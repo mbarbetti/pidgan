@@ -1,2 +1,2 @@
 # pidgan
-GAN-based model to fast-simulate the LHCb PID detectors
+GAN-based models to fast-simulate the LHCb PID detectors
