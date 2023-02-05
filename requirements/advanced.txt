@@ -1,0 +1,7 @@
+numpy
+pandas
+uproot
+matplotlib
+scikit-learn
+#hopaas_client   # to be released on PyPI
+html-reports>=0.2
