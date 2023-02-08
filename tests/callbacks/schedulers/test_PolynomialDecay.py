@@ -23,7 +23,7 @@ mse = tf.keras.losses.MeanSquaredError()
 
 @pytest.fixture
 def scheduler(cycle=False):
-    from calotron.callbacks.schedulers import PolynomialDecay
+    from pidgan.callbacks.schedulers import PolynomialDecay
 
     sched = PolynomialDecay(
         optimizer=adam,
@@ -40,7 +40,7 @@ def scheduler(cycle=False):
 
 
 def test_sched_configuration(scheduler):
-    from calotron.callbacks.schedulers import PolynomialDecay
+    from pidgan.callbacks.schedulers import PolynomialDecay
 
     assert isinstance(scheduler, PolynomialDecay)
     assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)
@@ -52,7 +52,7 @@ def test_sched_configuration(scheduler):
 
 @pytest.mark.parametrize("cycle", [False, True])
 def test_sched_use(cycle):
-    from calotron.callbacks.schedulers import PolynomialDecay
+    from pidgan.callbacks.schedulers import PolynomialDecay
 
     sched = PolynomialDecay(
         optimizer=adam,

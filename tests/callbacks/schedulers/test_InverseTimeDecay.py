@@ -23,7 +23,7 @@ mse = tf.keras.losses.MeanSquaredError()
 
 @pytest.fixture
 def scheduler(staircase=False):
-    from calotron.callbacks.schedulers import InverseTimeDecay
+    from pidgan.callbacks.schedulers import InverseTimeDecay
 
     sched = InverseTimeDecay(
         optimizer=adam,
@@ -39,7 +39,7 @@ def scheduler(staircase=False):
 
 
 def test_sched_configuration(scheduler):
-    from calotron.callbacks.schedulers import InverseTimeDecay
+    from pidgan.callbacks.schedulers import InverseTimeDecay
 
     assert isinstance(scheduler, InverseTimeDecay)
     assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)
@@ -50,7 +50,7 @@ def test_sched_configuration(scheduler):
 
 @pytest.mark.parametrize("staircase", [False, True])
 def test_sched_use(staircase):
-    from calotron.callbacks.schedulers import InverseTimeDecay
+    from pidgan.callbacks.schedulers import InverseTimeDecay
 
     sched = InverseTimeDecay(
         optimizer=adam, decay_rate=9, decay_steps=100, staircase=staircase, verbose=True

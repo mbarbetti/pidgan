@@ -23,7 +23,7 @@ mse = tf.keras.losses.MeanSquaredError()
 
 @pytest.fixture
 def scheduler():
-    from calotron.callbacks.schedulers import PiecewiseConstantDecay
+    from pidgan.callbacks.schedulers import PiecewiseConstantDecay
 
     sched = PiecewiseConstantDecay(
         optimizer=adam,
@@ -38,7 +38,7 @@ def scheduler():
 
 
 def test_sched_configuration(scheduler):
-    from calotron.callbacks.schedulers import PiecewiseConstantDecay
+    from pidgan.callbacks.schedulers import PiecewiseConstantDecay
 
     assert isinstance(scheduler, PiecewiseConstantDecay)
     assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)

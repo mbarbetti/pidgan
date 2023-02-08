@@ -23,7 +23,7 @@ mse = tf.keras.losses.MeanSquaredError()
 
 @pytest.fixture
 def scheduler():
-    from calotron.callbacks.schedulers import CosineDecay
+    from pidgan.callbacks.schedulers import CosineDecay
 
     sched = CosineDecay(optimizer=adam, decay_steps=1000, alpha=0.95, verbose=True)
     return sched
@@ -33,7 +33,7 @@ def scheduler():
 
 
 def test_sched_configuration(scheduler):
-    from calotron.callbacks.schedulers import CosineDecay
+    from pidgan.callbacks.schedulers import CosineDecay
 
     assert isinstance(scheduler, CosineDecay)
     assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)

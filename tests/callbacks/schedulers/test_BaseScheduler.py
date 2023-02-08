@@ -23,7 +23,7 @@ mse = tf.keras.losses.MeanSquaredError()
 
 @pytest.fixture
 def scheduler():
-    from calotron.callbacks.schedulers import BaseScheduler
+    from pidgan.callbacks.schedulers import BaseScheduler
 
     sched = BaseScheduler(optimizer=adam, verbose=True)
     return sched
@@ -33,7 +33,7 @@ def scheduler():
 
 
 def test_sched_configuration(scheduler):
-    from calotron.callbacks.schedulers import BaseScheduler
+    from pidgan.callbacks.schedulers import BaseScheduler
 
     assert isinstance(scheduler, BaseScheduler)
     assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)
