@@ -1,0 +1,22 @@
+version: 2
+updates:
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "07:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "mbarbetti"
+
+  - package-ecosystem: "pip"
+    directory: "/requirements"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "07:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "mbarbetti"
