@@ -229,30 +229,3 @@ class PolynomialDecay(BaseScheduler):
     @property
     def cycle(self) -> bool:
         return self._cycle
-
-
-class AttentionDecay(BaseScheduler):
-    def __init__(self, optimizer, d_model, warmup_steps=4000, verbose=False):
-        super().__init__(optimizer, verbose)
-        assert d_model > 0
-        self._d_model = int(d_model)
-        assert warmup_steps > 0
-        self._warmup_steps = int(warmup_steps)
-
-    def on_train_begin(self, logs=None):
-        super().on_train_begin(logs=logs)
-        self._tf_d_model = tf.cast(self._d_model, self._dtype)
-        self._tf_warmup_steps = tf.cast(self._warmup_steps, self._dtype)
-
-    def _scheduled_lr(self, init_lr, step):
-        arg1 = tf.math.rsqrt(step)
-        arg2 = tf.multiply(step, tf.pow(self._tf_warmup_steps, -1.5))
-        return tf.multiply(tf.math.rsqrt(self._tf_d_model), tf.math.minimum(arg1, arg2))
-
-    @property
-    def d_model(self) -> int:
-        return self._d_model
-
-    @property
-    def warmup_steps(self) -> int:
-        return self._warmup_steps
