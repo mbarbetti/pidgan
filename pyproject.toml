@@ -35,7 +35,8 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-  "tensorflow>=2.7",
+  "tensorflow>=2.5",
+  "scikit-learn",
   "pyyaml"
 ]
 
@@ -45,14 +46,12 @@ standard = [
   "pandas",
   "uproot",
   "matplotlib",
-  "scikit-learn",
 ]
 advanced = [
   "numpy",
   "pandas",
   "uproot",
   "matplotlib",
-  "scikit-learn",
   # "hopaas-client",   # to be released on PyPI
   "html-reports>=0.2",
 ]

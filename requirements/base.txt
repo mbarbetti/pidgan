@@ -1,2 +1,3 @@
-tensorflow>=2.7
+tensorflow>=2.5
+scikit-learn
 pyyaml
