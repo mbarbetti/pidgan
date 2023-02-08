@@ -1,0 +1,61 @@
+# tests.yml
+
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+      - release**
+  pull_request:
+    branches:
+      - main
+      - release**
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    container: tensorflow/tensorflow:${{ matrix.version }}
+    strategy:
+      matrix:
+        version: [2.5.0, 2.6.0, 2.7.0, 2.8.0]
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies and pidgan
+        shell: bash
+        run: |
+          pip install --upgrade pip build
+          pip install -r requirements/base.txt -r requirements/tests.txt
+          apt-get update
+          apt-get -y upgrade
+          apt-get install -y python3-venv
+          python -m build
+          pip install dist/*.whl --force-reinstall --no-deps
+          apt-get install -y git-all
+          pip install git+https://github.com/landerlini/hopaas_client.git   # hopaas-client not yet on PyPI
+
+      - name: Run pytest checks
+        shell: bash
+        env:
+          HOPAAS_TOKEN: ${{ secrets.HOPAAS_TOKEN }}
+        run: |
+          python tests/config/config.py --no-interactive -t "$HOPAAS_TOKEN"
+          pytest --cov tests/
+
+      - name: Upload coverage to Codecov
+        shell: bash
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import   # One-time step
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+          gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+          shasum -a 256 -c codecov.SHA256SUM
+
+          chmod +x codecov
+          ./codecov -R . -t "$CODECOV_TOKEN"
