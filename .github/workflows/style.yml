@@ -1,0 +1,65 @@
+# style.yml
+
+name: style
+
+on:
+  push:
+    branches:
+      - main
+      - release**
+  pull_request:
+    branches:
+      - main
+      - release**
+
+jobs:
+  black:
+    name: black
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v3
+    - name: Set-up python version
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"   # supported by all tensorflow versions
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements/style.txt
+    - name: Run black checks
+      run: black src/ tests/ --check --diff
+
+  flake8:
+    name: flake8
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v3
+    - name: Set-up python version
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"   # supported by all tensorflow versions
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements/style.txt
+    - name: Run flake8 checks
+      run: flake8 src/ tests/
+
+  isort:
+    name: isort
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v3
+    - name: Set-up python version
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"   # supported by all tensorflow versions
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements/style.txt
+    - name: Run isort checks
+      run: isort src/ tests/ --check --diff
