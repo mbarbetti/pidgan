@@ -1,9 +1,10 @@
-import tensorflow as tf
 from tensorflow.keras.callbacks import Callback
 
 
-class HopaasReporter(Callback):
-    def __init__(self, trial, loss_name, report_frequency=1, enable_pruning=False):
+class HopaasPruner(Callback):
+    def __init__(
+        self, trial, loss_name, report_frequency=1, enable_pruning=True
+    ) -> None:
         super().__init__()
         self._trial = trial
         assert isinstance(loss_name, str)
@@ -13,18 +14,18 @@ class HopaasReporter(Callback):
         assert isinstance(enable_pruning, bool)
         self._enable_pruning = enable_pruning
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch, logs=None) -> None:
         if self._enable_pruning:
             if (epoch + 1) % self._report_freq == 0:
                 self._trial.loss = self._get_monitor_value(logs=logs)
                 if self._trial.should_prune:
                     self.model.stop_training = True
 
-    def on_train_end(self, logs=None):
+    def on_train_end(self, logs=None) -> None:
         if not self._enable_pruning:
             self._trial.loss = self._get_monitor_value(logs=logs)
 
-    def _get_monitor_value(self, logs):
+    def _get_monitor_value(self, logs) -> float:
         logs = logs or {}
         monitor_value = logs.get(self._loss_name)
         if monitor_value is None:
