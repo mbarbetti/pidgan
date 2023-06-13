@@ -35,7 +35,8 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-  "tensorflow>=2.5",
+  "tensorflow>=2.7",
+  "scikit-learn",
   # "hopaas-client",   # to be released on PyPI
   "pyyaml"
 ]
@@ -46,7 +47,6 @@ lamarr = [
   "pandas",
   "uproot",
   "matplotlib",
-  "scikit-learn",
   "html-reports>=0.2",
 ]
 style = [

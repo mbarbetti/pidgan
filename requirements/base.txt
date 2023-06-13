@@ -1,3 +1,4 @@
-tensorflow>=2.5
+tensorflow>=2.7
+scikit-learn
 #hopaas_client   # to be released on PyPI
 pyyaml
