@@ -7,7 +7,7 @@ name = "pidgan"
 dynamic = ["version"]
 description = "GAN-based models to fast-simulate the LHCb PID detectors"
 readme = "README.md"
-requires-python = ">=3.7, <=3.10"
+requires-python = ">=3.7, <=3.11"
 license = {text = "GPLv3 License"}
 authors = [
   {name = "Matteo Barbetti", email = "matteo.barbetti@fi.infn.it"},
@@ -30,29 +30,23 @@ classifiers = [
   "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
   "tensorflow>=2.5",
-  "scikit-learn",
+  # "hopaas-client",   # to be released on PyPI
   "pyyaml"
 ]
 
 [project.optional-dependencies]
-standard = [
+lamarr = [
   "numpy",
   "pandas",
   "uproot",
   "matplotlib",
-]
-advanced = [
-  "numpy",
-  "pandas",
-  "uproot",
-  "matplotlib",
-  # "hopaas-client",   # to be released on PyPI
+  "scikit-learn",
   "html-reports>=0.2",
 ]
 style = [
@@ -72,7 +66,7 @@ repository = "https://github.com/mbarbetti/pidgan"
 version = {attr = "pidgan.__version__"}
 
 [tool.black]
-target-version = ["py37", "py38", "py39", "py310"]
+target-version = ["py37", "py38", "py39", "py310", "py311"]
 color = true
 skip_magic_trailing_comma = true
 

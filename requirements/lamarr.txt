@@ -1,6 +1,7 @@
+tqdm
 numpy
 pandas
 uproot
 matplotlib
-#hopaas_client   # to be released on PyPI
+scikit-learn
 html-reports>=0.2
