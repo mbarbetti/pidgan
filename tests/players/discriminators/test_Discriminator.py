@@ -45,14 +45,27 @@ def test_model_use(model):
     assert output.shape == tuple(test_shape)
 
 
-def test_model_train(model):
+@pytest.mark.parametrize("sample_weight", [w, None])
+def test_model_train(model, sample_weight):
+    if sample_weight is not None:
+        slices = ((x, y), labels, w)
+    else:
+        slices = ((x, y), labels)
     dataset = (
-        tf.data.Dataset.from_tensor_slices(((x, y), labels))
+        tf.data.Dataset.from_tensor_slices(slices)
         .batch(batch_size=512, drop_remainder=True)
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
     adam = tf.keras.optimizers.Adam(learning_rate=0.001)
     bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=bce)
+    model.compile(optimizer=adam, loss=bce, metrics=["bce"])
     model.fit(dataset, epochs=2)
+
+
+@pytest.mark.parametrize("sample_weight", [w, None])
+def test_model_eval(model, sample_weight):
+    adam = tf.keras.optimizers.Adam(learning_rate=0.001)
+    bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    model.compile(optimizer=adam, loss=bce, metrics=["bce"])
+    model.evaluate((x, y), sample_weight=sample_weight)

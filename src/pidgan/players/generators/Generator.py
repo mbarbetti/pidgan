@@ -62,7 +62,9 @@ class Generator(tf.keras.Model):
 
         # Model
         self._model = tf.keras.Sequential()
-        for i, (units, rate) in enumerate(zip(self._mlp_hidden_units, self._dropout_rate)):
+        for i, (units, rate) in enumerate(
+            zip(self._mlp_hidden_units, self._dropout_rate)
+        ):
             self._model.add(
                 Dense(
                     units=units,
@@ -81,11 +83,11 @@ class Generator(tf.keras.Model):
                 activation=output_activation,
                 kernel_initializer="glorot_uniform",
                 bias_initializer="zeros",
-                name=f"gen_dense_out" if name else None,
+                name="gen_dense_out" if name else None,
                 dtype=self.dtype,
             )
         )
-    
+
     def call(self, x) -> tf.Tensor:
         x = self._prepare_input(x, seed=None)
         out = self._model(x)
@@ -96,7 +98,7 @@ class Generator(tf.keras.Model):
         x = self._prepare_input(x, seed=seed)
         out = self._model(x)
         return out
-    
+
     def _prepare_input(self, x, seed=None) -> tf.Tensor:
         latent_sample = tf.random.normal(
             shape=(tf.shape(x)[0], self._latent_dim),
@@ -111,19 +113,19 @@ class Generator(tf.keras.Model):
     @property
     def output_dim(self) -> int:
         return self._output_dim
-    
+
     @property
     def latent_dim(self) -> int:
         return self._latent_dim
-    
+
     @property
     def num_hidden_layers(self) -> int:
         return self._num_hidden_layers
-    
+
     @property
     def mlp_hidden_units(self) -> list:
         return self._mlp_hidden_units
-    
+
     @property
     def dropout_rate(self) -> list:
         return self._dropout_rate
@@ -131,7 +133,7 @@ class Generator(tf.keras.Model):
     @property
     def output_activation(self):
         return self._output_activation
-    
+
     @property
     def model(self) -> tf.keras.Model:
         return self._model

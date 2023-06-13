@@ -6,8 +6,6 @@ CHUNK_SIZE = int(1e4)
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
 w = tf.random.uniform(shape=(CHUNK_SIZE,))
-labels = tf.random.uniform(shape=(CHUNK_SIZE,), minval=0.0, maxval=1.0)
-labels = tf.cast(labels > 0.5, x.dtype)
 
 
 @pytest.fixture
@@ -47,9 +45,14 @@ def test_model_use(model):
     assert output.shape == tuple(test_shape)
 
 
-def test_model_train(model):
+@pytest.mark.parametrize("sample_weight", [w, None])
+def test_model_train(model, sample_weight):
+    if sample_weight is not None:
+        slices = (x, y, w)
+    else:
+        slices = (x, y)
     dataset = (
-        tf.data.Dataset.from_tensor_slices((x, y))
+        tf.data.Dataset.from_tensor_slices(slices)
         .batch(batch_size=512, drop_remainder=True)
         .cache()
         .prefetch(tf.data.AUTOTUNE)
@@ -58,3 +61,10 @@ def test_model_train(model):
     mse = tf.keras.losses.MeanSquaredError()
     model.compile(optimizer=adam, loss=mse)
     model.fit(dataset, epochs=2)
+
+@pytest.mark.parametrize("sample_weight", [w, None])
+def test_model_eval(model, sample_weight):
+    adam = tf.keras.optimizers.Adam(learning_rate=0.001)
+    mse = tf.keras.losses.MeanSquaredError()
+    model.compile(optimizer=adam, loss=mse, metrics=["mse"])
+    model.evaluate(x, sample_weight=sample_weight)

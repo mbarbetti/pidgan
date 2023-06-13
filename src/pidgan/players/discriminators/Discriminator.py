@@ -57,7 +57,9 @@ class Discriminator(tf.keras.Model):
 
         # Model
         self._model = tf.keras.Sequential()
-        for i, (units, rate) in enumerate(zip(self._mlp_hidden_units, self._dropout_rate)):
+        for i, (units, rate) in enumerate(
+            zip(self._mlp_hidden_units, self._dropout_rate)
+        ):
             self._model.add(
                 Dense(
                     units=units,
@@ -76,32 +78,32 @@ class Discriminator(tf.keras.Model):
                 activation=output_activation,
                 kernel_initializer="glorot_uniform",
                 bias_initializer="zeros",
-                name=f"disc_dense_out" if name else None,
+                name="disc_dense_out" if name else None,
                 dtype=self.dtype,
             )
         )
-    
+
     def call(self, inputs) -> tf.Tensor:
-        x = tf.concat(inputs, axis=1)        
+        x = tf.concat(inputs, axis=1)
         out = self._model(x)
         return out
 
     @property
     def output_dim(self) -> int:
         return self._output_dim
-    
+
     @property
     def latent_dim(self) -> int:
         return self._latent_dim
-    
+
     @property
     def num_hidden_layers(self) -> int:
         return self._num_hidden_layers
-    
+
     @property
     def mlp_hidden_units(self) -> list:
         return self._mlp_hidden_units
-    
+
     @property
     def dropout_rate(self) -> list:
         return self._dropout_rate
@@ -109,7 +111,7 @@ class Discriminator(tf.keras.Model):
     @property
     def output_activation(self):
         return self._output_activation
-    
+
     @property
     def model(self) -> tf.keras.Model:
         return self._model
