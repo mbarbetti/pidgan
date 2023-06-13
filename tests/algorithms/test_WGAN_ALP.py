@@ -2,9 +2,9 @@ import pytest
 import tensorflow as tf
 from tensorflow.keras.optimizers import Optimizer, RMSprop
 
+from pidgan.algorithms.WGAN_GP import PENALTY_STRATEGIES
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
-from pidgan.algorithms.WGAN_GP import PENALTY_STRATEGIES
 
 CHUNK_SIZE = int(1e4)
 

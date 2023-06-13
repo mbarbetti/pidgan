@@ -62,6 +62,7 @@ def test_model_train(model, sample_weight):
     model.compile(optimizer=adam, loss=mse)
     model.fit(dataset, epochs=2)
 
+
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
     adam = tf.keras.optimizers.Adam(learning_rate=0.001)
