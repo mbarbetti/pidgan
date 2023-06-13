@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-chunk_size = int(1e4)
+CHUNK_SIZE = int(1e4)
 
 X = np.c_[
-    np.random.uniform(-1, 1, size=chunk_size),
-    np.random.normal(0, 1, size=chunk_size),
-    np.random.exponential(5, size=chunk_size),
+    np.random.uniform(-1, 1, size=CHUNK_SIZE),
+    np.random.normal(0, 1, size=CHUNK_SIZE),
+    np.random.exponential(5, size=CHUNK_SIZE),
 ]
 Y = np.tanh(X[:, 0]) + 2 * X[:, 1] * X[:, 2]
 
@@ -23,9 +23,11 @@ mse = tf.keras.losses.MeanSquaredError()
 
 @pytest.fixture
 def scheduler():
-    from pidgan.callbacks.schedulers import BaseScheduler
+    from pidgan.callbacks.schedulers.LearnRateBaseScheduler import (
+        LearnRateBaseScheduler,
+    )
 
-    sched = BaseScheduler(optimizer=adam, verbose=True)
+    sched = LearnRateBaseScheduler(optimizer=adam, verbose=True, key="lr")
     return sched
 
 
@@ -33,10 +35,15 @@ def scheduler():
 
 
 def test_sched_configuration(scheduler):
-    from pidgan.callbacks.schedulers import BaseScheduler
+    from pidgan.callbacks.schedulers.LearnRateBaseScheduler import (
+        LearnRateBaseScheduler,
+    )
 
-    assert isinstance(scheduler, BaseScheduler)
+    assert isinstance(scheduler, LearnRateBaseScheduler)
+    assert isinstance(scheduler.name, str)
     assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)
+    assert isinstance(scheduler.verbose, bool)
+    assert isinstance(scheduler.key, str)
 
 
 def test_sched_use(scheduler):
