@@ -11,12 +11,11 @@
 </h2>
 
 <p align="center">
-  <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/tensorflow-2.5–2.11-f57000?style=flat"></a>
-  <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.10-blue?style=flat"></a>
+  <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/tensorflow-2.7–2.12-f57000?style=flat"></a>
+  <a href="https://scikit-learn.org/stable/whats_new.html"><img alt="scikit-learn versions" src="https://img.shields.io/badge/sklearn-1.0–1.2-f89939?style=flat"></a>
+  <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.11-blue?style=flat"></a>
   <a href="https://pypi.python.org/pypi/pidgan"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/pidgan"></a>
-  <!--
   <a href="LICENSE"><img alt="GitHub - License" src="https://img.shields.io/github/license/mbarbetti/pidgan"></a>
-  -->
 </p>
 
 <p align="center">
@@ -35,14 +34,14 @@
 
 ### Generative Adversarial Networks
 
-| Algorithms | Implementation | Test |                              Paper                              |
-|:----------:|:--------------:|:----:|:---------------------------------------------------------------:|
-|    `GAN`   |       ✅       |   ✅  |  <a href="https://arxiv.org/abs/1406.2661">arXiv:1406.2661</a>  |
-|  `BceGAN`  |       ✅       |   ✅  |                                                                 |
-|   `LSGAN`  |       ✅       |   ✅  | <a href="https://arxiv.org/abs/1611.04076">arXiv:1611.04076</a> |
-|   `WGAN`   |       ✅       |   ✅  | <a href="https://arxiv.org/abs/1701.07875">arXiv:1701.07875</a> |
-|  `WGAN_GP` |       ✅       |   ✅  | <a href="https://arxiv.org/abs/1704.00028">arXiv:1704.00028</a> |
-| `CramerGAN`|       ✅       |   ✅  | <a href="https://arxiv.org/abs/1705.10743">arXiv:1705.10743</a> |
-| `WGAN_ALP` |       ✅       |   ✅  | <a href="https://arxiv.org/abs/1907.05681">arXiv:1907.05681</a> |
+| Algorithms | Implementation |  Test  |                         Paper                        |
+|:----------:|:--------------:|:------:|:----------------------------------------------------:|
+|    `GAN`   |       ✅       |   ✅   |  [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)  |
+|  `BceGAN`  |       ✅       |   ✅   |                                                      |
+|   `LSGAN`  |       ✅       |   ✅   | [arXiv:1611.04076](https://arxiv.org/abs/1611.04076) |
+|   `WGAN`   |       ✅       |   ✅   | [arXiv:1701.07875](https://arxiv.org/abs/1701.07875) |
+|  `WGAN_GP` |       ✅       |   ✅   | [arXiv:1704.00028](https://arxiv.org/abs/1704.00028) |
+| `CramerGAN`|       ✅       |   ✅   | [arXiv:1705.10743](https://arxiv.org/abs/1705.10743) |
+| `WGAN_ALP` |       ✅       |   ✅   | [arXiv:1907.05681](https://arxiv.org/abs/1907.05681) |
 
-**NOTE:** All the GAN algorithms available are designed to operate according to the **conditional version** proposed in [arXiv:1411.1784](https://arxiv.org/abs/1411.1784).
+*All the algorithms available are designed to operate according to the **conditional version** proposed in [arXiv:1411.1784](https://arxiv.org/abs/1411.1784)
