@@ -69,3 +69,11 @@ def test_model_eval(model, sample_weight):
     mse = tf.keras.losses.MeanSquaredError()
     model.compile(optimizer=adam, loss=mse, metrics=["mse"])
     model.evaluate(x, sample_weight=sample_weight)
+
+
+def test_model_generate(model):
+    out = model.generate(x, seed=42)
+    comparison = out.numpy() == model.generate(x, seed=42).numpy()
+    assert comparison.all()
+    comparison = out.numpy() != model.generate(x, seed=24).numpy()
+    assert comparison.any()

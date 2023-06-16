@@ -56,37 +56,40 @@ class Discriminator(tf.keras.Model):
         self._output_activation = output_activation
 
         # Model
-        self._model = tf.keras.Sequential()
+        self._seq = list()
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._dropout_rate)
         ):
-            self._model.add(
+            self._seq.append(
                 Dense(
                     units=units,
                     activation=None,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
-                    name=f"disc_dense_{i}" if name else None,
+                    name=f"dense_{i}" if name else None,
                     dtype=self.dtype,
                 )
             )
-            self._model.add(LeakyReLU(alpha=LEAKY_ALPHA))
-            self._model.add(Dropout(rate=rate))
-        self._model.add(
+            self._seq.append(
+                LeakyReLU(alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None)
+            )
+            self._seq.append(Dropout(rate=rate, name=f"dropout_{i}" if name else None))
+        self._seq.append(
             Dense(
                 units=output_dim,
                 activation=output_activation,
                 kernel_initializer="glorot_uniform",
                 bias_initializer="zeros",
-                name="disc_dense_out" if name else None,
+                name="dense_out" if name else None,
                 dtype=self.dtype,
             )
         )
 
     def call(self, inputs) -> tf.Tensor:
         x = tf.concat(inputs, axis=1)
-        out = self._model(x)
-        return out
+        for layer in self._seq:
+            x = layer(x)
+        return x
 
     @property
     def output_dim(self) -> int:

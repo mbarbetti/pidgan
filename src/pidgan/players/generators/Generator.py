@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense, Dropout, LeakyReLU
 
 LEAKY_ALPHA = 0.1
+SEED = 42
 
 
 class Generator(tf.keras.Model):
@@ -61,43 +62,47 @@ class Generator(tf.keras.Model):
         self._output_activation = output_activation
 
         # Model
-        self._model = tf.keras.Sequential()
+        self._seq = list()
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._dropout_rate)
         ):
-            self._model.add(
+            self._seq.append(
                 Dense(
                     units=units,
                     activation=None,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
-                    name=f"gen_dense_{i}" if name else None,
+                    name=f"dense_{i}" if name else None,
                     dtype=self.dtype,
                 )
             )
-            self._model.add(LeakyReLU(alpha=LEAKY_ALPHA))
-            self._model.add(Dropout(rate=rate))
-        self._model.add(
+            self._seq.append(
+                LeakyReLU(alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None)
+            )
+            self._seq.append(Dropout(rate=rate, name=f"dropout_{i}" if name else None))
+        self._seq.append(
             Dense(
                 units=output_dim,
                 activation=output_activation,
                 kernel_initializer="glorot_uniform",
                 bias_initializer="zeros",
-                name="gen_dense_out" if name else None,
+                name="dense_out" if name else None,
                 dtype=self.dtype,
             )
         )
 
     def call(self, x) -> tf.Tensor:
         x = self._prepare_input(x, seed=None)
-        out = self._model(x)
-        tf.print("shape:", tf.shape(out))
-        return out
+        for layer in self._seq:
+            x = layer(x)
+        return x
 
     def generate(self, x, seed=None) -> tf.Tensor:
+        tf.random.set_seed(seed=SEED)
         x = self._prepare_input(x, seed=seed)
-        out = self._model(x)
-        return out
+        for layer in self._seq:
+            x = layer(x)
+        return x
 
     def _prepare_input(self, x, seed=None) -> tf.Tensor:
         latent_sample = tf.random.normal(
@@ -133,7 +138,3 @@ class Generator(tf.keras.Model):
     @property
     def output_activation(self):
         return self._output_activation
-
-    @property
-    def model(self) -> tf.keras.Model:
-        return self._model
