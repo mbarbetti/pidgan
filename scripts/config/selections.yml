@@ -1,0 +1,92 @@
+Rich:
+  - probe_Brunel_P > 3000
+  - probe_Brunel_P < 200000 
+  - probe_Brunel_ETA > 1.8 
+  - probe_Brunel_ETA < 5.5 
+  - probe_Brunel_RichDLLe  > -150
+  - probe_Brunel_RichDLLmu > -150
+  - probe_Brunel_RichDLLk  > -150
+  - probe_Brunel_RichDLLp  > -150
+  - probe_Brunel_RichDLLe  <  150
+  - probe_Brunel_RichDLLmu <  150
+  - probe_Brunel_RichDLLk  <  150
+  - probe_Brunel_RichDLLp  <  150
+  - nTracks_Brunel > 0
+  - nTracks_Brunel < 1000 
+
+Muon:
+  - probe_Brunel_P > 3000
+  - probe_Brunel_P < 200000 
+  - probe_Brunel_ETA > 1.8 
+  - probe_Brunel_ETA < 5.5 
+  - probe_Brunel_isMuon == 1 
+  - probe_Brunel_MuonMuLL > -9
+  - probe_Brunel_MuonBgLL > -9 
+  - probe_Brunel_MuonMuLL <  1 
+  - probe_Brunel_MuonBgLL <  1 
+  - nTracks_Brunel > 0 
+  - nTracks_Brunel < 1000 
+  # - probe_Brunel_MuonUnbiased == 1
+
+GlobalPID:
+  - probe_Brunel_P > 3000
+  - probe_Brunel_P < 200000 
+  - probe_Brunel_ETA > 1.8 
+  - probe_Brunel_ETA < 5.5 
+  - probe_Brunel_RichDLLe  > -150
+  - probe_Brunel_RichDLLmu > -150
+  - probe_Brunel_RichDLLk  > -150
+  - probe_Brunel_RichDLLp  > -150
+  - probe_Brunel_RichDLLe  <  150
+  - probe_Brunel_RichDLLmu <  150
+  - probe_Brunel_RichDLLk  <  150
+  - probe_Brunel_RichDLLp  <  150
+  - probe_Brunel_PIDe  > -25 
+  - probe_Brunel_PIDmu > -150 
+  - probe_Brunel_PIDK  > -150 
+  - probe_Brunel_PIDp  > -150
+  - probe_Brunel_MC15TuneV1_ProbNNe  >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNpi >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNk  >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNp  >= 0 
+  - nTracks_Brunel > 0
+  - nTracks_Brunel < 1000 
+
+GlobalMuonId:
+  - probe_Brunel_P > 3000
+  - probe_Brunel_P < 200000 
+  - probe_Brunel_ETA > 1.8 
+  - probe_Brunel_ETA < 5.5 
+  - probe_Brunel_isMuon == 1 
+  - probe_Brunel_MuonMuLL > -9
+  - probe_Brunel_MuonBgLL > -9 
+  - probe_Brunel_MuonMuLL <  1 
+  - probe_Brunel_MuonBgLL <  1 
+  - probe_Brunel_RichDLLe  > -150
+  - probe_Brunel_RichDLLmu > -150
+  - probe_Brunel_RichDLLk  > -150
+  - probe_Brunel_RichDLLp  > -150
+  - probe_Brunel_RichDLLe  <  150
+  - probe_Brunel_RichDLLmu <  150
+  - probe_Brunel_RichDLLk  <  150
+  - probe_Brunel_RichDLLp  <  150
+  - probe_Brunel_PIDe  > -25 
+  - probe_Brunel_PIDmu > -150 
+  - probe_Brunel_PIDK  > -150 
+  - probe_Brunel_PIDp  > -150
+  - probe_Brunel_MC15TuneV1_ProbNNe  >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNmu >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNpi >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNk  >= 0 
+  - probe_Brunel_MC15TuneV1_ProbNNp  >= 0 
+  - nTracks_Brunel > 0
+  - nTracks_Brunel < 1000 
+  # - probe_Brunel_MuonUnbiased == 1
+
+isMuon:
+  - probe_Brunel_ETA > 1.5
+  - probe_Brunel_ETA < 5.5
+  - nTracks_Brunel > 0
+  - nTracks_Brunel < 1000
+  # - probe_Brunel_MuonUnbiased == 1
+      
