@@ -69,9 +69,22 @@ def test_model_configuration(model):
     assert isinstance(model.injected_noise_stddev, float)
 
 
-def test_model_use(model):
+@pytest.mark.parametrize("referee", [ref, None])
+def test_model_use(referee):
+    from pidgan.algorithms import GAN
+
+    model = GAN(
+        generator=gen,
+        discriminator=disc,
+        referee=referee,
+        use_original_loss=True,
+        injected_noise_stddev=0.1,
+    )
     outputs = model(x, y)
-    g_output, d_outputs, r_outputs = outputs
+    if referee is not None:
+        g_output, d_outputs, r_outputs = outputs
+    else:
+        g_output, d_outputs = outputs
     model.summary()
 
     test_g_shape = [y.shape[0]]
@@ -84,11 +97,12 @@ def test_model_use(model):
     assert d_output_gen.shape == tuple(test_d_shape)
     assert d_output_ref.shape == tuple(test_d_shape)
 
-    test_r_shape = [y.shape[0]]
-    test_r_shape.append(model.referee.output_dim)
-    r_output_gen, r_output_ref = r_outputs
-    assert r_output_gen.shape == tuple(test_r_shape)
-    assert r_output_ref.shape == tuple(test_r_shape)
+    if referee is not None:
+        test_r_shape = [y.shape[0]]
+        test_r_shape.append(model.referee.output_dim)
+        r_output_gen, r_output_ref = r_outputs
+        assert r_output_gen.shape == tuple(test_r_shape)
+        assert r_output_ref.shape == tuple(test_r_shape)
 
 
 @pytest.mark.parametrize("metrics", [["bce"], None])
@@ -114,9 +128,10 @@ def test_model_compilation(model, metrics):
     assert isinstance(model.referee_upds_per_batch, int)
 
 
+@pytest.mark.parametrize("referee", [ref, None])
 @pytest.mark.parametrize("sample_weight", [w, None])
 @pytest.mark.parametrize("use_original_loss", [True, False])
-def test_model_train(sample_weight, use_original_loss):
+def test_model_train(referee, sample_weight, use_original_loss):
     from pidgan.algorithms import GAN
 
     if sample_weight is not None:
@@ -133,7 +148,7 @@ def test_model_train(sample_weight, use_original_loss):
     model = GAN(
         generator=gen,
         discriminator=disc,
-        referee=ref,
+        referee=referee,
         use_original_loss=use_original_loss,
         injected_noise_stddev=0.1,
     )

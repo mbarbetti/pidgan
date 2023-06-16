@@ -112,6 +112,9 @@ class LSGAN(GAN):
         fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
         return (real_loss + fake_loss) / 2.0
 
+    def _compute_threshold(self, model, x, y, sample_weight=None) -> tf.Tensor:
+        return 0.0
+
     @property
     def minimize_pearson_chi2(self) -> bool:
         return self._minimize_pearson_chi2

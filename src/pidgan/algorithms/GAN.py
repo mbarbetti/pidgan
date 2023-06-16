@@ -17,7 +17,7 @@ class GAN(tf.keras.Model):
         referee=None,
         use_original_loss=True,
         injected_noise_stddev=0.0,
-        name=None,
+        name="GAN",
         dtype=None,
     ) -> None:
         super().__init__(name=name, dtype=dtype)
@@ -64,13 +64,20 @@ class GAN(tf.keras.Model):
     def call(self, x, y=None) -> tuple:
         g_out = self._generator(x)
         d_out_gen = self._discriminator((x, g_out))
-        r_out_gen = self._referee((x, g_out))
         if y is None:
-            return g_out, d_out_gen, r_out_gen
+            if self._referee is not None:
+                r_out_gen = self._referee((x, g_out))
+                return g_out, d_out_gen, r_out_gen
+            else:
+                return g_out, d_out_gen
         else:
             d_out_ref = self._discriminator((x, y))
-            r_out_ref = self._referee((x, y))
-            return g_out, (d_out_gen, d_out_ref), (r_out_gen, r_out_ref)
+            if self._referee is not None:
+                r_out_gen = self._referee((x, g_out))
+                r_out_ref = self._referee((x, y))
+                return g_out, (d_out_gen, d_out_ref), (r_out_gen, r_out_ref)
+            else:
+                return g_out, (d_out_gen, d_out_ref)
 
     def summary(self, **kwargs) -> None:
         print("_" * 65)
@@ -161,26 +168,35 @@ class GAN(tf.keras.Model):
     def _g_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
             loss = self._compute_g_loss(x, y, sample_weight, training=True)
+
         trainable_vars = self._generator.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
         self._g_opt.apply_gradients(zip(gradients, trainable_vars))
-        self._g_loss.update_state(loss)
+
+        threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
+        self._g_loss.update_state(loss - threshold)
 
     def _d_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
             loss = self._compute_d_loss(x, y, sample_weight, training=True)
+
         trainable_vars = self._discriminator.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
         self._d_opt.apply_gradients(zip(gradients, trainable_vars))
-        self._d_loss.update_state(loss)
+
+        threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
+        self._d_loss.update_state(loss + threshold)
 
     def _r_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
             loss = self._compute_r_loss(x, y, sample_weight, training=True)
+
         trainable_vars = self._referee.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
         self._r_opt.apply_gradients(zip(gradients, trainable_vars))
-        self._r_loss.update_state(loss)
+
+        threshold = self._compute_threshold(self._referee, x, y, sample_weight)
+        self._r_loss.update_state(loss + threshold)
 
     def _prepare_trainset(
         self, x, y, sample_weight=None, training_generator=True
@@ -303,18 +319,57 @@ class GAN(tf.keras.Model):
         fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
         return -(real_loss + fake_loss)
 
+    def _prepare_trainset_threshold(self, x, y, sample_weight=None) -> tuple:
+        batch_size = tf.cast(tf.shape(x)[0] / 2, tf.int32)
+        x_ref_1, x_ref_2 = tf.split(x[: batch_size * 2], 2, axis=0)
+        y_ref_1, y_ref_2 = tf.split(y[: batch_size * 2], 2, axis=0)
+
+        if sample_weight is not None:
+            w_ref_1, w_ref_2 = tf.split(sample_weight[: batch_size * 2], 2, axis=0)
+        else:
+            w_ref_1, w_ref_2 = tf.split(tf.ones(shape=(batch_size * 2,)), 2, axis=0)
+
+        return (x_ref_1, y_ref_1, w_ref_1), (x_ref_2, y_ref_2, w_ref_2)
+
+    def _compute_threshold(self, model, x, y, sample_weight=None) -> tf.Tensor:
+        trainset_ref_1, trainset_ref_2 = self._prepare_trainset_threshold(
+            x, y, sample_weight
+        )
+        x_ref_1, y_ref_1, w_ref_1 = trainset_ref_1
+        x_ref_2, y_ref_2, w_ref_2 = trainset_ref_2
+
+        m_out_ref_1 = model((x_ref_1, y_ref_1), training=False)
+        m_out_ref_2 = model((x_ref_2, y_ref_2), training=False)
+
+        loss_1 = tf.reduce_sum(
+            w_ref_1
+            * tf.math.log(tf.clip_by_value(m_out_ref_1, MIN_LOG_VALUE, MAX_LOG_VALUE))
+        ) / tf.reduce_sum(w_ref_1)
+        loss_1 = tf.cast(loss_1, dtype=y_ref_1.dtype)
+        loss_2 = tf.reduce_sum(
+            w_ref_2
+            * tf.math.log(
+                tf.clip_by_value(1.0 - m_out_ref_2, MIN_LOG_VALUE, MAX_LOG_VALUE)
+            )
+        ) / tf.reduce_sum(w_ref_2)
+        loss_2 = tf.cast(loss_2, dtype=y_ref_1.dtype)
+        return loss_1 + loss_2
+
     def test_step(self, data) -> dict:
         x, y, sample_weight = self._unpack_data(data)
 
+        threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
+
         g_loss = self._compute_g_loss(x, y, sample_weight, training=False)
-        self._g_loss.update_state(g_loss)
+        self._g_loss.update_state(g_loss - threshold)
 
         d_loss = self._compute_d_loss(x, y, sample_weight, training=False)
-        self._d_loss.update_state(d_loss)
+        self._d_loss.update_state(d_loss + threshold)
 
         if self._referee is not None:
             r_loss = self._compute_r_loss(x, y, sample_weight, training=False)
-            self._r_loss.update_state(r_loss)
+            threshold = self._compute_threshold(self._referee, x, y, sample_weight)
+            self._r_loss.update_state(r_loss + threshold)
 
         train_dict = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
         if self._referee is not None:

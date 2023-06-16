@@ -74,9 +74,24 @@ def test_model_configuration(model):
     assert isinstance(model.label_smoothing, float)
 
 
-def test_model_use(model):
+@pytest.mark.parametrize("referee", [ref, None])
+def test_model_use(referee):
+    from pidgan.algorithms import CramerGAN
+
+    model = CramerGAN(
+        generator=gen,
+        discriminator=disc,
+        referee=referee,
+        lipschitz_penalty=10.0,
+        penalty_strategy="two-sided",
+        from_logits=True,
+        label_smoothing=0.0,
+    )
     outputs = model(x, y)
-    g_output, d_outputs, r_outputs = outputs
+    if referee is not None:
+        g_output, d_outputs, r_outputs = outputs
+    else:
+        g_output, d_outputs = outputs
     model.summary()
 
     test_g_shape = [y.shape[0]]
@@ -89,11 +104,12 @@ def test_model_use(model):
     assert d_output_gen.shape == tuple(test_d_shape)
     assert d_output_ref.shape == tuple(test_d_shape)
 
-    test_r_shape = [y.shape[0]]
-    test_r_shape.append(model.referee.output_dim)
-    r_output_gen, r_output_ref = r_outputs
-    assert r_output_gen.shape == tuple(test_r_shape)
-    assert r_output_ref.shape == tuple(test_r_shape)
+    if referee is not None:
+        test_r_shape = [y.shape[0]]
+        test_r_shape.append(model.referee.output_dim)
+        r_output_gen, r_output_ref = r_outputs
+        assert r_output_gen.shape == tuple(test_r_shape)
+        assert r_output_ref.shape == tuple(test_r_shape)
 
 
 @pytest.mark.parametrize("metrics", [["bce"], None])
@@ -119,10 +135,11 @@ def test_model_compilation(model, metrics):
     assert isinstance(model.referee_upds_per_batch, int)
 
 
+@pytest.mark.parametrize("referee", [ref, None])
 @pytest.mark.parametrize("sample_weight", [w, None])
 @pytest.mark.parametrize("penalty_strategy", PENALTY_STRATEGIES)
 @pytest.mark.parametrize("bce_options", [(True, 0.0), (None, None)])
-def test_model_train(sample_weight, penalty_strategy, bce_options):
+def test_model_train(referee, sample_weight, penalty_strategy, bce_options):
     from pidgan.algorithms import CramerGAN
 
     if sample_weight is not None:
@@ -140,7 +157,7 @@ def test_model_train(sample_weight, penalty_strategy, bce_options):
     model = CramerGAN(
         generator=gen,
         discriminator=disc,
-        referee=ref,
+        referee=referee,
         lipschitz_penalty=10.0,
         penalty_strategy=penalty_strategy,
         from_logits=from_logits,

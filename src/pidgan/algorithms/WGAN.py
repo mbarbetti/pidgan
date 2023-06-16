@@ -118,6 +118,9 @@ class WGAN(GAN):
             fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
             return fake_loss - real_loss
 
+    def _compute_threshold(self, model, x, y, sample_weight=None) -> tf.Tensor:
+        return 0.0
+
     @property
     def clip_param(self) -> float:
         return self._clip_param
