@@ -34,14 +34,20 @@
 
 ### Generative Adversarial Networks
 
-| Algorithms | Implementation |  Test  |                         Paper                        |
-|:----------:|:--------------:|:------:|:----------------------------------------------------:|
-|    `GAN`   |       ✅       |   ✅   |  [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)  |
-|  `BceGAN`  |       ✅       |   ✅   |                                                      |
-|   `LSGAN`  |       ✅       |   ✅   | [arXiv:1611.04076](https://arxiv.org/abs/1611.04076) |
-|   `WGAN`   |       ✅       |   ✅   | [arXiv:1701.07875](https://arxiv.org/abs/1701.07875) |
-|  `WGAN_GP` |       ✅       |   ✅   | [arXiv:1704.00028](https://arxiv.org/abs/1704.00028) |
-| `CramerGAN`|       ✅       |   ✅   | [arXiv:1705.10743](https://arxiv.org/abs/1705.10743) |
-| `WGAN_ALP` |       ✅       |   ✅   | [arXiv:1907.05681](https://arxiv.org/abs/1907.05681) |
+| Algorithms* | Implementation |  Test  |                         Paper                        |
+|:-----------:|:--------------:|:------:|:----------------------------------------------------:|
+|    `GAN`    |       ✅       |   ✅   |  [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)  |
+|  `BceGAN`   |       ✅       |   ✅   |                                                      |
+|   `LSGAN`   |       ✅       |   ✅   | [arXiv:1611.04076](https://arxiv.org/abs/1611.04076) |
+|   `WGAN`    |       ✅       |   ✅   | [arXiv:1701.07875](https://arxiv.org/abs/1701.07875) |
+|  `WGAN_GP`  |       ✅       |   ✅   | [arXiv:1704.00028](https://arxiv.org/abs/1704.00028) |
+| `CramerGAN` |       ✅       |   ✅   | [arXiv:1705.10743](https://arxiv.org/abs/1705.10743) |
+| `WGAN_ALP`  |       ✅       |   ✅   | [arXiv:1907.05681](https://arxiv.org/abs/1907.05681) |
 
-*All the algorithms available are designed to operate according to the **conditional version** proposed in [arXiv:1411.1784](https://arxiv.org/abs/1411.1784)
+*Designed to operate according to the **conditional version** proposed in [arXiv:1411.1784](https://arxiv.org/abs/1411.1784)
+
+<!--
+#### Some tricks:
+* [arXiv:1606.03498](https://arxiv.org/abs/1606.03498)
+* [arXiv:1701.04862](https://arxiv.org/abs/1701.04862)
+-->

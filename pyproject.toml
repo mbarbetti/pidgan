@@ -36,7 +36,7 @@ classifiers = [
 ]
 dependencies = [
   "tensorflow>=2.7",
-  "scikit-learn",
+  "scikit-learn>=1.0",
   # "hopaas-client",   # to be released on PyPI
   "pyyaml"
 ]
