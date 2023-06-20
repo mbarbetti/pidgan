@@ -284,10 +284,10 @@ with study.trial() as trial:
     # +----------------------+
 
     g_opt = tf.keras.optimizers.RMSprop(hp.get("g_lr0", float(trial.g_lr)))
-    hp.get("g_optimizer", g_opt.name)
+    hp.get("g_optimizer", "RMSprop")
 
     d_opt = tf.keras.optimizers.RMSprop(hp.get("d_lr0", float(trial.d_lr)))
-    hp.get("d_optimizer", d_opt.name)
+    hp.get("d_optimizer", "RMSprop")
 
     # +----------------------------+
     # |   Training configuration   |
