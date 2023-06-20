@@ -86,7 +86,6 @@ properties = {
     "lip_exp": hpc.suggestions.Int(-2, 2, step=1),
     "g_lr": hpc.suggestions.Float(1e-4, 1e-3),
     "d_lr": hpc.suggestions.Float(1e-4, 1e-3),
-    "gupb": hpc.suggestions.Int(1, 5, step=1),
     "dupb": hpc.suggestions.Int(1, 5, step=1),
 }
 
@@ -304,7 +303,7 @@ with study.trial() as trial:
         metrics=hp.get("metrics", metrics),
         generator_optimizer=g_opt,
         discriminator_optimizer=d_opt,
-        generator_upds_per_batch=hp.get("generator_upds_per_batch", int(trial.gupb)),
+        generator_upds_per_batch=hp.get("generator_upds_per_batch", 1),
         discriminator_upds_per_batch=hp.get(
             "discriminator_upds_per_batch", int(trial.dupb)
         ),
