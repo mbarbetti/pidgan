@@ -12,7 +12,7 @@ from sklearn.utils import shuffle
 from utils_argparser import argparser_optimization
 from utils_training import prepare_training_plots, prepare_validation_plots
 
-from pidgan.algorithms import GAN, BceGAN, LSGAN, WGAN, WGAN_GP, CramerGAN, WGAN_ALP
+from pidgan.algorithms import GAN, LSGAN, WGAN, WGAN_ALP, WGAN_GP, BceGAN, CramerGAN
 from pidgan.callbacks.schedulers import LearnRateExpDecay
 from pidgan.optimization.scores import KSDistance
 from pidgan.players.discriminators import Discriminator
@@ -202,7 +202,9 @@ with study.trial() as trial:
     )
 
     d_output_dim = 1 if trial.algo != "cramer-gan" else 256
-    d_output_activation = "sigmoid" if trial.algo in ["gan", "bce-gan", "lsgan"] else "linear"
+    d_output_activation = (
+        "sigmoid" if trial.algo in ["gan", "bce-gan", "lsgan"] else "linear"
+    )
 
     discriminator = Discriminator(
         output_dim=hp.get("d_output_dim", d_output_dim),
@@ -292,14 +294,20 @@ with study.trial() as trial:
     # |   Training configuration   |
     # +----------------------------+
 
-    metrics = ["accuracy", "bce"] if trial.algo in ["gan", "bce-gan", "lsgan"] else ["wass_dist"]
+    metrics = (
+        ["accuracy", "bce"]
+        if trial.algo in ["gan", "bce-gan", "lsgan"]
+        else ["wass_dist"]
+    )
 
     model.compile(
         metrics=hp.get("metrics", metrics),
         generator_optimizer=g_opt,
         discriminator_optimizer=d_opt,
         generator_upds_per_batch=hp.get("generator_upds_per_batch", int(trial.gupb)),
-        discriminator_upds_per_batch=hp.get("discriminator_upds_per_batch", int(trial.dupb)),
+        discriminator_upds_per_batch=hp.get(
+            "discriminator_upds_per_batch", int(trial.dupb)
+        ),
     )
 
     # +--------------------------+
