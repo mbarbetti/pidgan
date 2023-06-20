@@ -93,7 +93,7 @@ properties.update(
     {"train_ratio": train_ratio, "batch_size": BATCHSIZE, "epochs": EPOCHS}
 )
 
-study_name = f"{args.model}GAN::{args.particle}Algo::{VERSION}"
+study_name = f"{args.model}GAN-{args.particle}-algo-{VERSION}"
 
 study = hpc.Study(
     name=study_name,
