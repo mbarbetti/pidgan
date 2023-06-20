@@ -20,7 +20,7 @@ from pidgan.players.generators import Generator
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 
-STUDY_NAME = "PIDGAN::GanAlgo::v0"
+VERSION = "v0"
 DTYPE = np.float32
 BATCHSIZE = 512
 EPOCHS = 500
@@ -93,8 +93,10 @@ properties.update(
     {"train_ratio": train_ratio, "batch_size": BATCHSIZE, "epochs": EPOCHS}
 )
 
+study_name = f"{args.model}GAN::{args.particle}Algo::{VERSION}"
+
 study = hpc.Study(
-    name=STUDY_NAME,
+    name=study_name,
     properties=properties,
     special_properties={
         "address": socket.gethostbyname(socket.gethostname()),
