@@ -20,11 +20,11 @@ class CramerGAN(WGAN_GP):
         generator,
         discriminator,
         referee=None,
-        lipschitz_penalty=10.0,
+        lipschitz_penalty=1.0,
         penalty_strategy="two-sided",
         from_logits=None,
         label_smoothing=None,
-        name=None,
+        name="CramerGAN",
         dtype=None,
     ):
         super().__init__(
@@ -162,7 +162,7 @@ class CramerGAN(WGAN_GP):
                 fake_loss
                 - real_loss
                 + self._lipschitz_regularization(
-                    self._critic, x, y, sample_weight, training=training
+                    self._referee_critic, x, y, sample_weight, training=training
                 )
             )
 

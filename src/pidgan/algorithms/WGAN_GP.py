@@ -11,11 +11,11 @@ class WGAN_GP(WGAN):
         generator,
         discriminator,
         referee=None,
-        lipschitz_penalty=10.0,
+        lipschitz_penalty=1.0,
         penalty_strategy="two-sided",
         from_logits=None,
         label_smoothing=None,
-        name=None,
+        name="WGAN-GP",
         dtype=None,
     ):
         super().__init__(
@@ -52,59 +52,19 @@ class WGAN_GP(WGAN):
         super(WGAN, self)._r_train_step(x, y, sample_weight)
 
     def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
-        trainset_ref, trainset_gen = self._prepare_trainset(
-            x, y, sample_weight, training_generator=False
+        d_loss = super()._compute_d_loss(x, y, sample_weight, training)
+        d_loss += self._lipschitz_regularization(
+            self._discriminator, x, y, sample_weight, training=training
         )
-        x_ref, y_ref, w_ref = trainset_ref
-        x_gen, y_gen, w_gen = trainset_gen
-
-        d_out_ref = self._discriminator((x_ref, y_ref), training=training)
-        d_out_gen = self._discriminator((x_gen, y_gen), training=training)
-
-        real_loss = tf.reduce_sum(w_ref * d_out_ref) / tf.reduce_sum(w_ref)
-        real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-        fake_loss = tf.reduce_sum(w_gen * d_out_gen) / tf.reduce_sum(w_gen)
-        fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-        return (
-            fake_loss
-            - real_loss
-            + self._lipschitz_regularization(
-                self._discriminator, x, y, sample_weight, training=training
-            )
-        )
+        return d_loss
 
     def _compute_r_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
-        trainset_ref, trainset_gen = self._prepare_trainset(
-            x, y, sample_weight, training_generator=False
-        )
-        x_ref, y_ref, w_ref = trainset_ref
-        x_gen, y_gen, w_gen = trainset_gen
-
-        r_out_ref = self._referee((x_ref, y_ref), training=training)
-        r_out_gen = self._referee((x_gen, y_gen), training=training)
-
-        if self._referee_loss is not None:
-            real_loss = self._referee_loss(
-                tf.ones_like(r_out_ref), r_out_ref, sample_weight=w_ref
+        r_loss = super()._compute_r_loss(x, y, sample_weight, training)
+        if self._referee_loss is None:
+            r_loss += self._lipschitz_regularization(
+                self._referee, x, y, sample_weight, training=training
             )
-            real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-            fake_loss = self._referee_loss(
-                tf.zeros_like(r_out_gen), r_out_gen, sample_weight=w_gen
-            )
-            fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-            return (real_loss + fake_loss) / 2.0
-        else:
-            real_loss = tf.reduce_sum(w_ref * r_out_ref) / tf.reduce_sum(w_ref)
-            real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-            fake_loss = tf.reduce_sum(w_gen * r_out_gen) / tf.reduce_sum(w_gen)
-            fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-            return (
-                fake_loss
-                - real_loss
-                + self._lipschitz_regularization(
-                    self._referee, x, y, sample_weight, training=training
-                )
-            )
+        return r_loss
 
     def _lipschitz_regularization(
         self, critic, x, y, sample_weight=None, training=True

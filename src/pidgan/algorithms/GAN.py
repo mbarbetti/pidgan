@@ -174,7 +174,7 @@ class GAN(tf.keras.Model):
         self._g_opt.apply_gradients(zip(gradients, trainable_vars))
 
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
-        self._g_loss.update_state(loss - threshold)
+        self._g_loss.update_state(loss + threshold)
 
     def _d_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
@@ -185,7 +185,7 @@ class GAN(tf.keras.Model):
         self._d_opt.apply_gradients(zip(gradients, trainable_vars))
 
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
-        self._d_loss.update_state(loss + threshold)
+        self._d_loss.update_state(loss - threshold)
 
     def _r_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
@@ -196,7 +196,7 @@ class GAN(tf.keras.Model):
         self._r_opt.apply_gradients(zip(gradients, trainable_vars))
 
         threshold = self._compute_threshold(self._referee, x, y, sample_weight)
-        self._r_loss.update_state(loss + threshold)
+        self._r_loss.update_state(loss - threshold)
 
     def _prepare_trainset(
         self, x, y, sample_weight=None, training_generator=True
@@ -353,7 +353,7 @@ class GAN(tf.keras.Model):
             )
         ) / tf.reduce_sum(w_ref_2)
         loss_2 = tf.cast(loss_2, dtype=y_ref_1.dtype)
-        return loss_1 + loss_2
+        return -(loss_1 + loss_2)
 
     def test_step(self, data) -> dict:
         x, y, sample_weight = self._unpack_data(data)
@@ -361,15 +361,15 @@ class GAN(tf.keras.Model):
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
 
         g_loss = self._compute_g_loss(x, y, sample_weight, training=False)
-        self._g_loss.update_state(g_loss - threshold)
+        self._g_loss.update_state(g_loss + threshold)
 
         d_loss = self._compute_d_loss(x, y, sample_weight, training=False)
-        self._d_loss.update_state(d_loss + threshold)
+        self._d_loss.update_state(d_loss - threshold)
 
         if self._referee is not None:
             r_loss = self._compute_r_loss(x, y, sample_weight, training=False)
             threshold = self._compute_threshold(self._referee, x, y, sample_weight)
-            self._r_loss.update_state(r_loss + threshold)
+            self._r_loss.update_state(r_loss - threshold)
 
         train_dict = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
         if self._referee is not None:

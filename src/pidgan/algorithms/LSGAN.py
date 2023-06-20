@@ -11,7 +11,7 @@ class LSGAN(GAN):
         referee=None,
         minimize_pearson_chi2=False,
         injected_noise_stddev=0,
-        name=None,
+        name="LSGAN",
         dtype=None,
     ) -> None:
         super().__init__(

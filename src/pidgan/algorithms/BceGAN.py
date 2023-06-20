@@ -13,7 +13,7 @@ class BceGAN(GAN):
         injected_noise_stddev=0.0,
         from_logits=False,
         label_smoothing=0.0,
-        name=None,
+        name="BceGAN",
         dtype=None,
     ):
         super().__init__(

@@ -13,7 +13,7 @@ class WGAN(GAN):
         clip_param=0.01,
         from_logits=None,
         label_smoothing=None,
-        name=None,
+        name="WGAN",
         dtype=None,
     ):
         super().__init__(

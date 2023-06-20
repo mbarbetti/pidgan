@@ -3,7 +3,7 @@ import tensorflow as tf
 from pidgan.algorithms.WGAN_GP import WGAN_GP
 
 LIPSCHITZ_CONSTANT = 1.0
-FIXED_XI = 10.0
+FIXED_XI = 1.0
 SAMPLED_XI_MIN = 0.0
 SAMPLED_XI_MAX = 1.0
 EPSILON = 1e-12
@@ -15,11 +15,11 @@ class WGAN_ALP(WGAN_GP):
         generator,
         discriminator,
         referee=None,
-        lipschitz_penalty=100.0,
+        lipschitz_penalty=1.0,
         penalty_strategy="one-sided",
         from_logits=None,
         label_smoothing=None,
-        name=None,
+        name="WGAN-ALP",
         dtype=None,
     ):
         super().__init__(
@@ -98,7 +98,6 @@ class WGAN_ALP(WGAN_GP):
                     clip_value_min=tf.reduce_min(xy_gen, axis=0),
                     clip_value_max=tf.reduce_max(xy_gen, axis=0),
                 )
-
                 x_ref_hat, y_ref_hat = (
                     xy_ref_hat[:, : tf.shape(x_ref)[1]],
                     xy_ref_hat[:, tf.shape(x_ref)[1] :],
@@ -130,12 +129,12 @@ class WGAN_ALP(WGAN_GP):
         xi_ref, xi_gen = tf.split(xi, 2, axis=0)
         d_ref, d_gen = tf.split(d, 2, axis=0)
         xy_ref_hat = tf.clip_by_value(
-            xy_ref + xi_ref * d_ref,
+            xy_ref + (0.5 + xi_ref) * d_ref,
             clip_value_min=tf.reduce_min(xy_ref, axis=0),
             clip_value_max=tf.reduce_max(xy_ref, axis=0),
         )
         xy_gen_hat = tf.clip_by_value(
-            xy_gen + xi_gen * d_gen,
+            xy_gen + (0.5 + xi_gen) * d_gen,
             clip_value_min=tf.reduce_min(xy_gen, axis=0),
             clip_value_max=tf.reduce_max(xy_gen, axis=0),
         )
