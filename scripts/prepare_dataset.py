@@ -48,7 +48,7 @@ images_dir = config_dir["images_dir"]
 models_dir = config_dir["models_dir"]
 
 export_model_fname = f"{models_dir}/{args.model}_{args.particle}_models"
-export_img_dirname = f"{images_dir}/{args.model}_{args.particle}_images"
+export_img_dirname = f"{images_dir}/{args.model}_{args.particle}_img"
 
 for dirname in [export_model_fname, export_img_dirname]:
     if not os.path.exists(dirname):
@@ -251,10 +251,10 @@ print(
 # |   Preprocessing models export   |
 # +---------------------------------+
 
-pkl_fname = f"{export_model_fname}/tX.pkl"
+pkl_fname = f"{export_model_fname}/tX_{args.label}.pkl"
 pickle.dump(x_scaler, open(pkl_fname, "wb"))
 print(f"[INFO] Input variables scaler correctly saved to {pkl_fname}")
 
-pkl_fname = f"{export_model_fname}/tY.pkl"
+pkl_fname = f"{export_model_fname}/tY_{args.label}.pkl"
 pickle.dump(y_scaler, open(pkl_fname, "wb"))
 print(f"[INFO] Output variables scaler correctly saved to {pkl_fname}")

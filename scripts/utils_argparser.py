@@ -1,8 +1,10 @@
+import socket
 from argparse import ArgumentParser
 
 MODELS = ["Rich", "Muon", "GlobalPID", "GlobalMuonId", "isMuon"]
 PARTICLES = ["muon", "pion", "kaon", "proton"]
 LABELS = ["sim", "calib"]
+ADDRESS = socket.gethostbyname(socket.gethostname())
 
 
 def argparser_preprocessing(description=None) -> ArgumentParser:
@@ -70,14 +72,14 @@ def argparser_preprocessing(description=None) -> ArgumentParser:
     return parser
 
 
-def argparser_training(description=None) -> ArgumentParser:
+def argparser_training(model, description=None) -> ArgumentParser:
     parser = ArgumentParser(description=description)
     parser.add_argument(
         "-p",
         "--particle",
         required=True,
         choices=PARTICLES,
-        help="train the Rich model for the selected long-lived charged particle",
+        help=f"train the {model} model for the selected long-lived charged particle",
     )
     parser.add_argument(
         "-C",
@@ -94,19 +96,102 @@ def argparser_training(description=None) -> ArgumentParser:
     parser.add_argument(
         "--fullsim",
         action="store_true",
-        help="train the Rich model using data taken from simulated samples (default: True)",
+        help=f"train the {model} model using data taken from simulated samples (default: True)",
     )
     parser.add_argument(
         "--calibration",
         dest="fullsim",
         action="store_false",
-        help="train the Rich model using data taken from calibration samples (default: False)",
+        help=f"train the {model} model using data taken from calibration samples (default: False)",
     )
     parser.set_defaults(fullsim=True)
     parser.add_argument(
         "--weights",
         action="store_true",
-        help="train the Rich model using weights when available (default: True)",
+        help=f"train the {model} model using weights when available (default: True)",
+    )
+    parser.add_argument("--no-weights", dest="weights", action="store_false")
+    parser.set_defaults(weights=True)
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="enable overwriting for model, images and reports since test execution (default: False)",
+    )
+    parser.add_argument("--no-test", dest="test", action="store_false")
+    parser.set_defaults(test=False)
+    parser.add_argument(
+        "--saving",
+        action="store_true",
+        help="enable to save the trained model and all the images produced (default: False)",
+    )
+    parser.add_argument("--no-saving", dest="saving", action="store_false")
+    parser.set_defaults(saving=False)
+    return parser
+
+
+def argparser_optimization(description=None) -> ArgumentParser:
+    parser = ArgumentParser(description=description)
+    parser.add_argument(
+        "-m",
+        "--model",
+        required=True,
+        choices=MODELS,
+        help="optimize the GAN model for the selected LHCb sub-detector",
+    )
+    parser.add_argument(
+        "-p",
+        "--particle",
+        required=True,
+        choices=PARTICLES,
+        help="optimize the GAN model for the selected long-lived charged particle",
+    )
+    parser.add_argument(
+        "-n",
+        "--node_name",
+        default=f"{ADDRESS}",
+        help="name given to the computing node that runs the optimization study (default: IP address)",
+    )
+    parser.add_argument(
+        "-S",
+        "--min_score_for_report",
+        default=0.2,
+        help="minimum optimization score to produce the HTML report (default: 0.2)",
+    )
+    parser.add_argument(
+        "-C",
+        "--chunk_size",
+        default=-1,
+        help="maximum number of instancens to be used for a trial of training/validation (default: -1)",
+    )
+    parser.add_argument(
+        "-T",
+        "--train_ratio",
+        default=0.7,
+        help="fraction of instances to be used for a trial of training (default: 0.7)",
+    )
+    parser.add_argument(
+        "--gpu",
+        action="store_true",
+        help="ensure that the optimization study is running on GPU (default: False)",
+    )
+    parser.add_argument("--no-gpu", dest="gpu", action="store_false")
+    parser.set_defaults(test=False)
+    parser.add_argument(
+        "--fullsim",
+        action="store_true",
+        help="optimize the GAN model using data taken from simulated samples (default: True)",
+    )
+    parser.add_argument(
+        "--calibration",
+        dest="fullsim",
+        action="store_false",
+        help="optimize the GAN model using data taken from calibration samples (default: False)",
+    )
+    parser.set_defaults(fullsim=True)
+    parser.add_argument(
+        "--weights",
+        action="store_true",
+        help="optimize the GAN model using weights when available (default: True)",
     )
     parser.add_argument("--no-weights", dest="weights", action="store_false")
     parser.set_defaults(weights=True)

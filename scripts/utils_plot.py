@@ -263,24 +263,23 @@ def correlation_histogram(
 
 def binned_validation_histogram(
     report,
-    data_corr,
+    data_bin,
     data_ref,
     data_gen,
-    boundaries_corr,
+    boundaries_bin,
     weights_ref=None,
     weights_gen=None,
     xlabel=None,
     density=False,
     label_ref="Data sample",
     label_gen="GAN model",
-    symbol_corr=None,
-    unit_corr=None,
+    symbol_bin=None,
+    unit_bin=None,
     log_scale=False,
     save_figure=False,
     export_fname="./images/bin-val-hist",
 ) -> None:
     _, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 10), dpi=300)
-    # plt.subplots_adjust(wspace=0.25, hspace=0.25)
 
     idx = 0
     for i in range(2):
@@ -288,8 +287,8 @@ def binned_validation_histogram(
             ax[i, j].set_xlabel(xlabel, fontsize=12)
             ax[i, j].set_ylabel("Candidates", fontsize=12)
 
-            query = (data_corr >= boundaries_corr[idx]) & (
-                data_corr < boundaries_corr[idx + 1]
+            query = (data_bin >= boundaries_bin[idx]) & (
+                data_bin < boundaries_bin[idx + 1]
             )
             min_ = data_ref[query].mean() - 4.0 * data_ref[query].std()
             max_ = data_ref[query].mean() + 4.0 * data_ref[query].std()
@@ -314,15 +313,13 @@ def binned_validation_histogram(
                 label=label_gen,
             )
 
-            if symbol_corr is not None:
-                text = f"{symbol_corr}"
+            if symbol_bin is not None:
+                text = f"{symbol_bin}"
             else:
                 text = "Condition"
-            text += (
-                f" $\in ({boundaries_corr[idx]:.1f}, {boundaries_corr[idx + 1]:.1f})$"
-            )
-            if unit_corr is not None:
-                text += f" {unit_corr}"
+            text += f" $\in ({boundaries_bin[idx]:.1f}, {boundaries_bin[idx + 1]:.1f})$"
+            if unit_bin is not None:
+                text += f" {unit_bin}"
             ax[i, j].annotate(
                 text,
                 fontsize=10,
@@ -343,4 +340,87 @@ def binned_validation_histogram(
             export_fname += "-log"
         plt.savefig(f"{export_fname}.png")
     report.add_figure(options="width=45%")
+    plt.close()
+
+
+def selection_efficiency(
+    report,
+    data_bin,
+    data_ref,
+    data_gen,
+    range_bin,
+    weights_ref=None,
+    weights_gen=None,
+    title=None,
+    xlabel=None,
+    label_ref="Data sample",
+    label_gen="GAN model",
+    save_figure=False,
+    export_fname="./images/sel-eff",
+) -> None:
+    min_, max_ = range_bin
+    bins = np.linspace(min_, max_, 26)
+
+    _, ax = plt.subplots(nrows=1, ncols=3, figsize=(24, 5), dpi=300)
+
+    for i, (pctl, ylabel) in enumerate(zip([25, 50, 75], ["Loose", "Mild", "Tight"])):
+        ax[i].set_title(f"{title} > $Q_{i + 1}$", fontsize=14)
+        ax[i].set_xlabel(xlabel, fontsize=12)
+        ax[i].set_ylabel(f"{ylabel} selection efficiency", fontsize=12)
+
+        selection = np.percentile(data_ref, pctl)
+        query_ref = data_ref > selection
+        query_gen = data_gen > selection
+
+        h_tot, _ = np.histogram(data_bin, bins=bins, weights=weights_ref)
+        h_ref, _ = np.histogram(
+            data_bin[query_ref],
+            bins=bins,
+            weights=weights_ref[query_ref] if weights_ref is not None else None,
+        )
+        h_gen, _ = np.histogram(
+            data_bin[query_gen],
+            bins=bins,
+            weights=weights_gen[query_gen] if weights_gen is not None else None,
+        )
+
+        h_tot_err = np.where(h_tot > 0.0, np.sqrt(h_tot) / (h_tot + 1e-12), 0.0)
+        h_ref_err = np.where(h_ref > 0.0, np.sqrt(h_ref) / (h_ref + 1e-12), 0.0)
+        h_gen_err = np.where(h_gen > 0.0, np.sqrt(h_gen) / (h_gen + 1e-12), 0.0)
+
+        bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        eff_ref = np.where(h_tot > 0.0, h_ref / (h_tot + 1e-12), 0.0)
+        eff_gen = np.where(h_tot > 0.0, h_gen / (h_tot + 1e-12), 0.0)
+        eff_ref_err = eff_ref * np.sqrt(h_tot_err**2 + h_ref_err**2)
+        eff_gen_err = eff_gen * np.sqrt(h_tot_err**2 + h_gen_err**2)
+
+        ax[i].errorbar(
+            bin_centers,
+            eff_ref,
+            yerr=eff_ref_err,
+            marker="^",
+            markersize=3,
+            capsize=3,
+            elinewidth=2,
+            color="#3288bd",
+            label=label_ref,
+            zorder=0,
+        )
+        ax[i].errorbar(
+            bin_centers,
+            eff_gen,
+            yerr=eff_gen_err,
+            marker="v",
+            markersize=3,
+            capsize=3,
+            elinewidth=1,
+            color="#fc8d59",
+            label=label_gen,
+            zorder=1,
+        )
+        ax[i].legend(loc="upper left", fontsize=10)
+
+    if save_figure:
+        plt.savefig(f"{export_fname}.png")
+    report.add_figure(options="width=95%")
     plt.close()

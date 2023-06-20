@@ -9,32 +9,24 @@ import yaml
 from html_reports import Report
 from sklearn.utils import shuffle
 from utils_argparser import argparser_training
-from utils_plot import (
-    binned_validation_histogram,
-    correlation_histogram,
-    learn_rate_scheduling,
-    learning_curves,
-    metric_curves,
-    validation_histogram,
-)
+from utils_training import prepare_training_plots, prepare_validation_plots
 
-from pidgan.algorithms import GAN
+from pidgan.algorithms import WGAN_ALP
 from pidgan.callbacks.schedulers import LearnRateExpDecay
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 
-PARTICLES = ["muon", "pion", "kaon", "proton"]
 DTYPE = np.float32
-BATCHSIZE = 256
+BATCHSIZE = 512
 EPOCHS = 100
 
 # +------------------+
 # |   Parser setup   |
 # +------------------+
 
-parser = argparser_training(description="RichGAN training setup")
+parser = argparser_training(model="Rich", description="RichGAN training setup")
 args = parser.parse_args()
 
 # +-------------------+
@@ -150,17 +142,20 @@ discriminator = Discriminator(
     num_hidden_layers=hp.get("d_num_hidden_layers", 5),
     mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
     dropout_rate=hp.get("d_dropout_rate", 0.0),
-    output_activation=hp.get("d_output_activation", "sigmoid"),
+    output_activation=hp.get("d_output_activation", "linear"),
     name="discriminator",
     dtype=DTYPE,
 )
 
-model = GAN(
+model = WGAN_ALP(
     generator=generator,
     discriminator=discriminator,
-    use_original_loss=hp.get("gan_use_original_loss", True),
-    injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.1),
+    lipschitz_penalty=hp.get("gan_lipschitz_penalty", 1.0),
+    penalty_strategy=hp.get("gan_penalty_strategy", "one-sided"),
+    from_logits=hp.get("gan_from_logits", None),
+    label_smoothing=hp.get("gan_label_smoothing", None),
 )
+hp.get("gan_name", model.name)
 
 output = model(x[:BATCHSIZE], y[:BATCHSIZE])
 model.summary()
@@ -169,22 +164,25 @@ model.summary()
 # |   Optimizers setup   |
 # +----------------------+
 
-g_opt = tf.keras.optimizers.RMSprop(hp.get("g_lr0", 1e-4))
+g_opt = tf.keras.optimizers.RMSprop(hp.get("g_lr0", 0.001))
 hp.get("g_optimizer", g_opt.name)
 
-d_opt = tf.keras.optimizers.RMSprop(hp.get("d_lr0", 1e-4))
+d_opt = tf.keras.optimizers.RMSprop(hp.get("d_lr0", 0.001))
 hp.get("d_optimizer", d_opt.name)
 
 # +----------------------------+
 # |   Training configuration   |
 # +----------------------------+
 
+metrics = ["wass_dist"]
+
 model.compile(
-    metrics=hp.get("metrics", ["accuracy", "bce"]),
+    metrics=hp.get("metrics", metrics),
     generator_optimizer=g_opt,
     discriminator_optimizer=d_opt,
     generator_upds_per_batch=hp.get("generator_upds_per_batch", 1),
     discriminator_upds_per_batch=hp.get("discriminator_upds_per_batch", 1),
+    virtual_direction_upds=hp.get("virtual_direction_upds", 1),
 )
 
 # +--------------------------+
@@ -236,7 +234,18 @@ print(f"[INFO] Model training completed in {duration}")
 # |   Model inference   |
 # +---------------------+
 
+with open(f"{models_dir}/Rich_{args.particle}_models/tX_{label}.pkl", "rb") as file:
+    x_scaler = pickle.load(file)
+
+x_post = invertColumnTransformer(x_scaler, x_val)
+
+with open(f"{models_dir}/Rich_{args.particle}_models/tY_{label}.pkl", "rb") as file:
+    y_scaler = pickle.load(file)
+
+y_post = y_scaler.inverse_transform(y_val)
+
 output = model.generate(x_val, seed=None)
+out_post = y_scaler.inverse_transform(output)
 
 # +------------------+
 # |   Model export   |
@@ -254,10 +263,10 @@ else:
     timestamp = timestamp.split(".")[0].replace("-", "").replace(" ", "-")
     for time, unit in zip(timestamp.split(":"), ["h", "m", "s"]):
         prefix += time + unit  # YYYYMMDD-HHhMMmSSs
-prefix += f"_RichGAN-{args.particle}"
+prefix += f"_RichGAN-{args.particle}-{label}"
 
 export_model_fname = f"{models_dir}/Rich_{args.particle}_models/{prefix}_model"
-export_img_dirname = f"{export_model_fname}/images"
+export_img_dirname = f"{images_dir}/Rich_{args.particle}_img/{prefix}_img"
 
 if args.saving:
     tf.saved_model.save(model.generator, export_dir=export_model_fname)
@@ -271,7 +280,7 @@ if args.saving:
         output=output,
     )  # export training results
     print(f"[INFO] Trained model correctly exported to {export_model_fname}")
-    if not os.path.exists:
+    if not os.path.exists(export_img_dirname):
         os.makedirs(export_img_dirname)  # need to save images
 
 # +---------------------+
@@ -335,247 +344,29 @@ report.add_markdown(model_weights)
 report.add_markdown("---")
 
 ## Training plots
-report.add_markdown('<h2 align="center">Training plots</h2>')
-
-start_epoch = int(EPOCHS / 20)
-
-#### Learning curves
-learning_curves(
+prepare_training_plots(
     report=report,
     history=train.history,
-    start_epoch=start_epoch,
-    keys=["g_loss", "d_loss"],
-    colors=["#3288bd", "#fc8d59"],
-    labels=["generator", "discriminator"],
-    legend_loc=None,
-    save_figure=args.saving,
-    scale_curves=False,
-    export_fname=f"{export_img_dirname}/learn-curves",
+    metrics=metrics,
+    num_epochs=EPOCHS,
+    loss_name=model.loss_name,
+    is_from_validation_set=(train_ratio != 1.0),
+    save_images=args.saving,
+    images_dirname=export_img_dirname,
 )
-
-#### Learning rate scheduling
-learn_rate_scheduling(
-    report=report,
-    history=train.history,
-    start_epoch=0,
-    keys=["g_lr", "d_lr"],
-    colors=["#3288bd", "#fc8d59"],
-    labels=["generator", "discriminator"],
-    legend_loc="upper right",
-    save_figure=args.saving,
-    export_fname=f"{export_img_dirname}/lr-sched",
-)
-
-#### Generator loss
-metric_curves(
-    report=report,
-    history=train.history,
-    start_epoch=start_epoch,
-    key="g_loss",
-    ylabel=model.loss_name,
-    title="Generator learning curves",
-    validation_set=(train_ratio != 1.0),
-    colors=["#d01c8b", "#4dac26"],
-    labels=["training set", "validation set"],
-    legend_loc=None,
-    yscale="linear",
-    save_figure=args.saving,
-    export_fname=f"{export_img_dirname}/gen-loss",
-)
-
-#### Discriminator loss
-metric_curves(
-    report=report,
-    history=train.history,
-    start_epoch=start_epoch,
-    key="d_loss",
-    ylabel=model.loss_name,
-    title="Discriminator learning curves",
-    validation_set=(train_ratio != 1.0),
-    colors=["#d01c8b", "#4dac26"],
-    labels=["training set", "validation set"],
-    legend_loc=None,
-    yscale="linear",
-    save_figure=args.saving,
-    export_fname=f"{export_img_dirname}/disc-loss",
-)
-
-#### Accuracy curves
-metric_curves(
-    report=report,
-    history=train.history,
-    start_epoch=start_epoch,
-    key="accuracy",
-    ylabel="Accuracy",
-    title="Metric curves",
-    validation_set=(train_ratio != 1.0),
-    colors=["#d01c8b", "#4dac26"],
-    labels=["training set", "validation set"],
-    legend_loc=None,
-    yscale="linear",
-    save_figure=args.saving,
-    export_fname=f"{export_img_dirname}/accuracy-curves",
-)
-
-#### BCE curves
-metric_curves(
-    report=report,
-    history=train.history,
-    start_epoch=start_epoch,
-    key="bce",
-    ylabel="Binary cross-entropy",
-    title="Metric curves",
-    validation_set=(train_ratio != 1.0),
-    colors=["#d01c8b", "#4dac26"],
-    labels=["training set", "validation set"],
-    legend_loc=None,
-    yscale="linear",
-    save_figure=args.saving,
-    export_fname=f"{export_img_dirname}/bce-curves",
-)
-
-report.add_markdown("---")
 
 ## Validation plots
-with open(f"{models_dir}/Rich_{args.particle}_models/tX.pkl", "rb") as file:
-    x_scaler = pickle.load(file)
-
-x_post = invertColumnTransformer(x_scaler, x_val)
-
-with open(f"{models_dir}/Rich_{args.particle}_models/tY.pkl", "rb") as file:
-    y_scaler = pickle.load(file)
-
-y_post = y_scaler.inverse_transform(y_val)
-out_post = y_scaler.inverse_transform(output)
-
-for i, y_var in enumerate(y_vars):
-    report.add_markdown(f'<h2 align="center">Validation plots of {y_var}</h2>')
-
-    for log_scale in [False, True]:
-        validation_histogram(
-            report=report,
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}-hist",
-        )
-
-    for log_scale in [False, True]:
-        correlation_histogram(
-            report=report,
-            data_corr=x_post[:, 0] / 1e3,
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            range_corr=[0, 100],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel="Momentum [GeV/$c$]",
-            ylabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}_vs_p-corr_hist",
-        )
-
-    for log_scale in [False, True]:
-        binned_validation_histogram(
-            report=report,
-            data_corr=x_post[:, 0] / 1e3,
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            boundaries_corr=[0.1, 5, 10, 25, 100],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            symbol_corr="$p$",
-            unit_corr="[GeV/$c$]",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}-hist",
-        )
-
-    for log_scale in [False, True]:
-        correlation_histogram(
-            report=report,
-            data_corr=x_post[:, 1],
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            range_corr=[2, 5],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel="Pseudorapidity",
-            ylabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}_vs_eta-corr_hist",
-        )
-
-    for log_scale in [False, True]:
-        binned_validation_histogram(
-            report=report,
-            data_corr=x_post[:, 1],
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            boundaries_corr=[1.8, 2.7, 3.5, 4.2, 5.5],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            symbol_corr="$\eta$",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}-hist",
-        )
-
-    for log_scale in [False, True]:
-        correlation_histogram(
-            report=report,
-            data_corr=x_post[:, 2],
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            range_corr=[0, 500],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel="$\mathtt{nTracks}$",
-            ylabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}_vs_nTracks-corr_hist",
-        )
-
-    for log_scale in [False, True]:
-        binned_validation_histogram(
-            report=report,
-            data_corr=x_post[:, 2],
-            data_ref=y_post[:, i],
-            data_gen=out_post[:, i],
-            boundaries_corr=[0, 50, 150, 300, 500],
-            weights_ref=w_val,
-            weights_gen=w_val,
-            xlabel=f"{y_var}",
-            label_ref="Full simulation" if args.fullsim else "Calibration samples",
-            label_gen="GAN-based model",
-            symbol_corr="$\mathtt{nTracks}$",
-            log_scale=log_scale,
-            save_figure=args.saving,
-            export_fname=f"{export_img_dirname}/{y_var}-hist",
-        )
-
-    report.add_markdown("---")
+prepare_validation_plots(
+    report=report,
+    x_true=x_post,
+    y_true=y_post,
+    y_pred=out_post,
+    y_vars=y_vars,
+    weights=w_val,
+    is_from_fullsim=args.fullsim,
+    save_images=args.saving,
+    images_dirname=export_img_dirname,
+)
 
 report_fname = f"{reports_dir}/{prefix}_train-report.html"
 report.write_report(filename=report_fname)
