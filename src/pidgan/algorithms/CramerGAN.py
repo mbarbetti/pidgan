@@ -2,6 +2,8 @@ import tensorflow as tf
 
 from pidgan.algorithms.WGAN_GP import WGAN_GP
 
+LIPSCHITZ_CONSTANT = 1.0
+
 
 class Critic:
     def __init__(self, h) -> None:
@@ -21,9 +23,10 @@ class CramerGAN(WGAN_GP):
         discriminator,
         referee=None,
         lipschitz_penalty=1.0,
-        penalty_strategy="two-sided",
-        from_logits=None,
-        label_smoothing=None,
+        lipschitz_penalty_strategy="two-sided",
+        feature_matching_penalty=0.0,
+        referee_from_logits=None,
+        referee_label_smoothing=None,
         name="CramerGAN",
         dtype=None,
     ):
@@ -32,9 +35,10 @@ class CramerGAN(WGAN_GP):
             discriminator=discriminator,
             referee=referee,
             lipschitz_penalty=lipschitz_penalty,
-            penalty_strategy=penalty_strategy,
-            from_logits=from_logits,
-            label_smoothing=label_smoothing,
+            lipschitz_penalty_strategy=lipschitz_penalty_strategy,
+            feature_matching_penalty=feature_matching_penalty,
+            referee_from_logits=referee_from_logits,
+            referee_label_smoothing=referee_label_smoothing,
             name=name,
             dtype=dtype,
         )
@@ -42,7 +46,7 @@ class CramerGAN(WGAN_GP):
 
         # Critic function
         self._critic = Critic(lambda x, t: self._discriminator(x, training=t))
-        if self._referee_loss is None:
+        if self._bce_loss is None:
             self._referee_critic = Critic(lambda x, t: self._referee(x, training=t))
         else:
             self._referee_critic = None
@@ -53,8 +57,10 @@ class CramerGAN(WGAN_GP):
         batch_size = tf.cast(tf.shape(x)[0] / 4, tf.int32)
         x_ref, x_gen_1, x_gen_2 = tf.split(x[: batch_size * 3], 3, axis=0)
         y_ref = y[:batch_size]
-        y_gen_1 = self._generator(x_gen_1, training=training_generator)
-        y_gen_2 = self._generator(x_gen_2, training=training_generator)
+
+        x_gen_concat = tf.concat([x_gen_1, x_gen_2], axis=0)
+        y_gen = self._generator(x_gen_concat, training=training_generator)
+        y_gen_1, y_gen_2 = tf.split(y_gen, 2, axis=0)
 
         if sample_weight is not None:
             w_ref, w_gen_1, w_gen_2 = tf.split(
@@ -71,99 +77,79 @@ class CramerGAN(WGAN_GP):
             (x_gen_2, y_gen_2, w_gen_2),
         )
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
-        trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
-            x, y, sample_weight, training_generator=training
-        )
+    @staticmethod
+    def _standard_loss_func(
+        critic, trainset_ref, trainset_gen_1, trainset_gen_2, critic_training=False
+    ) -> tf.Tensor:
         x_ref, y_ref, w_ref = trainset_ref
         x_gen_1, y_gen_1, w_gen_1 = trainset_gen_1
         x_gen_2, y_gen_2, w_gen_2 = trainset_gen_2
 
-        d_out_ref = self._critic((x_ref, y_ref), (x_gen_2, y_gen_2), training=False)
-        d_out_gen = self._critic((x_gen_1, y_gen_1), (x_gen_2, y_gen_2), training=False)
+        x_concat_1 = tf.concat([x_ref, x_gen_1], axis=0)
+        y_concat_1 = tf.concat([y_ref, y_gen_1], axis=0)
+        x_concat_2 = tf.concat([x_gen_2, x_gen_2], axis=0)
+        y_concat_2 = tf.concat([y_gen_2, y_gen_2], axis=0)
 
-        real_loss = tf.reduce_sum(w_ref * w_gen_2 * d_out_ref) / tf.reduce_sum(
-            w_ref * w_gen_2
+        d_out = critic(
+            (x_concat_1, y_concat_1), (x_concat_2, y_concat_2), training=critic_training
         )
-        real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-        fake_loss = tf.reduce_sum(w_gen_1 * w_gen_2 * d_out_gen) / tf.reduce_sum(
-            w_gen_1 * w_gen_2
-        )
-        fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
+        d_ref, d_gen = tf.split(d_out, 2, axis=0)
+
+        real_loss = tf.reduce_sum(
+            w_ref[:, None] * w_gen_2[:, None] * d_ref
+        ) / tf.reduce_sum(w_ref * w_gen_2)
+        fake_loss = tf.reduce_sum(
+            w_gen_1[:, None] * w_gen_2[:, None] * d_gen
+        ) / tf.reduce_sum(w_gen_1 * w_gen_2)
         return real_loss - fake_loss
+
+    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+        trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
+            x, y, sample_weight, training_generator=training
+        )
+        return self._standard_loss_func(
+            critic=self._critic,
+            trainset_ref=trainset_ref,
+            trainset_gen_1=trainset_gen_1,
+            trainset_gen_2=trainset_gen_2,
+            critic_training=False,
+        )
 
     def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
-        x_ref, y_ref, w_ref = trainset_ref
-        x_gen_1, y_gen_1, w_gen_1 = trainset_gen_1
-        x_gen_2, y_gen_2, w_gen_2 = trainset_gen_2
-
-        d_out_ref = self._critic((x_ref, y_ref), (x_gen_2, y_gen_2), training=training)
-        d_out_gen = self._critic(
-            (x_gen_1, y_gen_1), (x_gen_2, y_gen_2), training=training
+        d_loss = -self._standard_loss_func(
+            critic=self._critic,
+            trainset_ref=trainset_ref,
+            trainset_gen_1=trainset_gen_1,
+            trainset_gen_2=trainset_gen_2,
+            critic_training=training,
         )
-
-        real_loss = tf.reduce_sum(w_ref * w_gen_2 * d_out_ref) / tf.reduce_sum(
-            w_ref * w_gen_2
+        d_loss += self._lipschitz_regularization(
+            self._critic, x, y, sample_weight, training=training
         )
-        real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-        fake_loss = tf.reduce_sum(w_gen_1 * w_gen_2 * d_out_gen) / tf.reduce_sum(
-            w_gen_1 * w_gen_2
-        )
-        fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-        return (
-            fake_loss
-            - real_loss
-            + self._lipschitz_regularization(
-                self._critic, x, y, sample_weight, training=training
-            )
-        )
+        return d_loss
 
     def _compute_r_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
-        x_ref, y_ref, w_ref = trainset_ref
-        x_gen_1, y_gen_1, w_gen_1 = trainset_gen_1
-        x_gen_2, y_gen_2, w_gen_2 = trainset_gen_2
-
-        if self._referee_loss is not None:
-            r_out_ref = self._referee((x_ref, y_ref), training=training)
-            r_out_gen = self._referee((x_gen_1, y_gen_1), training=training)
-
-            real_loss = self._referee_loss(
-                tf.ones_like(r_out_ref), r_out_ref, sample_weight=w_ref
+        if self._bce_loss is not None:
+            return self._bce_loss_func(
+                model=self._referee,
+                trainset_ref=trainset_ref,
+                trainset_gen=trainset_gen_1,
+                inj_noise_std=0.0,
+                model_training=training,
             )
-            real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-            fake_loss = self._referee_loss(
-                tf.zeros_like(r_out_gen), r_out_gen, sample_weight=w_gen_1
-            )
-            fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-            return (real_loss + fake_loss) / 2.0
         else:
-            r_out_ref = self._referee_critic(
-                (x_ref, y_ref), (x_gen_2, y_gen_2), training=training
-            )
-            r_out_gen = self._referee_critic(
-                (x_gen_1, y_gen_1), (x_gen_2, y_gen_2), training=training
-            )
-
-            real_loss = tf.reduce_sum(w_ref * w_gen_2 * r_out_ref) / tf.reduce_sum(
-                w_ref * w_gen_2
-            )
-            real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-            fake_loss = tf.reduce_sum(w_gen_1 * w_gen_2 * r_out_gen) / tf.reduce_sum(
-                w_gen_1 * w_gen_2
-            )
-            fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-            return (
-                fake_loss
-                - real_loss
-                + self._lipschitz_regularization(
-                    self._referee_critic, x, y, sample_weight, training=training
-                )
+            return -self._standard_loss_func(
+                critic=self._referee_critic,
+                trainset_ref=trainset_ref,
+                trainset_gen_1=trainset_gen_1,
+                trainset_gen_2=trainset_gen_2,
+                critic_training=training,
             )
 
     def _lipschitz_regularization(
@@ -172,34 +158,37 @@ class CramerGAN(WGAN_GP):
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
-        x_ref, y_ref, _ = trainset_ref
+        _, y_ref, _ = trainset_ref
         x_gen_1, y_gen_1, _ = trainset_gen_1
         x_gen_2, y_gen_2, _ = trainset_gen_2
 
-        xy_ref = tf.concat([x_ref, y_ref], axis=1)
-        xy_gen_1 = tf.concat([x_gen_1, y_gen_1], axis=1)
+        y_concat = tf.concat([y_ref, y_gen_1], axis=0)
 
         with tf.GradientTape() as tape:
             # Compute interpolated points
-            eps = tf.random.uniform(
-                shape=(tf.shape(xy_ref)[0],), minval=0.0, maxval=1.0, dtype=y_ref.dtype
+            eps = tf.tile(
+                tf.random.uniform(
+                    shape=(tf.shape(y_ref)[0],),
+                    minval=0.0,
+                    maxval=1.0,
+                    dtype=y_ref.dtype,
+                )[:, None],
+                (1, tf.shape(y_ref)[1]),
             )
-            xy_hat = xy_gen_1 + tf.tile(eps[:, None], (1, tf.shape(xy_ref)[1])) * (
-                xy_ref - xy_gen_1
+            y_hat = tf.clip_by_value(
+                y_gen_1 + eps * (y_ref - y_gen_1),
+                clip_value_min=tf.reduce_min(y_concat, axis=0),
+                clip_value_max=tf.reduce_max(y_concat, axis=0),
             )
-            tape.watch(xy_hat)
+            tape.watch(y_hat)
 
             # Value of the critic on interpolated points
-            x_hat, y_hat = (
-                xy_hat[:, : tf.shape(x_ref)[1]],
-                xy_hat[:, tf.shape(x_ref)[1] :],
-            )
-            c_out_hat = critic((x_hat, y_hat), (x_gen_2, y_gen_2), training=training)
-            grad = tape.gradient(c_out_hat, xy_hat)
+            c_out_hat = critic((x_gen_1, y_hat), (x_gen_2, y_gen_2), training=training)
+            grad = tape.gradient(c_out_hat, y_hat)
             norm = tf.norm(grad, ord=2, axis=-1)
 
-        if self._penalty_strategy == "two-sided":
-            gp_term = (norm - 1.0) ** 2
+        if self._lipschitz_penalty_strategy == "two-sided":
+            gp_term = (norm - LIPSCHITZ_CONSTANT) ** 2
         else:
-            gp_term = (tf.maximum(0.0, norm - 1.0)) ** 2
+            gp_term = (tf.maximum(0.0, norm - LIPSCHITZ_CONSTANT)) ** 2
         return self._lipschitz_penalty * tf.reduce_mean(gp_term)

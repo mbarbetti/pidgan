@@ -4,8 +4,8 @@ from pidgan.algorithms.WGAN_GP import WGAN_GP
 
 LIPSCHITZ_CONSTANT = 1.0
 FIXED_XI = 1.0
-SAMPLED_XI_MIN = 0.0
-SAMPLED_XI_MAX = 1.0
+SAMPLED_XI_MIN = 0.8
+SAMPLED_XI_MAX = 1.2
 EPSILON = 1e-12
 
 
@@ -16,9 +16,10 @@ class WGAN_ALP(WGAN_GP):
         discriminator,
         referee=None,
         lipschitz_penalty=1.0,
-        penalty_strategy="one-sided",
-        from_logits=None,
-        label_smoothing=None,
+        lipschitz_penalty_strategy="one-sided",
+        feature_matching_penalty=0.0,
+        referee_from_logits=None,
+        referee_label_smoothing=None,
         name="WGAN-ALP",
         dtype=None,
     ):
@@ -27,9 +28,10 @@ class WGAN_ALP(WGAN_GP):
             discriminator=discriminator,
             referee=referee,
             lipschitz_penalty=lipschitz_penalty,
-            penalty_strategy=penalty_strategy,
-            from_logits=from_logits,
-            label_smoothing=label_smoothing,
+            lipschitz_penalty_strategy=lipschitz_penalty_strategy,
+            feature_matching_penalty=feature_matching_penalty,
+            referee_from_logits=referee_from_logits,
+            referee_label_smoothing=referee_label_smoothing,
             name=name,
             dtype=dtype,
         )
@@ -69,106 +71,56 @@ class WGAN_ALP(WGAN_GP):
         x_ref, y_ref, _ = trainset_ref
         x_gen, y_gen, _ = trainset_gen
 
-        c_out_ref = critic((x_ref, y_ref), training=training)
-        c_out_gen = critic((x_gen, y_gen), training=training)
+        x_concat = tf.concat([x_ref, x_gen], axis=0)
+        y_concat = tf.concat([y_ref, y_gen], axis=0)
+        c_out = critic((x_concat, y_concat), training=training)
 
-        xy_ref = tf.concat([x_ref, y_ref], axis=1)
-        xy_gen = tf.concat([x_gen, y_gen], axis=1)
+        # Initial virtual adversarial direction
+        adv_dir = tf.random.uniform(
+            shape=(2 * tf.shape(y_ref)[0], tf.shape(y_ref)[1]),
+            minval=-1.0,
+            maxval=1.0,
+            dtype=y_ref.dtype,
+        )
+        adv_dir /= tf.norm(adv_dir, axis=-1, keepdims=True)
 
-        with tf.GradientTape() as tape:
-            # Initial virtual adversarial direction
-            d = tf.random.uniform(
-                shape=(2 * tf.shape(xy_ref)[0], tf.shape(xy_ref)[1]),
-                minval=-1.0,
-                maxval=1.0,
-                dtype=y_ref.dtype,
-            )
-            d /= tf.norm(d, ord=2, axis=-1)[:, None]
-            tape.watch(d)
-
-            for _ in range(self._vir_dir_upds):
-                d_ref, d_gen = tf.split(d, 2, axis=0)
-                xy_ref_hat = tf.clip_by_value(
-                    xy_ref + FIXED_XI * d_ref,
-                    clip_value_min=tf.reduce_min(xy_ref, axis=0),
-                    clip_value_max=tf.reduce_max(xy_ref, axis=0),
+        for _ in range(self._vir_dir_upds):
+            with tf.GradientTape() as tape:
+                tape.watch(adv_dir)
+                y_hat = tf.clip_by_value(
+                    y_concat + FIXED_XI * adv_dir,
+                    clip_value_min=tf.reduce_min(y_concat, axis=0),
+                    clip_value_max=tf.reduce_max(y_concat, axis=0),
                 )
-                xy_gen_hat = tf.clip_by_value(
-                    xy_gen + FIXED_XI * d_gen,
-                    clip_value_min=tf.reduce_min(xy_gen, axis=0),
-                    clip_value_max=tf.reduce_max(xy_gen, axis=0),
-                )
-                x_ref_hat, y_ref_hat = (
-                    xy_ref_hat[:, : tf.shape(x_ref)[1]],
-                    xy_ref_hat[:, tf.shape(x_ref)[1] :],
-                )
-                c_out_ref_hat = critic((x_ref_hat, y_ref_hat), training=training)
-                x_gen_hat, y_gen_hat = (
-                    xy_gen_hat[:, : tf.shape(x_ref)[1]],
-                    xy_gen_hat[:, tf.shape(x_ref)[1] :],
-                )
-                c_out_gen_hat = critic((x_gen_hat, y_gen_hat), training=training)
-
-                c_out_diff = tf.reduce_mean(
-                    tf.abs(
-                        tf.concat([c_out_ref, c_out_gen], axis=0)
-                        - tf.concat([c_out_ref_hat, c_out_gen_hat], axis=0)
-                    )
-                )
-                grad = tape.gradient(c_out_diff, d) + EPSILON  # non-zero gradient
-                d = grad / tf.norm(grad, ord=2, axis=-1, keepdims=True)
+                c_hat = critic((x_concat, y_hat), training=training)
+                c_diff = tf.reduce_mean(tf.abs(c_out - c_hat))
+                grad = tape.gradient(c_diff, adv_dir) + EPSILON  # non-zero gradient
+                adv_dir = grad / tf.norm(grad, axis=-1, keepdims=True)
 
         # Virtual adversarial direction
         xi = tf.random.uniform(
-            shape=(2 * tf.shape(xy_ref)[0],),
+            shape=(2 * tf.shape(y_ref)[0],),
             minval=SAMPLED_XI_MIN,
             maxval=SAMPLED_XI_MAX,
             dtype=y_ref.dtype,
         )
-        xi = tf.tile(xi[:, None], (1, tf.shape(xy_ref)[1]))
-        xi_ref, xi_gen = tf.split(xi, 2, axis=0)
-        d_ref, d_gen = tf.split(d, 2, axis=0)
-        xy_ref_hat = tf.clip_by_value(
-            xy_ref + (0.5 + xi_ref) * d_ref,
-            clip_value_min=tf.reduce_min(xy_ref, axis=0),
-            clip_value_max=tf.reduce_max(xy_ref, axis=0),
+        xi = tf.tile(xi[:, None], (1, tf.shape(y_ref)[1]))
+        y_hat = tf.clip_by_value(
+            y_concat + xi * adv_dir,
+            clip_value_min=tf.reduce_min(y_concat, axis=0),
+            clip_value_max=tf.reduce_max(y_concat, axis=0),
         )
-        xy_gen_hat = tf.clip_by_value(
-            xy_gen + (0.5 + xi_gen) * d_gen,
-            clip_value_min=tf.reduce_min(xy_gen, axis=0),
-            clip_value_max=tf.reduce_max(xy_gen, axis=0),
-        )
-
-        x_ref_hat, y_ref_hat = (
-            xy_ref_hat[:, : tf.shape(x_ref)[1]],
-            xy_ref_hat[:, tf.shape(x_ref)[1] :],
-        )
-        c_out_ref_hat = critic((x_ref_hat, y_ref_hat), training=training)
-        x_gen_hat, y_gen_hat = (
-            xy_gen_hat[:, : tf.shape(x_ref)[1]],
-            xy_gen_hat[:, tf.shape(x_ref)[1] :],
-        )
-        c_out_gen_hat = critic((x_gen_hat, y_gen_hat), training=training)
-
-        c_out_diff = tf.reduce_mean(
-            tf.abs(
-                tf.concat([c_out_ref, c_out_gen], axis=0)
-                - tf.concat([c_out_ref_hat, c_out_gen_hat], axis=0)
-            )
-        )
-        xy_diff = tf.norm(
-            tf.abs(
-                tf.concat([xy_ref, xy_gen], axis=0)
-                - tf.concat([xy_ref_hat, xy_gen_hat], axis=0)
-            )
-            + EPSILON,  # non-zero difference
+        c_hat = critic((x_concat, y_hat), training=training)
+        c_diff = tf.abs(c_out - c_hat)
+        y_diff = tf.norm(
+            tf.abs(y_concat - y_hat) + EPSILON,  # non-zero difference
             ord=2,
             axis=-1,
             keepdims=True,
         )
 
-        K = c_out_diff / xy_diff  # lipschitz constant
-        if self._penalty_strategy == "two-sided":
+        K = c_diff / y_diff  # lipschitz constant
+        if self._lipschitz_penalty_strategy == "two-sided":
             alp_term = tf.abs(K - LIPSCHITZ_CONSTANT)
         else:
             alp_term = tf.maximum(0.0, K - LIPSCHITZ_CONSTANT)

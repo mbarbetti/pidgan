@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.optimizers import Optimizer
+from tensorflow import keras
 
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
@@ -17,6 +17,9 @@ class GAN(tf.keras.Model):
         referee=None,
         use_original_loss=True,
         injected_noise_stddev=0.0,
+        feature_matching_penalty=0.0,
+        referee_from_logits=None,
+        referee_label_smoothing=None,
         name="GAN",
         dtype=None,
     ) -> None:
@@ -47,10 +50,8 @@ class GAN(tf.keras.Model):
                     f"instead {type(referee)} passed"
                 )
             self._referee = referee
-            self._referee_loss_name = f"{self._loss_name}"
         else:
             self._referee = None
-            self._referee_loss_name = None
 
         # Flag to use the original loss
         assert isinstance(use_original_loss, bool)
@@ -60,6 +61,25 @@ class GAN(tf.keras.Model):
         assert isinstance(injected_noise_stddev, (int, float))
         assert injected_noise_stddev >= 0.0
         self._inj_noise_std = float(injected_noise_stddev)
+
+        # Feature matching penalty
+        assert isinstance(feature_matching_penalty, (int, float))
+        assert feature_matching_penalty >= 0.0
+        self._feature_matching_penalty = float(feature_matching_penalty)
+
+        # TensorFlow BinaryCrossentropy
+        if (referee_from_logits is not None) and (referee_label_smoothing is not None):
+            self._bce_loss = keras.losses.BinaryCrossentropy(
+                from_logits=referee_from_logits, label_smoothing=referee_label_smoothing
+            )
+            self._referee_from_logits = bool(referee_from_logits)
+            self._referee_label_smoothing = float(referee_label_smoothing)
+            self._referee_loss_name = "Binary cross-entropy"
+        else:
+            self._bce_loss = None
+            self._referee_from_logits = None
+            self._referee_label_smoothing = None
+            self._referee_loss_name = self._loss_name
 
     def call(self, x, y=None) -> tuple:
         g_out = self._generator(x)
@@ -147,11 +167,13 @@ class GAN(tf.keras.Model):
             train_dict.update(dict(r_loss=self._r_loss.result()))
         if self._metrics is not None:
             g_out = self._generator(x, training=False)
-            d_out_gen = self._discriminator((x, g_out), training=False)
-            d_out_ref = self._discriminator((x, y), training=False)
+            x_concat = tf.concat([x, x], axis=0)
+            y_concat = tf.concat([y, g_out], axis=0)
+            d_out = self._discriminator((x_concat, y_concat), training=False)
+            d_ref, d_gen = tf.split(d_out, 2, axis=0)
             for metric in self._metrics:
                 metric.update_state(
-                    y_true=d_out_ref, y_pred=d_out_gen, sample_weight=sample_weight
+                    y_true=d_ref, y_pred=d_gen, sample_weight=sample_weight
                 )
                 train_dict.update({metric.name: metric.result()})
         return train_dict
@@ -168,6 +190,7 @@ class GAN(tf.keras.Model):
     def _g_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
             loss = self._compute_g_loss(x, y, sample_weight, training=True)
+            loss += self._compute_feature_matching(x, y, sample_weight, training=True)
 
         trainable_vars = self._generator.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
@@ -213,111 +236,158 @@ class GAN(tf.keras.Model):
 
         return (x_ref, y_ref, w_ref), (x_gen, y_gen, w_gen)
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
-        trainset_ref, trainset_gen = self._prepare_trainset(
-            x, y, sample_weight, training_generator=training
-        )
+    @staticmethod
+    def _standard_loss_func(
+        model,
+        trainset_ref,
+        trainset_gen,
+        inj_noise_std=0.0,
+        model_training=False,
+        original_loss=True,
+    ) -> tf.Tensor:
         x_ref, y_ref, w_ref = trainset_ref
         x_gen, y_gen, w_gen = trainset_gen
 
-        if self._inj_noise_std > 0.0:
-            rnd_ref, rnd_gen = tf.split(
-                tf.random.normal(
-                    shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
-                    mean=0.0,
-                    stddev=self._inj_noise_std,
-                    dtype=y_ref.dtype,
-                ),
-                num_or_size_splits=2,
-                axis=0,
+        if inj_noise_std > 0.0:
+            rnd_noise = tf.random.normal(
+                shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
+                mean=0.0,
+                stddev=inj_noise_std,
+                dtype=y_ref.dtype,
             )
         else:
-            rnd_ref, rnd_gen = 0.0, 0.0
+            rnd_noise = 0.0
 
-        d_out_ref = self._discriminator((x_ref, y_ref + rnd_ref), training=False)
-        d_out_gen = self._discriminator((x_gen, y_gen + rnd_gen), training=False)
+        x_concat = tf.concat([x_ref, x_gen], axis=0)
+        y_concat = tf.concat([y_ref, y_gen], axis=0)
+
+        m_out = model((x_concat, y_concat + rnd_noise), training=model_training)
+        m_ref, m_gen = tf.split(m_out, 2, axis=0)
 
         real_loss = tf.reduce_sum(
-            w_ref
-            * tf.math.log(tf.clip_by_value(d_out_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
+            w_ref[:, None]
+            * tf.math.log(tf.clip_by_value(m_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
         ) / tf.reduce_sum(w_ref)
-        real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-        if self._use_original_loss:
+        if original_loss:
             fake_loss = tf.reduce_sum(
-                w_gen
+                w_gen[:, None]
                 * tf.math.log(
-                    tf.clip_by_value(1.0 - d_out_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
+                    tf.clip_by_value(1.0 - m_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
                 )
             ) / tf.reduce_sum(w_gen)
         else:
             fake_loss = tf.reduce_sum(
-                -w_gen
-                * tf.math.log(tf.clip_by_value(d_out_gen, MIN_LOG_VALUE, MAX_LOG_VALUE))
+                -w_gen[:, None]
+                * tf.math.log(tf.clip_by_value(m_gen, MIN_LOG_VALUE, MAX_LOG_VALUE))
             )
-        fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
         return real_loss + fake_loss
+
+    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+        trainset_ref, trainset_gen = self._prepare_trainset(
+            x, y, sample_weight, training_generator=training
+        )
+        return self._standard_loss_func(
+            model=self._discriminator,
+            trainset_ref=trainset_ref,
+            trainset_gen=trainset_gen,
+            inj_noise_std=self._inj_noise_std,
+            model_training=False,
+            original_loss=self._use_original_loss,
+        )
 
     def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
+        return -self._standard_loss_func(
+            model=self._discriminator,
+            trainset_ref=trainset_ref,
+            trainset_gen=trainset_gen,
+            inj_noise_std=self._inj_noise_std,
+            model_training=training,
+            original_loss=True,
+        )
+
+    def _bce_loss_func(
+        self, model, trainset_ref, trainset_gen, inj_noise_std=0.0, model_training=True
+    ) -> tf.Tensor:
         x_ref, y_ref, w_ref = trainset_ref
         x_gen, y_gen, w_gen = trainset_gen
 
-        if self._inj_noise_std > 0.0:
-            rnd_ref, rnd_gen = tf.split(
-                tf.random.normal(
-                    shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
-                    mean=0.0,
-                    stddev=self._inj_noise_std,
-                    dtype=y_ref.dtype,
-                ),
-                num_or_size_splits=2,
-                axis=0,
+        if inj_noise_std > 0.0:
+            rnd_noise = tf.random.normal(
+                shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
+                mean=0.0,
+                stddev=inj_noise_std,
+                dtype=y_ref.dtype,
             )
         else:
-            rnd_ref, rnd_gen = 0.0, 0.0
+            rnd_noise = 0.0
 
-        d_out_ref = self._discriminator((x_ref, y_ref + rnd_ref), training=training)
-        d_out_gen = self._discriminator((x_gen, y_gen + rnd_gen), training=training)
+        x_concat = tf.concat([x_ref, x_gen], axis=0)
+        y_concat = tf.concat([y_ref, y_gen], axis=0)
 
-        real_loss = tf.reduce_sum(
-            w_ref
-            * tf.math.log(tf.clip_by_value(d_out_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
-        ) / tf.reduce_sum(w_ref)
-        real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-        fake_loss = tf.reduce_sum(
-            w_gen
-            * tf.math.log(
-                tf.clip_by_value(1.0 - d_out_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
-            )
-        ) / tf.reduce_sum(w_gen)
-        fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-        return -(real_loss + fake_loss)
+        m_out = model((x_concat, y_concat + rnd_noise), training=model_training)
+        m_ref, m_gen = tf.split(m_out, 2, axis=0)
+
+        real_loss = self._bce_loss(tf.ones_like(m_ref), m_ref, sample_weight=w_ref)
+        fake_loss = self._bce_loss(tf.zeros_like(m_gen), m_gen, sample_weight=w_gen)
+        return (real_loss + fake_loss) / 2.0
 
     def _compute_r_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
-        x_ref, y_ref, w_ref = trainset_ref
-        x_gen, y_gen, w_gen = trainset_gen
-
-        r_out_ref = self._referee((x_ref, y_ref), training=training)
-        r_out_gen = self._referee((x_gen, y_gen), training=training)
-
-        real_loss = tf.reduce_sum(
-            w_ref
-            * tf.math.log(tf.clip_by_value(r_out_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
-        ) / tf.reduce_sum(w_ref)
-        real_loss = tf.cast(real_loss, dtype=y_ref.dtype)
-        fake_loss = tf.reduce_sum(
-            w_gen
-            * tf.math.log(
-                tf.clip_by_value(1.0 - r_out_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
+        if self._bce_loss is not None:
+            return self._bce_loss_func(
+                model=self._referee,
+                trainset_ref=trainset_ref,
+                trainset_gen=trainset_gen,
+                inj_noise_std=0.0,
+                model_training=training,
             )
-        ) / tf.reduce_sum(w_gen)
-        fake_loss = tf.cast(fake_loss, dtype=y_ref.dtype)
-        return -(real_loss + fake_loss)
+        else:
+            return -self._standard_loss_func(
+                model=self._referee,
+                trainset_ref=trainset_ref,
+                trainset_gen=trainset_gen,
+                inj_noise_std=0.0,
+                model_training=training,
+                original_loss=True,
+            )
+
+    def _compute_feature_matching(
+        self, x, y, sample_weight=None, training=True
+    ) -> tf.Tensor:
+        if self._feature_matching_penalty > 0.0:
+            trainset_ref, trainset_gen = self._prepare_trainset(
+                x, y, sample_weight, training_generator=training
+            )
+            x_ref, y_ref, _ = trainset_ref
+            x_gen, y_gen, _ = trainset_gen
+
+            rnd_noise = 0.0
+            if self._inj_noise_std is not None:
+                if self._inj_noise_std > 0.0:
+                    rnd_noise = tf.random.normal(
+                        shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
+                        mean=0.0,
+                        stddev=self._inj_noise_std,
+                        dtype=y_ref.dtype,
+                    )
+
+            x_concat = tf.concat([x_ref, x_gen], axis=0)
+            y_concat = tf.concat([y_ref, y_gen], axis=0)
+
+            d_feat_out = self._discriminator.hidden_feature(
+                (x_concat, y_concat + rnd_noise)
+            )
+            d_feat_ref, d_feat_gen = tf.split(d_feat_out, 2, axis=0)
+
+            feat_match_term = tf.norm(d_feat_ref - d_feat_gen, axis=-1) ** 2
+            return self._feature_matching_penalty * tf.reduce_mean(feat_match_term)
+        else:
+            return 0.0
 
     def _prepare_trainset_threshold(self, x, y, sample_weight=None) -> tuple:
         batch_size = tf.cast(tf.shape(x)[0] / 2, tf.int32)
@@ -335,25 +405,14 @@ class GAN(tf.keras.Model):
         trainset_ref_1, trainset_ref_2 = self._prepare_trainset_threshold(
             x, y, sample_weight
         )
-        x_ref_1, y_ref_1, w_ref_1 = trainset_ref_1
-        x_ref_2, y_ref_2, w_ref_2 = trainset_ref_2
-
-        m_out_ref_1 = model((x_ref_1, y_ref_1), training=False)
-        m_out_ref_2 = model((x_ref_2, y_ref_2), training=False)
-
-        loss_1 = tf.reduce_sum(
-            w_ref_1
-            * tf.math.log(tf.clip_by_value(m_out_ref_1, MIN_LOG_VALUE, MAX_LOG_VALUE))
-        ) / tf.reduce_sum(w_ref_1)
-        loss_1 = tf.cast(loss_1, dtype=y_ref_1.dtype)
-        loss_2 = tf.reduce_sum(
-            w_ref_2
-            * tf.math.log(
-                tf.clip_by_value(1.0 - m_out_ref_2, MIN_LOG_VALUE, MAX_LOG_VALUE)
-            )
-        ) / tf.reduce_sum(w_ref_2)
-        loss_2 = tf.cast(loss_2, dtype=y_ref_1.dtype)
-        return -(loss_1 + loss_2)
+        return -self._standard_loss_func(
+            model=model,
+            trainset_ref=trainset_ref_1,
+            trainset_gen=trainset_ref_2,
+            inj_noise_std=0.0,
+            model_training=False,
+            original_loss=True,
+        )
 
     def test_step(self, data) -> dict:
         x, y, sample_weight = self._unpack_data(data)
@@ -376,11 +435,13 @@ class GAN(tf.keras.Model):
             train_dict.update(dict(r_loss=self._r_loss.result()))
         if self._metrics is not None:
             g_out = self._generator(x, training=False)
-            d_out_gen = self._discriminator((x, g_out), training=False)
-            d_out_ref = self._discriminator((x, y), training=False)
+            x_concat = tf.concat([x, x], axis=0)
+            y_concat = tf.concat([y, g_out], axis=0)
+            d_out = self._discriminator((x_concat, y_concat), training=False)
+            d_ref, d_gen = tf.split(d_out, 2, axis=0)
             for metric in self._metrics:
                 metric.update_state(
-                    y_true=d_out_ref, y_pred=d_out_gen, sample_weight=sample_weight
+                    y_true=d_ref, y_pred=d_gen, sample_weight=sample_weight
                 )
                 train_dict.update({metric.name: metric.result()})
         return train_dict
@@ -417,6 +478,18 @@ class GAN(tf.keras.Model):
         return self._inj_noise_std
 
     @property
+    def feature_matching_penalty(self) -> float:
+        return self._feature_matching_penalty
+
+    @property
+    def referee_from_logits(self):  # TODO: add Union[None, bool]
+        return self._referee_from_logits
+
+    @property
+    def referee_label_smoothing(self):  # TODO: add Union[None, float]
+        return self._referee_label_smoothing
+
+    @property
     def metrics(self) -> list:
         reset_states = [self._g_loss, self._d_loss]
         if self._referee is not None:
@@ -426,11 +499,11 @@ class GAN(tf.keras.Model):
         return reset_states
 
     @property
-    def generator_optimizer(self) -> Optimizer:
+    def generator_optimizer(self) -> keras.optimizers.Optimizer:
         return self._g_opt
 
     @property
-    def discriminator_optimizer(self) -> Optimizer:
+    def discriminator_optimizer(self) -> keras.optimizers.Optimizer:
         return self._d_opt
 
     @property
