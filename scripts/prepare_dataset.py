@@ -11,12 +11,7 @@ import yaml
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.utils import shuffle
-from utils_argparser import argparser_preprocessing
-
-MODELS = ["Rich", "Muon", "GlobalPID", "GlobalMuonId", "isMuon"]
-PARTICLES = ["muon", "pion", "kaon", "proton"]
-LABELS = ["sim", "calib"]
-
+from utils.utils_argparser import argparser_preprocessing
 
 # +------------------+
 # |   Parser setup   |
@@ -72,7 +67,7 @@ for fname in data_fnames:
             .query(" and ".join([s for s in selections]))
         )
 
-print(f"[INFO] Data correctly loaded in {time()-start:.2f} s")
+print(f"[INFO] Data from {len(data_fnames)} correctly loaded in {time()-start:.2f} s")
 
 df = pd.concat(dataframes, ignore_index=True).dropna()
 df = shuffle(df).reset_index(drop=True)[:chunk_size]
@@ -170,6 +165,8 @@ if len(y_features) > 0:
         df[y_features].values
     )
     df_preprocessed[y_features] = y_scaler.transform(df[y_features].values)
+else:
+    y_scaler = None
 
 print(f"[INFO] Data preprocessing completed in {time()-start:.2f} s")
 
@@ -198,40 +195,41 @@ for var in x_features:
         label="data",
     )
     plt.legend(loc="upper right", fontsize=10)
-    plt.savefig(f"{export_img_dirname}/{var}-hist.png")
+    plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png")
     plt.close()
 
 # +---------------------------------+
 # |   Output variables histograms   |
 # +---------------------------------+
 
-for var in y_features:
-    min_ = df[var].values.min()
-    max_ = df[var].values.max()
-    bins = np.linspace(min_, max_, 101)
+if args.model != "isMuon":
+    for var in y_features:
+        min_ = df[var].values.min()
+        max_ = df[var].values.max()
+        bins = np.linspace(min_, max_, 101)
 
-    plt.figure(figsize=(8, 5), dpi=300)
-    plt.title(f"{args.model} model - {args.particle} tracks", fontsize=14)
-    plt.xlabel(f"{var}", fontsize=12)
-    plt.ylabel("Candidates", fontsize=12)
-    plt.hist(
-        df[var].values,
-        bins=bins,
-        density=False,
-        weights=df[w_var].values if args.weights else None,
-        color="#3288bd",
-        label="data",
-    )
-    plt.legend(loc="upper right", fontsize=10)
-    plt.savefig(f"{export_img_dirname}/{var}-hist.png")
-    plt.close()
+        plt.figure(figsize=(8, 5), dpi=300)
+        plt.title(f"{args.model} model - {args.particle} tracks", fontsize=14)
+        plt.xlabel(f"{var}", fontsize=12)
+        plt.ylabel("Candidates", fontsize=12)
+        plt.hist(
+            df[var].values,
+            bins=bins,
+            density=False,
+            weights=df[w_var].values if args.weights else None,
+            color="#3288bd",
+            label="data",
+        )
+        plt.legend(loc="upper right", fontsize=10)
+        plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png")
+        plt.close()
 
 # +--------------------------+
 # |   Training data export   |
 # +--------------------------+
 
 export_data_fname = (
-    f"{export_data_dir}/pidgan-{args.model}-{args.particle}-{args.label}-dataset"
+    f"{export_data_dir}/pidgan-{args.model}-{args.particle}-{args.data_sample}-data"
 )
 npz_fname = f"{export_data_fname}.npz"
 np.savez(
@@ -251,10 +249,11 @@ print(
 # |   Preprocessing models export   |
 # +---------------------------------+
 
-pkl_fname = f"{export_model_fname}/tX_{args.label}.pkl"
+pkl_fname = f"{export_model_fname}/tX_{args.data_sample}.pkl"
 pickle.dump(x_scaler, open(pkl_fname, "wb"))
 print(f"[INFO] Input variables scaler correctly saved to {pkl_fname}")
 
-pkl_fname = f"{export_model_fname}/tY_{args.label}.pkl"
-pickle.dump(y_scaler, open(pkl_fname, "wb"))
-print(f"[INFO] Output variables scaler correctly saved to {pkl_fname}")
+if y_scaler is not None:
+    pkl_fname = f"{export_model_fname}/tY_{args.data_sample}.pkl"
+    pickle.dump(y_scaler, open(pkl_fname, "wb"))
+    print(f"[INFO] Output variables scaler correctly saved to {pkl_fname}")

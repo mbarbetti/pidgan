@@ -10,10 +10,12 @@ parser.add_argument("--interactive", action="store_true")
 parser.add_argument("--no-interactive", dest="interactive", action="store_false")
 parser.set_defaults(interactive=True)
 
-parser.add_argument("-D", "--data_dir", default="./data")
-parser.add_argument("-M", "--models_dir", default="./models")
-parser.add_argument("-I", "--images_dir", default="./images")
-parser.add_argument("-R", "--reports_dir", default="./html")
+parser.add_argument("-D", "--data_dir", default="data")
+parser.add_argument("-L", "--logs_dir", default="logs")
+parser.add_argument("-M", "--models_dir", default="models")
+parser.add_argument("-I", "--images_dir", default="images")
+parser.add_argument("-R", "--reports_dir", default="html")
+parser.add_argument("-E", "--exports_dir", default="exports")
 config_dir = dict()
 
 parser.add_argument(
@@ -27,6 +29,9 @@ args = parser.parse_args()
 if args.interactive:
     data_dir = input(f"Path for the data directory (default: '{args.data_dir}'): ")
     config_dir["data_dir"] = data_dir if not (data_dir == "") else args.data_dir
+
+    logs_dir = input(f"Path for the logs directory (default: '{args.logs_dir}'): ")
+    config_dir["logs_dir"] = logs_dir if not (logs_dir == "") else args.logs_dir
 
     models_dir = input(
         f"Path for the models directory (default: '{args.models_dir}'): "
@@ -45,6 +50,13 @@ if args.interactive:
         reports_dir if not (reports_dir == "") else args.reports_dir
     )
 
+    exports_dir = input(
+        f"Path for the exports directory (default: '{args.exports_dir}'): "
+    )
+    config_dir["exports_dir"] = (
+        exports_dir if not (exports_dir == "") else args.exports_dir
+    )
+
     server = input(f"Address of the Hopaas service (default: '{args.server}'): ")
     config_hopaas["server"] = server if not (server == "") else args.server
 
@@ -52,9 +64,11 @@ if args.interactive:
     config_hopaas["token"] = token if not (token == "") else args.token
 else:
     config_dir["data_dir"] = args.data_dir
+    config_dir["logs_dir"] = args.logs_dir
     config_dir["models_dir"] = args.models_dir
     config_dir["images_dir"] = args.images_dir
     config_dir["reports_dir"] = args.reports_dir
+    config_dir["exports_dir"] = args.exports_dir
 
     config_hopaas["server"] = args.server
     config_hopaas["token"] = args.token

@@ -26,7 +26,7 @@ Muon:
   - probe_Brunel_MuonBgLL <  1 
   - nTracks_Brunel > 0 
   - nTracks_Brunel < 1000 
-  # - probe_Brunel_MuonUnbiased == 1
+  - probe_Brunel_MuonUnbiased == 1
 
 GlobalPID:
   - probe_Brunel_P > 3000
@@ -81,12 +81,12 @@ GlobalMuonId:
   - probe_Brunel_MC15TuneV1_ProbNNp  >= 0 
   - nTracks_Brunel > 0
   - nTracks_Brunel < 1000 
-  # - probe_Brunel_MuonUnbiased == 1
+  - probe_Brunel_MuonUnbiased == 1
 
 isMuon:
   - probe_Brunel_ETA > 1.5
   - probe_Brunel_ETA < 5.5
   - nTracks_Brunel > 0
   - nTracks_Brunel < 1000
-  # - probe_Brunel_MuonUnbiased == 1
+  - probe_Brunel_MuonUnbiased == 1
       
