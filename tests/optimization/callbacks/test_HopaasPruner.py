@@ -3,8 +3,8 @@ import os
 import hopaas_client as hpc
 import numpy as np
 import pytest
-from tensorflow import keras
 import yaml
+from tensorflow import keras
 
 NUM_TRIALS = 1
 CHUNK_SIZE = int(1e3)

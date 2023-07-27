@@ -1,7 +1,11 @@
 from tensorflow import keras
 
 OPT_SHORTCUTS = ["sgd", "rmsprop", "adam"]
-TF_OPTIMIZERS = [keras.optimizers.SGD(), keras.optimizers.RMSprop(), keras.optimizers.Adam()]
+TF_OPTIMIZERS = [
+    keras.optimizers.SGD(),
+    keras.optimizers.RMSprop(),
+    keras.optimizers.Adam(),
+]
 
 
 def checkOptimizer(optimizer) -> keras.optimizers.Optimizer:

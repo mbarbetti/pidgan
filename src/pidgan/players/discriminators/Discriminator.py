@@ -71,9 +71,13 @@ class Discriminator(keras.Model):
                 )
             )
             self._seq.add(
-                keras.layers.LeakyReLU(alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None)
+                keras.layers.LeakyReLU(
+                    alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None
+                )
             )
-            self._seq.add(keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None))
+            self._seq.add(
+                keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None)
+            )
         self._seq.add(
             keras.layers.Dense(
                 units=output_dim,
