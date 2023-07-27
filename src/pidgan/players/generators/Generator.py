@@ -1,11 +1,11 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Dropout, LeakyReLU
+from tensorflow import keras
 
 LEAKY_ALPHA = 0.1
 SEED = 42
 
 
-class Generator(tf.keras.Model):
+class Generator(keras.Model):
     def __init__(
         self,
         output_dim,
@@ -62,12 +62,12 @@ class Generator(tf.keras.Model):
         self._output_activation = output_activation
 
         # Model
-        self._seq = list()
+        self._seq = keras.Sequential(name=f"{name}_seq" if name else None)
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._dropout_rate)
         ):
-            self._seq.append(
-                Dense(
+            self._seq.add(
+                keras.layers.Dense(
                     units=units,
                     activation=None,
                     kernel_initializer="glorot_uniform",
@@ -76,12 +76,12 @@ class Generator(tf.keras.Model):
                     dtype=self.dtype,
                 )
             )
-            self._seq.append(
-                LeakyReLU(alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None)
+            self._seq.add(
+                keras.layers.LeakyReLU(alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None)
             )
-            self._seq.append(Dropout(rate=rate, name=f"dropout_{i}" if name else None))
-        self._seq.append(
-            Dense(
+            self._seq.add(keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None))
+        self._seq.add(
+            keras.layers.Dense(
                 units=output_dim,
                 activation=output_activation,
                 kernel_initializer="glorot_uniform",
@@ -92,19 +92,23 @@ class Generator(tf.keras.Model):
         )
 
     def call(self, x) -> tf.Tensor:
-        x = self._prepare_input(x, seed=None)
-        for layer in self._seq:
-            x = layer(x)
-        return x
+        x, _ = self._prepare_input(x, seed=None)
+        out = self._seq(x)
+        return out
 
-    def generate(self, x, seed=None) -> tf.Tensor:
+    def summary(self, **kwargs) -> None:
+        self._seq.summary(**kwargs)
+
+    def generate(self, x, seed=None, return_latent_sample=False) -> tf.Tensor:
         tf.random.set_seed(seed=SEED)
-        x = self._prepare_input(x, seed=seed)
-        for layer in self._seq:
-            x = layer(x)
-        return x
+        x, latent_sample = self._prepare_input(x, seed=seed)
+        out = self._seq(x)
+        if return_latent_sample:
+            return out, latent_sample
+        else:
+            return out
 
-    def _prepare_input(self, x, seed=None) -> tf.Tensor:
+    def _prepare_input(self, x, seed=None) -> tuple:
         latent_sample = tf.random.normal(
             shape=(tf.shape(x)[0], self._latent_dim),
             mean=0.0,
@@ -112,8 +116,8 @@ class Generator(tf.keras.Model):
             dtype=self.dtype,
             seed=seed,
         )
-        x = tf.concat([x, latent_sample], axis=1)
-        return x
+        x = tf.concat([x, latent_sample], axis=-1)
+        return x, latent_sample
 
     @property
     def output_dim(self) -> int:
@@ -138,3 +142,7 @@ class Generator(tf.keras.Model):
     @property
     def output_activation(self):
         return self._output_activation
+
+    @property
+    def export_model(self) -> keras.Sequential:
+        return self._seq
