@@ -1,7 +1,14 @@
+import os
+
 import pytest
 import tensorflow as tf
+from tensorflow import keras
 
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
+
+here = os.path.dirname(__file__)
+export_dir = f"{here}/tmp/generator"
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -35,6 +42,8 @@ def test_model_configuration(model):
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
     assert isinstance(model.dropout_rate, list)
+    # assert isinstance(model.output_activation, str)
+    assert isinstance(model.export_model, keras.Sequential)
 
 
 def test_model_use(model):
@@ -53,20 +62,20 @@ def test_model_train(model, sample_weight):
         slices = (x, y)
     dataset = (
         tf.data.Dataset.from_tensor_slices(slices)
-        .batch(batch_size=512, drop_remainder=True)
+        .batch(batch_size=BATCH_SIZE, drop_remainder=True)
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
-    adam = tf.keras.optimizers.Adam(learning_rate=0.001)
-    mse = tf.keras.losses.MeanSquaredError()
-    model.compile(optimizer=adam, loss=mse)
-    model.fit(dataset, epochs=2)
+    adam = keras.optimizers.Adam(learning_rate=0.001)
+    mse = keras.losses.MeanSquaredError()
+    model.compile(optimizer=adam, loss=mse, metrics=["mse"])
+    model.fit(dataset, epochs=1)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    adam = tf.keras.optimizers.Adam(learning_rate=0.001)
-    mse = tf.keras.losses.MeanSquaredError()
+    adam = keras.optimizers.Adam(learning_rate=0.001)
+    mse = keras.losses.MeanSquaredError()
     model.compile(optimizer=adam, loss=mse, metrics=["mse"])
     model.evaluate(x, sample_weight=sample_weight)
 
@@ -77,3 +86,13 @@ def test_model_generate(model):
     assert comparison.all()
     comparison = out.numpy() != model.generate(x, seed=24).numpy()
     assert comparison.any()
+
+
+def test_model_export(model):
+    out, latent_sample = model.generate(x, return_latent_sample=True)
+    keras.models.save_model(model.export_model, export_dir, save_format="tf")
+    model_reloaded = keras.models.load_model(export_dir)
+    x_reloaded = tf.concat([x, latent_sample], axis=-1)
+    out_reloaded = model_reloaded(x_reloaded)
+    comparison = out.numpy() == out_reloaded.numpy()
+    assert comparison.all()

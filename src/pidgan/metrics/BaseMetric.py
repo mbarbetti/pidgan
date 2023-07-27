@@ -1,7 +1,7 @@
-import tensorflow as tf
+from tensorflow import keras
 
 
-class BaseMetric(tf.keras.metrics.Metric):
+class BaseMetric(keras.metrics.Metric):
     def __init__(self, name="metric", dtype=None) -> None:
         super().__init__(name, dtype)
         self._metric_values = self.add_weight(

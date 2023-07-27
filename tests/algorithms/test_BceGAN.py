@@ -1,6 +1,6 @@
 import pytest
 import tensorflow as tf
-from tensorflow.keras.optimizers import Optimizer, RMSprop
+from tensorflow import keras
 
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
@@ -46,6 +46,7 @@ def model():
         discriminator=disc,
         referee=ref,
         injected_noise_stddev=0.1,
+        feature_matching_penalty=0.0,
         from_logits=False,
         label_smoothing=0.0,
     )
@@ -67,6 +68,7 @@ def test_model_configuration(model):
     assert isinstance(model.referee, Discriminator)
     assert isinstance(model.referee_loss_name, str)
     assert isinstance(model.injected_noise_stddev, float)
+    assert isinstance(model.feature_matching_penalty, float)
     assert isinstance(model.from_logits, bool)
     assert isinstance(model.label_smoothing, float)
 
@@ -110,9 +112,9 @@ def test_model_use(referee):
 
 @pytest.mark.parametrize("metrics", [["bce"], None])
 def test_model_compilation(model, metrics):
-    g_opt = RMSprop(learning_rate=0.001)
-    d_opt = RMSprop(learning_rate=0.001)
-    r_opt = RMSprop(learning_rate=0.001)
+    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=metrics,
         generator_optimizer=g_opt,
@@ -123,9 +125,9 @@ def test_model_compilation(model, metrics):
         referee_upds_per_batch=1,
     )
     assert isinstance(model.metrics, list)
-    assert isinstance(model.generator_optimizer, Optimizer)
-    assert isinstance(model.discriminator_optimizer, Optimizer)
-    assert isinstance(model.referee_optimizer, Optimizer)
+    assert isinstance(model.generator_optimizer, keras.optimizers.Optimizer)
+    assert isinstance(model.discriminator_optimizer, keras.optimizers.Optimizer)
+    assert isinstance(model.referee_optimizer, keras.optimizers.Optimizer)
     assert isinstance(model.generator_upds_per_batch, int)
     assert isinstance(model.discriminator_upds_per_batch, int)
     assert isinstance(model.referee_upds_per_batch, int)
@@ -152,12 +154,13 @@ def test_model_train(referee, sample_weight):
         discriminator=disc,
         referee=referee,
         injected_noise_stddev=0.1,
+        feature_matching_penalty=1.0,
         from_logits=False,
         label_smoothing=0.0,
     )
-    g_opt = RMSprop(learning_rate=0.001)
-    d_opt = RMSprop(learning_rate=0.001)
-    r_opt = RMSprop(learning_rate=0.001)
+    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=None,
         generator_optimizer=g_opt,
@@ -172,9 +175,9 @@ def test_model_train(referee, sample_weight):
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    g_opt = RMSprop(learning_rate=0.001)
-    d_opt = RMSprop(learning_rate=0.001)
-    r_opt = RMSprop(learning_rate=0.001)
+    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=None,
         generator_optimizer=g_opt,

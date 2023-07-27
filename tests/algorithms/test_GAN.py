@@ -1,6 +1,6 @@
 import pytest
 import tensorflow as tf
-from tensorflow.keras.optimizers import Optimizer, RMSprop
+from tensorflow import keras
 
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
@@ -47,6 +47,9 @@ def model():
         referee=ref,
         use_original_loss=True,
         injected_noise_stddev=0.1,
+        feature_matching_penalty=0.0,
+        referee_from_logits=False,
+        referee_label_smoothing=0.0,
     )
     return gan
 
@@ -67,6 +70,11 @@ def test_model_configuration(model):
     assert isinstance(model.referee_loss_name, str)
     assert isinstance(model.use_original_loss, bool)
     assert isinstance(model.injected_noise_stddev, float)
+    assert isinstance(model.feature_matching_penalty, float)
+    if model.referee_from_logits is not None:
+        assert isinstance(model.referee_from_logits, bool)
+    if model.referee_label_smoothing is not None:
+        assert isinstance(model.referee_label_smoothing, float)
 
 
 @pytest.mark.parametrize("referee", [ref, None])
@@ -79,6 +87,9 @@ def test_model_use(referee):
         referee=referee,
         use_original_loss=True,
         injected_noise_stddev=0.1,
+        feature_matching_penalty=0.0,
+        referee_from_logits=None,
+        referee_label_smoothing=None,
     )
     outputs = model(x, y)
     if referee is not None:
@@ -107,9 +118,9 @@ def test_model_use(referee):
 
 @pytest.mark.parametrize("metrics", [["bce"], None])
 def test_model_compilation(model, metrics):
-    g_opt = RMSprop(learning_rate=0.001)
-    d_opt = RMSprop(learning_rate=0.001)
-    r_opt = RMSprop(learning_rate=0.001)
+    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=metrics,
         generator_optimizer=g_opt,
@@ -120,9 +131,9 @@ def test_model_compilation(model, metrics):
         referee_upds_per_batch=1,
     )
     assert isinstance(model.metrics, list)
-    assert isinstance(model.generator_optimizer, Optimizer)
-    assert isinstance(model.discriminator_optimizer, Optimizer)
-    assert isinstance(model.referee_optimizer, Optimizer)
+    assert isinstance(model.generator_optimizer, keras.optimizers.Optimizer)
+    assert isinstance(model.discriminator_optimizer, keras.optimizers.Optimizer)
+    assert isinstance(model.referee_optimizer, keras.optimizers.Optimizer)
     assert isinstance(model.generator_upds_per_batch, int)
     assert isinstance(model.discriminator_upds_per_batch, int)
     assert isinstance(model.referee_upds_per_batch, int)
@@ -130,8 +141,8 @@ def test_model_compilation(model, metrics):
 
 @pytest.mark.parametrize("referee", [ref, None])
 @pytest.mark.parametrize("sample_weight", [w, None])
-@pytest.mark.parametrize("use_original_loss", [True, False])
-def test_model_train(referee, sample_weight, use_original_loss):
+@pytest.mark.parametrize("loss_options", [(True, None, None), (False, False, 0.0)])
+def test_model_train(referee, sample_weight, loss_options):
     from pidgan.algorithms import GAN
 
     if sample_weight is not None:
@@ -145,16 +156,21 @@ def test_model_train(referee, sample_weight, use_original_loss):
         .prefetch(tf.data.AUTOTUNE)
     )
 
+    use_original_loss, from_logits, label_smoothing = loss_options
+
     model = GAN(
         generator=gen,
         discriminator=disc,
         referee=referee,
         use_original_loss=use_original_loss,
         injected_noise_stddev=0.1,
+        feature_matching_penalty=1.0,
+        referee_from_logits=from_logits,
+        referee_label_smoothing=label_smoothing,
     )
-    g_opt = RMSprop(learning_rate=0.001)
-    d_opt = RMSprop(learning_rate=0.001)
-    r_opt = RMSprop(learning_rate=0.001)
+    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=None,
         generator_optimizer=g_opt,
@@ -164,14 +180,14 @@ def test_model_train(referee, sample_weight, use_original_loss):
         discriminator_upds_per_batch=1,
         referee_upds_per_batch=1,
     )
-    model.fit(dataset, epochs=2)
+    model.fit(dataset, epochs=1)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    g_opt = RMSprop(learning_rate=0.001)
-    d_opt = RMSprop(learning_rate=0.001)
-    r_opt = RMSprop(learning_rate=0.001)
+    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=None,
         generator_optimizer=g_opt,

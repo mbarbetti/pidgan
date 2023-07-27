@@ -1,10 +1,10 @@
-from tensorflow.keras.optimizers import SGD, Adam, Optimizer, RMSprop
+from tensorflow import keras
 
 OPT_SHORTCUTS = ["sgd", "rmsprop", "adam"]
-TF_OPTIMIZERS = [SGD(), RMSprop(), Adam()]
+TF_OPTIMIZERS = [keras.optimizers.SGD(), keras.optimizers.RMSprop(), keras.optimizers.Adam()]
 
 
-def checkOptimizer(optimizer) -> Optimizer:
+def checkOptimizer(optimizer) -> keras.optimizers.Optimizer:
     if isinstance(optimizer, str):
         if optimizer in OPT_SHORTCUTS:
             for opt, tf_opt in zip(OPT_SHORTCUTS, TF_OPTIMIZERS):
@@ -15,7 +15,7 @@ def checkOptimizer(optimizer) -> Optimizer:
                 f"`optimizer` should be selected in {OPT_SHORTCUTS}, "
                 f"instead '{optimizer}' passed"
             )
-    elif isinstance(optimizer, Optimizer):
+    elif isinstance(optimizer, keras.optimizers.Optimizer):
         return optimizer
     else:
         raise TypeError(

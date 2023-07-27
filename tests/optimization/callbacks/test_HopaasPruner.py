@@ -3,7 +3,7 @@ import os
 import hopaas_client as hpc
 import numpy as np
 import pytest
-import tensorflow as tf
+from tensorflow import keras
 import yaml
 
 NUM_TRIALS = 1
@@ -24,11 +24,11 @@ X = np.c_[
 ]
 Y = np.tanh(X[:, 0]) + 2 * X[:, 1] * X[:, 2]
 
-model = tf.keras.Sequential()
-model.add(tf.keras.layers.InputLayer(input_shape=(3,)))
+model = keras.Sequential()
+model.add(keras.layers.InputLayer(input_shape=(3,)))
 for units in [16, 16, 16]:
-    model.add(tf.keras.layers.Dense(units, activation="relu"))
-model.add(tf.keras.layers.Dense(1))
+    model.add(keras.layers.Dense(units, activation="relu"))
+model.add(keras.layers.Dense(1))
 
 
 @pytest.fixture
@@ -77,8 +77,8 @@ def test_callback_use(enable_pruning):
 
     for _ in range(NUM_TRIALS):
         with study.trial() as trial:
-            adam = tf.keras.optimizers.Adam(learning_rate=trial.learning_rate)
-            mse = tf.keras.losses.MeanSquaredError()
+            adam = keras.optimizers.Adam(learning_rate=trial.learning_rate)
+            mse = keras.losses.MeanSquaredError()
 
             report = HopaasPruner(
                 trial=trial,

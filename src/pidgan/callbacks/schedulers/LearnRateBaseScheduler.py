@@ -1,17 +1,16 @@
 import tensorflow as tf
-from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.optimizers import Optimizer
+from tensorflow import keras
 
 K = tf.keras.backend
 
 
-class LearnRateBaseScheduler(Callback):
+class LearnRateBaseScheduler(keras.callbacks.Callback):
     def __init__(self, optimizer, verbose=False, key="lr") -> None:
         super().__init__()
         self._name = "LearnRateBaseScheduler"
 
         # Optimizer
-        assert isinstance(optimizer, Optimizer)
+        assert isinstance(optimizer, keras.optimizers.Optimizer)
         self._optimizer = optimizer
 
         # Verbose

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-import tensorflow as tf
+from tensorflow import keras
 
 CHUNK_SIZE = int(1e4)
 
@@ -11,14 +11,14 @@ X = np.c_[
 ]
 Y = np.tanh(X[:, 0]) + 2 * X[:, 1] * X[:, 2]
 
-model = tf.keras.Sequential()
-model.add(tf.keras.layers.InputLayer(input_shape=(3,)))
+model = keras.Sequential()
+model.add(keras.layers.InputLayer(input_shape=(3,)))
 for units in [16, 16, 16]:
-    model.add(tf.keras.layers.Dense(units, activation="relu"))
-model.add(tf.keras.layers.Dense(1))
+    model.add(keras.layers.Dense(units, activation="relu"))
+model.add(keras.layers.Dense(1))
 
-adam = tf.keras.optimizers.Adam(learning_rate=0.001)
-mse = tf.keras.losses.MeanSquaredError()
+adam = keras.optimizers.Adam(learning_rate=0.001)
+mse = keras.losses.MeanSquaredError()
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def test_sched_configuration(scheduler):
 
     assert isinstance(scheduler, LearnRateInvTimeDecay)
     assert isinstance(scheduler.name, str)
-    assert isinstance(scheduler.optimizer, tf.keras.optimizers.Optimizer)
+    assert isinstance(scheduler.optimizer, keras.optimizers.Optimizer)
     assert isinstance(scheduler.decay_rate, float)
     assert isinstance(scheduler.decay_steps, int)
     assert isinstance(scheduler.staircase, bool)

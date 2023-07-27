@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.metrics import KLDivergence as TF_KLDivergence
+from tensorflow import keras
 
 from pidgan.metrics.BaseMetric import BaseMetric
 
@@ -7,7 +7,7 @@ from pidgan.metrics.BaseMetric import BaseMetric
 class JSDivergence(BaseMetric):
     def __init__(self, name="js_div", dtype=None) -> None:
         super().__init__(name, dtype)
-        self._kl_div = TF_KLDivergence(name=name, dtype=dtype)
+        self._kl_div = keras.metrics.KLDivergence(name=name, dtype=dtype)
 
     def update_state(self, y_true, y_pred, sample_weight=None) -> None:
         dtype = self._kl_div(y_true, y_pred).dtype

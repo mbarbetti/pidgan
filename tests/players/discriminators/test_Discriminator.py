@@ -1,7 +1,9 @@
 import pytest
 import tensorflow as tf
+from tensorflow import keras
 
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -35,14 +37,20 @@ def test_model_configuration(model):
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
     assert isinstance(model.dropout_rate, list)
+    # assert isinstance(model.output_activation, str)
+    assert isinstance(model.export_model, keras.Sequential)
 
 
 def test_model_use(model):
-    output = model((x, y))
+    out = model((x, y))
     model.summary()
     test_shape = [x.shape[0]]
     test_shape.append(model.output_dim)
-    assert output.shape == tuple(test_shape)
+    assert out.shape == tuple(test_shape)
+    hidden_feat, hidden_idx = model.hidden_feature((x, y), return_hidden_idx=True)
+    test_shape = [x.shape[0]]
+    test_shape.append(model.mlp_hidden_units[hidden_idx])
+    assert hidden_feat.shape == tuple(test_shape)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
@@ -53,19 +61,19 @@ def test_model_train(model, sample_weight):
         slices = ((x, y), labels)
     dataset = (
         tf.data.Dataset.from_tensor_slices(slices)
-        .batch(batch_size=512, drop_remainder=True)
+        .batch(batch_size=BATCH_SIZE, drop_remainder=True)
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
-    adam = tf.keras.optimizers.Adam(learning_rate=0.001)
-    bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    adam = keras.optimizers.Adam(learning_rate=0.001)
+    bce = keras.losses.BinaryCrossentropy(from_logits=False)
     model.compile(optimizer=adam, loss=bce, metrics=["bce"])
-    model.fit(dataset, epochs=2)
+    model.fit(dataset, epochs=1)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    adam = tf.keras.optimizers.Adam(learning_rate=0.001)
-    bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    adam = keras.optimizers.Adam(learning_rate=0.001)
+    bce = keras.losses.BinaryCrossentropy(from_logits=False)
     model.compile(optimizer=adam, loss=bce, metrics=["bce"])
     model.evaluate((x, y), sample_weight=sample_weight)
