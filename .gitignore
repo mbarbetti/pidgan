@@ -1,15 +1,16 @@
 # Old files
 old_files/
 
+# Snakemake
+.snakemake/
+
 # Data files
 *.root
 *.npz
-*.png
-*.svg
-*.pdf
 *.html
+scripts/images/
 scripts/models/
-tests/*/tmp/
+tests/*/*/tmp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
