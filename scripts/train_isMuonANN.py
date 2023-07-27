@@ -12,10 +12,8 @@ from utils.utils_argparser import argparser_training
 from utils.utils_training import prepare_training_plots, prepare_validation_plots
 
 import pidgan
-from pidgan.algorithms import BceGAN
 from pidgan.callbacks.schedulers import LearnRateExpDecay
-from pidgan.players.discriminators import Discriminator
-from pidgan.players.generators import Generator
+from pidgan.players.classifiers import Classifier
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 
@@ -26,7 +24,7 @@ BATCHSIZE = 512
 # |   Parser setup   |
 # +------------------+
 
-parser = argparser_training(model="Rich", description="RichGAN training setup")
+parser = argparser_training(model="isMuon", description="isMuonANN training setup")
 args = parser.parse_args()
 
 # +-------------------+
@@ -51,7 +49,9 @@ train_ratio = float(args.train_ratio)
 # |   Data loading   |
 # +------------------+
 
-npzfile = np.load(f"{data_dir}/pidgan-Rich-{args.particle}-{args.data_sample}-data.npz")
+npzfile = np.load(
+    f"{data_dir}/pidgan-isMuon-{args.particle}-{args.data_sample}-data.npz"
+)
 
 x = npzfile["x"].astype(DTYPE)[:chunk_size]
 x_vars = [str(v) for v in npzfile["x_vars"]]
@@ -123,62 +123,29 @@ else:
 # |   Model construction   |
 # +------------------------+
 
-generator = Generator(
-    output_dim=hp.get("g_output_dim", y.shape[1]),
-    latent_dim=hp.get("g_latent_dim", 64),
-    num_hidden_layers=hp.get("g_num_hidden_layers", 5),
-    mlp_hidden_units=hp.get("g_mlp_hidden_units", 128),
-    dropout_rate=hp.get("g_dropout_rate", 0.0),
-    name="generator",
+classifier = Classifier(
+    num_hidden_layers=hp.get("num_hidden_layers", 5),
+    mlp_hidden_units=hp.get("mlp_hidden_units", 128),
+    dropout_rate=hp.get("dropout_rate", 0.1),
+    name="classifier",
     dtype=DTYPE,
 )
 
-discriminator = Discriminator(
-    output_dim=hp.get("d_output_dim", 1),
-    num_hidden_layers=hp.get("d_num_hidden_layers", 5),
-    mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
-    dropout_rate=hp.get("d_dropout_rate", 0.0),
-    output_activation=hp.get("d_output_activation", "sigmoid"),
-    name="discriminator",
-    dtype=DTYPE,
-)
-
-gan = BceGAN(
-    generator=generator,
-    discriminator=discriminator,
-    injected_noise_stddev=0.05,
-    feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
-    from_logits=hp.get("gan_from_logits", False),
-    label_smoothing=hp.get("gan_label_smoothing", 0.1),
-)
-hp.get("gan_name", gan.name)
-
-out = gan(x[:BATCHSIZE], y[:BATCHSIZE])
-gan.summary()
+out = classifier(x[:BATCHSIZE])
+classifier.summary()
 
 # +----------------------+
 # |   Optimizers setup   |
 # +----------------------+
 
-g_opt = tf.keras.optimizers.RMSprop(hp.get("g_lr0", 0.001))
-hp.get("g_optimizer", g_opt.name)
-
-d_opt = tf.keras.optimizers.RMSprop(hp.get("d_lr0", 0.001))
-hp.get("d_optimizer", d_opt.name)
+opt = tf.keras.optimizers.Adam(hp.get("lr0", 0.001))
+hp.get("optimizer", opt.name)
 
 # +----------------------------+
 # |   Training configuration   |
 # +----------------------------+
 
-metrics = ["accuracy", "bce"]
-
-gan.compile(
-    metrics=hp.get("metrics", metrics),
-    generator_optimizer=g_opt,
-    discriminator_optimizer=d_opt,
-    generator_upds_per_batch=hp.get("generator_upds_per_batch", 1),
-    discriminator_upds_per_batch=hp.get("discriminator_upds_per_batch", 1),
-)
+classifier.compile(optimizer=opt, loss=hp.get("loss", "bce"), metrics=None)
 
 # +--------------------------+
 # |   Callbacks definition   |
@@ -186,34 +153,23 @@ gan.compile(
 
 callbacks = list()
 
-g_lr_sched = LearnRateExpDecay(
-    gan.generator_optimizer,
-    decay_rate=hp.get("g_decay_rate", 0.10),
-    decay_steps=hp.get("g_decay_steps", 100_000),
-    min_learning_rate=hp.get("g_min_learning_rate", 1e-6),
+lr_sched = LearnRateExpDecay(
+    classifier.optimizer,
+    decay_rate=hp.get("decay_rate", 0.10),
+    decay_steps=hp.get("decay_steps", 100_000),
+    min_learning_rate=hp.get("min_learning_rate", 1e-6),
     verbose=True,
-    key="g_lr",
+    key="lr",
 )
-hp.get("g_sched", g_lr_sched.name)
-callbacks.append(g_lr_sched)
-
-d_lr_sched = LearnRateExpDecay(
-    gan.discriminator_optimizer,
-    decay_rate=hp.get("d_decay_rate", 0.10),
-    decay_steps=hp.get("d_decay_steps", 100_000),
-    min_learning_rate=hp.get("d_min_learning_rate", 1e-6),
-    verbose=True,
-    key="d_lr",
-)
-hp.get("d_sched", d_lr_sched.name)
-callbacks.append(d_lr_sched)
+hp.get("lr_sched", lr_sched.name)
+callbacks.append(lr_sched)
 
 # +------------------------+
 # |   Training procedure   |
 # +------------------------+
 
 start = datetime.now()
-train = gan.fit(
+train = classifier.fit(
     train_ds,
     epochs=hp.get("num_epochs", num_epochs),
     validation_data=val_ds,
@@ -230,21 +186,14 @@ print(f"[INFO] Model training completed in {duration}")
 # +---------------------+
 
 with open(
-    f"{models_dir}/Rich_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/isMuon_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
 ) as file:
     x_scaler = pickle.load(file)
 
 x_post = invertColumnTransformer(x_scaler, x_val)
 
-with open(
-    f"{models_dir}/Rich_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
-) as file:
-    y_scaler = pickle.load(file)
-
-y_post = y_scaler.inverse_transform(y_val)
-
-out = gan.generate(x_val, seed=None)
-out_post = y_scaler.inverse_transform(out)
+probs = classifier(x_val).numpy()
+preds = probs > 0.5
 
 # +------------------+
 # |   Model export   |
@@ -267,10 +216,10 @@ else:
     timestamp = timestamp.split(".")[0].replace("-", "").replace(" ", "-")
     for time, unit in zip(timestamp.split(":"), ["h", "m", "s"]):
         prefix += time + unit  # YYYYMMDD-HHhMMmSSs
-prefix += f"_RichGAN-{args.particle}_{args.data_sample}"
+prefix += f"_isMuonANN-{args.particle}_{args.data_sample}"
 
-export_model_dirname = f"{models_dir}/Rich_{args.particle}_models/{prefix}_model"
-export_img_dirname = f"{images_dir}/Rich_{args.particle}_img/{prefix}_img"
+export_model_dirname = f"{models_dir}/isMuon_{args.particle}_models/{prefix}_model"
+export_img_dirname = f"{images_dir}/isMuon_{args.particle}_img/{prefix}_img"
 
 if save_output:
     if not os.path.exists(export_model_dirname):
@@ -278,8 +227,8 @@ if save_output:
     if not os.path.exists(export_img_dirname):
         os.makedirs(export_img_dirname)  # need to save images
     tf.keras.models.save_model(
-        gan.generator.export_model,
-        filepath=f"{export_model_dirname}/saved_generator",
+        classifier.export_model,
+        filepath=f"{export_model_dirname}/saved_model",
         save_format="tf",
     )
     print(f"[INFO] Trained model correctly exported to {export_model_dirname}")
@@ -287,14 +236,14 @@ if save_output:
         f"{export_model_dirname}/hyperparams.yml"
     )  # export also list of hyperparams
     pickle.dump(x_scaler, open(f"{export_model_dirname}/tX.pkl", "wb"))
-    pickle.dump(y_scaler, open(f"{export_model_dirname}/tY.pkl", "wb"))
     np.savez(
         f"{export_model_dirname}/results.npz",
         x=x_val,
         x_vars=x_vars,
         y=y_val,
         y_vars=y_vars,
-        output=out,
+        probs=probs,
+        preds=preds,
     )  # export training results
 
 # +---------------------+
@@ -302,7 +251,7 @@ if save_output:
 # +---------------------+
 
 report = Report()
-report.add_markdown('<h1 align="center">RichGAN training report</h1>')
+report.add_markdown('<h1 align="center">isMuonANN training report</h1>')
 
 info = [
     f"- Script executed on **{socket.gethostname()}**",
@@ -334,22 +283,10 @@ report.add_markdown(hyperparams)
 
 report.add_markdown("---")
 
-## Generator architecture
-report.add_markdown('<h2 align="center">Generator architecture</h2>')
-report.add_markdown(f"**Model name:** {gan.generator.name}")
-html_table, params_details = getSummaryHTML(gan.generator.export_model)
-model_weights = ""
-for k, n in zip(["Total", "Trainable", "Non-trainable"], params_details):
-    model_weights += f"- **{k} params:** {n}\n"
-report.add_markdown(html_table)
-report.add_markdown(model_weights)
-
-report.add_markdown("---")
-
-## Discriminator architecture
-report.add_markdown('<h2 align="center">Discriminator architecture</h2>')
-report.add_markdown(f"**Model name:** {gan.discriminator.name}")
-html_table, params_details = getSummaryHTML(gan.discriminator.export_model)
+## Classifier architecture
+report.add_markdown('<h2 align="center">Classifier architecture</h2>')
+report.add_markdown(f"**Model name:** {classifier.name}")
+html_table, params_details = getSummaryHTML(classifier.export_model)
 model_weights = ""
 for k, n in zip(["Total", "Trainable", "Non-trainable"], params_details):
     model_weights += f"- **{k} params:** {n}\n"
@@ -361,11 +298,11 @@ report.add_markdown("---")
 ## Training plots
 prepare_training_plots(
     report=report,
-    model="Rich",
+    model="isMuon",
     history=train.history,
-    metrics=metrics,
+    metrics=None,
     num_epochs=num_epochs,
-    loss_name=gan.loss_name,
+    loss_name=None,
     is_from_validation_set=(train_ratio != 1.0),
     save_images=save_output,
     images_dirname=export_img_dirname,
@@ -374,10 +311,10 @@ prepare_training_plots(
 ## Validation plots
 prepare_validation_plots(
     report=report,
-    model="Rich",
+    model="isMuon",
     x_true=x_post,
-    y_true=y_post,
-    y_pred=out_post,
+    y_true=y_val.flatten(),
+    y_pred=probs.flatten(),
     y_vars=y_vars,
     weights=w_val,
     is_from_fullsim="sim" in args.data_sample,

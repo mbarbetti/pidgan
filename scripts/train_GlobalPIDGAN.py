@@ -26,7 +26,9 @@ BATCHSIZE = 512
 # |   Parser setup   |
 # +------------------+
 
-parser = argparser_training(model="Rich", description="RichGAN training setup")
+parser = argparser_training(
+    model="GlobalPID", description="GlobalPIDGAN training setup"
+)
 args = parser.parse_args()
 
 # +-------------------+
@@ -51,7 +53,9 @@ train_ratio = float(args.train_ratio)
 # |   Data loading   |
 # +------------------+
 
-npzfile = np.load(f"{data_dir}/pidgan-Rich-{args.particle}-{args.data_sample}-data.npz")
+npzfile = np.load(
+    f"{data_dir}/pidgan-GlobalPID-{args.particle}-{args.data_sample}-data.npz"
+)
 
 x = npzfile["x"].astype(DTYPE)[:chunk_size]
 x_vars = [str(v) for v in npzfile["x_vars"]]
@@ -215,7 +219,7 @@ callbacks.append(d_lr_sched)
 start = datetime.now()
 train = gan.fit(
     train_ds,
-    epochs=hp.get("num_epochs", num_epochs),
+    epochs=hp.get("epochs", num_epochs),
     validation_data=val_ds,
     callbacks=callbacks,
 )
@@ -230,14 +234,14 @@ print(f"[INFO] Model training completed in {duration}")
 # +---------------------+
 
 with open(
-    f"{models_dir}/Rich_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/GlobalPID_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
 ) as file:
     x_scaler = pickle.load(file)
 
 x_post = invertColumnTransformer(x_scaler, x_val)
 
 with open(
-    f"{models_dir}/Rich_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/GlobalPID_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
 ) as file:
     y_scaler = pickle.load(file)
 
@@ -267,10 +271,10 @@ else:
     timestamp = timestamp.split(".")[0].replace("-", "").replace(" ", "-")
     for time, unit in zip(timestamp.split(":"), ["h", "m", "s"]):
         prefix += time + unit  # YYYYMMDD-HHhMMmSSs
-prefix += f"_RichGAN-{args.particle}_{args.data_sample}"
+prefix += f"_GlobalPIDGAN-{args.particle}_{args.data_sample}"
 
-export_model_dirname = f"{models_dir}/Rich_{args.particle}_models/{prefix}_model"
-export_img_dirname = f"{images_dir}/Rich_{args.particle}_img/{prefix}_img"
+export_model_dirname = f"{models_dir}/GlobalPID_{args.particle}_models/{prefix}_model"
+export_img_dirname = f"{images_dir}/GlobalPID_{args.particle}_img/{prefix}_img"
 
 if save_output:
     if not os.path.exists(export_model_dirname):
@@ -302,7 +306,7 @@ if save_output:
 # +---------------------+
 
 report = Report()
-report.add_markdown('<h1 align="center">RichGAN training report</h1>')
+report.add_markdown('<h1 align="center">GlobalPIDGAN training report</h1>')
 
 info = [
     f"- Script executed on **{socket.gethostname()}**",
@@ -361,7 +365,7 @@ report.add_markdown("---")
 ## Training plots
 prepare_training_plots(
     report=report,
-    model="Rich",
+    model="GlobalPID",
     history=train.history,
     metrics=metrics,
     num_epochs=num_epochs,
@@ -374,7 +378,7 @@ prepare_training_plots(
 ## Validation plots
 prepare_validation_plots(
     report=report,
-    model="Rich",
+    model="GlobalPID",
     x_true=x_post,
     y_true=y_post,
     y_pred=out_post,
