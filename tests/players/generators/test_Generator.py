@@ -68,7 +68,7 @@ def test_model_train(model, sample_weight):
     )
     adam = keras.optimizers.Adam(learning_rate=0.001)
     mse = keras.losses.MeanSquaredError()
-    model.compile(optimizer=adam, loss=mse, metrics=["mse"])
+    model.compile(optimizer=adam, loss=mse, metrics=["mae"])
     model.fit(dataset, epochs=1)
 
 
@@ -76,7 +76,7 @@ def test_model_train(model, sample_weight):
 def test_model_eval(model, sample_weight):
     adam = keras.optimizers.Adam(learning_rate=0.001)
     mse = keras.losses.MeanSquaredError()
-    model.compile(optimizer=adam, loss=mse, metrics=["mse"])
+    model.compile(optimizer=adam, loss=mse, metrics=["mae"])
     model.evaluate(x, sample_weight=sample_weight)
 
 
