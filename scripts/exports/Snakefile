@@ -101,6 +101,25 @@ rule compile_full_pipes:
     shell:
         "gcc {params.flags} -o {output} {input} > {log}"
 
+# +--------------------------+
+# |    Test transpilation    |
+# +--------------------------+
+
+rule test_transpilation:
+    input:
+        os.path.join(exports_dir, "CompiledModel_{sample}_{label}.so"),
+
+    params:
+        max_rel_err = config["max_rel_err"],
+        min_percentage = config["min_percentage"],
+
+    log:
+        os.path.join(logs_dir, "test-transpilation_{part}_{sample}_{label}.log"),
+
+    shell:
+        "python tests/test.py -o {input} -p {wildcards.part} -D {wildcards.sample} -E {params.max_rel_err} -P {params.min_percentage} > {log}"
+
+
 # +------------------+
 # |    Final rule    |
 # +------------------+
@@ -112,13 +131,19 @@ rule final_rule:
             sample=config["data_sample"],
             label=config["label"],
         ),
+        expand(
+            os.path.join(logs_dir, "test-transpilation_{part}_{sample}_{label}.log"),
+            part=PARTS,
+            sample=config["data_sample"],
+            label=config["label"],
+        )
 
     params:
-        logs_dir,
+        logs_dir = logs_dir,
 
     output:
         ".all_rules_completed"
 
     shell:
-        "rm {params}/*;"
+        "rm {params.logs_dir}/*;"
         "touch {output}"

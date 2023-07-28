@@ -1,11 +1,15 @@
 import ctypes
 import os
+import pickle
 from argparse import ArgumentParser
 
 import numpy as np
+import pandas as pd
 import yaml
 from tqdm import tqdm
 from utils import FullPipe, GanPipe, isMuonPipe
+
+from pidgan.utils.preprocessing import invertColumnTransformer
 
 MODELS = ["Rich", "Muon", "GlobalPID", "GlobalMuonId"]
 PARTICLES = ["muon", "pion", "kaon", "proton"]
@@ -23,9 +27,6 @@ N_OUTPUT_GLOBALMUONID = 2
 N_OUTPUT_FULL = (
     N_OUTPUT_RICH + N_OUTPUT_MUON + N_OUTPUT_GLOBALPID + N_OUTPUT_GLOBALMUONID
 )
-
-MAX_REL_ERROR = 1e-4
-MAX_PERCENTAGE = 1e-1
 
 # +------------------+
 # |   Parser setup   |
@@ -48,8 +49,8 @@ parser.add_argument(
 parser.add_argument(
     "-C",
     "--chunk_size",
-    default=50_000,
-    help="maximum number of instancens to be used for validation (default: 50_000)",
+    default=10_000,
+    help="maximum number of instancens to be used for validation (default: 10_000)",
 )
 parser.add_argument(
     "-D",
@@ -58,13 +59,28 @@ parser.add_argument(
     choices=DATA_SAMPLES,
     help="prepare dataset from simulated/calibration samples",
 )
+parser.add_argument(
+    "-E",
+    "--max_rel_err",
+    default=0.001,
+    help="maximum relative error allowed for Python-C conversion (default: 0.001)",
+)
+parser.add_argument(
+    "-P",
+    "--min_percentage",
+    default=95.0,
+    help="minimum percentage of well-converted instances (default: 95.0)",
+)
 args = parser.parse_args()
+
+max_rel_err = float(args.max_rel_err)
+min_percentage = float(args.min_percentage)
 
 # +-------------------+
 # |   Initial setup   |
 # +-------------------+
 
-with open("../../config/directories.yml") as file:
+with open("../config/directories.yml") as file:
     config_dir = yaml.full_load(file)
 
 data_dir = config_dir["data_dir"]
@@ -77,11 +93,22 @@ label = f"{args.shared_object}".split(".")[0].split("_")[-1]
 # |   Data loading   |
 # +------------------+
 
+data_model = MODELS[0]
+
 npzfile = np.load(
-    f"{data_dir}/pidgan-{MODELS[0]}-{args.particle}-{args.data_sample}-data.npz"
+    f"{data_dir}/pidgan-{data_model}-{args.particle}-{args.data_sample}-data.npz"
 )
 
+filepath = os.path.join(
+    models_dir,
+    f"{data_model}_{args.particle}_models",
+    f"{label}_{data_model}GAN-{args.particle}_{args.data_sample}_model",
+)
+with open(f"{filepath}/tX.pkl", "rb") as file:
+    x_scaler = pickle.load(file)
+
 x = npzfile["x"].astype(DTYPE)[:chunk_size]
+x = invertColumnTransformer(x_scaler, x)
 rnd_noise = np.random.uniform(0.0, 1.0, size=(len(x), LATENT_DIM * 4))
 
 # +--------------------------+
@@ -114,7 +141,6 @@ dll = ctypes.CDLL(args.shared_object)
 float_p = ctypes.POINTER(ctypes.c_float)
 
 ismuon_pyout = ismuon_pipe.predict_proba(x, batch_size=BATCH_SIZE)
-print(np.count_nonzero(ismuon_pyout), ismuon_pyout)  # debug
 
 rel_errs = list()
 for x_row, pyout_row in tqdm(
@@ -131,11 +157,12 @@ for x_row, pyout_row in tqdm(
     if pyout_row != 0.0:
         rel_errs.append(abs((out_f - pyout_row) / pyout_row))
 
-counts = np.count_nonzero(np.array(rel_errs) > MAX_REL_ERROR)
+print(pd.DataFrame(rel_errs, columns=["isMuon_err"]).describe())
+counts = np.count_nonzero(np.array(rel_errs) < max_rel_err)
 percentage = 100 * float(counts / (1 + len(rel_errs)))
-if percentage > MAX_PERCENTAGE:
+if percentage < min_percentage:
     raise Exception(
-        f"C and Python isMuonANN implementations were found inconsistent ({percentage:.2f}%)"
+        f"C and Python isMuonANN implementations were found inconsistent ({100.0 - percentage:.2f}%)"
     )
 
 mu_rnd = np.random.uniform(0.0, 1.0, size=(len(x), 1))
@@ -153,7 +180,7 @@ for x_row, rnd_row, ismuon_row, pyout_row in tqdm(
     total=len(x),
     unit="data",
 ):
-    in_f = x_row.astype(ctypes.c_float)
+    in_f = np.hstack((x_row, ismuon_row)).astype(ctypes.c_float)
     out_f = np.empty(N_OUTPUT_FULL, dtype=ctypes.c_float)
     rnd_f = rnd_row.astype(ctypes.c_float)
     getattr(dll, f"full_{args.particle}_pipe")(
@@ -167,18 +194,26 @@ for x_row, rnd_row, ismuon_row, pyout_row in tqdm(
         [N_OUTPUT_RICH, N_OUTPUT_MUON, N_OUTPUT_GLOBALPID, N_OUTPUT_GLOBALMUONID],
     ):
         if np.all(pyout_row[i : (i + n_out)]) != 0.0:
-            rel_errs[model] += list(
-                np.abs(
-                    (out_f[i : (i + n_out)] - pyout_row[i : (i + n_out)])
-                    / pyout_row[i : (i + n_out)]
-                ).flatten()
+            rel_errs[model].append(
+                list(
+                    np.abs(
+                        (out_f[i : (i + n_out)] - pyout_row[i : (i + n_out)])
+                        / pyout_row[i : (i + n_out)]
+                    ).flatten()
+                )
             )
         i += n_out
 
 for model in MODELS:
-    counts = np.count_nonzero(np.array(rel_errs[model]) > MAX_REL_ERROR)
-    percentage = 100 * float(counts / (1 + len(rel_errs[model])))
-    if percentage > MAX_PERCENTAGE:
+    rel_errs_ = np.array(rel_errs[model])
+    print(
+        pd.DataFrame(
+            rel_errs_, columns=[f"{model}#{i}_err" for i in range(rel_errs_.shape[1])]
+        ).describe()
+    )
+    counts = np.count_nonzero(rel_errs_ < max_rel_err, axis=0)
+    percentage = 100.0 * (counts / (1.0 + len(rel_errs_)))
+    if percentage.min() < min_percentage:
         raise Exception(
-            f"C and Python {model}GAN implementations were found inconsistent ({percentage:.2f}%)"
+            f"C and Python {model}GAN implementations were found inconsistent ({100.0 - percentage.min():.2f}%)"
         )

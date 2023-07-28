@@ -54,7 +54,7 @@
 #endif 
 
 #ifndef N_OUTPUT
-#define N_OUTPUT 16
+#define N_OUTPUT 15
 #endif 
 
 #ifndef MUON_ERRORCODE
@@ -239,7 +239,7 @@ FLOAT_T* GenericPipe ( FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *ran
     }
     else
         for (i = 0; i < N_OUTPUT_MUON; ++i)
-        muondll[i] = MUON_ERRORCODE; 
+            muondll[i] = MUON_ERRORCODE; 
 
     // Global PID
     FLOAT_T gpid_input [N_INPUT_GLOBALPID];
@@ -316,7 +316,12 @@ FLOAT_T* GenericPipe ( FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *ran
         output[j++] = gpid_output[i]; 
 
     for (i = 0; i < N_OUTPUT_GLOBALMUONID; ++i)
-        output[j++] = gmuid_output[i]; 
+        output[j++] = gmuid_output[i];
+    #ifdef DEBUG
+    printf (" === OUTPUT === \n");
+    for (i = 0; i < N_OUTPUT; ++i)
+        printf ( "in [%d] : %.2f\n", i, output[i] );
+    #endif
 
     return output; 
 }
