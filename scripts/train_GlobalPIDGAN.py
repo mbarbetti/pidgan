@@ -8,6 +8,7 @@ import tensorflow as tf
 import yaml
 from html_reports import Report
 from sklearn.utils import shuffle
+from tensorflow import keras
 from utils.utils_argparser import argparser_training
 from utils.utils_training import prepare_training_plots, prepare_validation_plots
 
@@ -91,12 +92,12 @@ x_train = x[:train_size]
 y_train = y[:train_size]
 if w is not None:
     w_train = w[:train_size]
-    slices = (x_train, y_train, w_train)
+    train_slices = (x_train, y_train, w_train)
 else:
     w_train = None
-    slices = (x_train, y_train)
+    train_slices = (x_train, y_train)
 train_ds = (
-    tf.data.Dataset.from_tensor_slices(slices)
+    tf.data.Dataset.from_tensor_slices(train_slices)
     .batch(hp.get("batch_size", BATCHSIZE), drop_remainder=True)
     .cache()
     .prefetch(tf.data.AUTOTUNE)
@@ -107,12 +108,12 @@ if train_ratio != 1.0:
     y_val = y[train_size:]
     if w is not None:
         w_val = w[train_size:]
-        slices = (x_train, y_train, w_train)
+        val_slices = (x_val, y_val, w_val)
     else:
         w_val = None
-        slices = (x_train, y_train)
+        val_slices = (x_val, y_val)
     val_ds = (
-        tf.data.Dataset.from_tensor_slices(slices)
+        tf.data.Dataset.from_tensor_slices(val_slices)
         .batch(BATCHSIZE, drop_remainder=True)
         .cache()
         .prefetch(tf.data.AUTOTUNE)
@@ -164,10 +165,10 @@ gan.summary()
 # |   Optimizers setup   |
 # +----------------------+
 
-g_opt = tf.keras.optimizers.RMSprop(hp.get("g_lr0", 0.001))
+g_opt = keras.optimizers.RMSprop(hp.get("g_lr0", 0.001))
 hp.get("g_optimizer", g_opt.name)
 
-d_opt = tf.keras.optimizers.RMSprop(hp.get("d_lr0", 0.001))
+d_opt = keras.optimizers.RMSprop(hp.get("d_lr0", 0.001))
 hp.get("d_optimizer", d_opt.name)
 
 # +----------------------------+
@@ -281,7 +282,7 @@ if save_output:
         os.makedirs(export_model_dirname)
     if not os.path.exists(export_img_dirname):
         os.makedirs(export_img_dirname)  # need to save images
-    tf.keras.models.save_model(
+    keras.models.save_model(
         gan.generator.export_model,
         filepath=f"{export_model_dirname}/saved_generator",
         save_format="tf",
