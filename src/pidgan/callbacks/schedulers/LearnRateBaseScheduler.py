@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-K = tf.keras.backend
+K = keras.backend
 
 
 class LearnRateBaseScheduler(keras.callbacks.Callback):
@@ -52,7 +52,7 @@ class LearnRateBaseScheduler(keras.callbacks.Callback):
         return self._name
 
     @property
-    def optimizer(self) -> tf.keras.optimizers.Optimizer:
+    def optimizer(self) -> keras.optimizers.Optimizer:
         return self._optimizer
 
     @property

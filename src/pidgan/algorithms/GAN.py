@@ -9,7 +9,7 @@ MIN_LOG_VALUE = 1e-8
 MAX_LOG_VALUE = 1.0
 
 
-class GAN(tf.keras.Model):
+class GAN(keras.Model):
     def __init__(
         self,
         generator,
@@ -119,10 +119,10 @@ class GAN(tf.keras.Model):
         super().compile(weighted_metrics=[])
 
         # Loss metrics
-        self._g_loss = tf.keras.metrics.Mean(name="g_loss")
-        self._d_loss = tf.keras.metrics.Mean(name="d_loss")
+        self._g_loss = keras.metrics.Mean(name="g_loss")
+        self._d_loss = keras.metrics.Mean(name="d_loss")
         if self._referee is not None:
-            self._r_loss = tf.keras.metrics.Mean(name="r_loss")
+            self._r_loss = keras.metrics.Mean(name="r_loss")
         self._metrics = checkMetrics(metrics)
 
         # Optimizers
