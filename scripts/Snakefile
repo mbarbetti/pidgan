@@ -1,5 +1,5 @@
 #  + - - - - - -
-#  |  run with: snakemake final_rule --forceall --cores 4 --config ...
+#  |  run with: snakemake final_rule --cores 4 --config ...
 #  + - - - 
 
 import os
@@ -18,7 +18,6 @@ with open("config/directories.yml") as file:
     config_dir = yaml.full_load(file)
 
 data_dir = config_dir["data_dir"]
-logs_dir = config_dir["logs_dir"]
 models_dir = config_dir["models_dir"]
 
 wildcard_constraints:
@@ -41,7 +40,7 @@ rule gan_preprocessing:
         tY = os.path.join(models_dir, "{model}_{part}_models/tY_{sample}.pkl"),
 
     log:
-        os.path.join(logs_dir, "gan-preprocessing_{model}-{part}_{sample}.log")
+        "logs/gan-preprocessing_{model}-{part}_{sample}.log"
 
     shell:
         "python prepare_dataset.py -m {wildcards.model} -p {wildcards.part} -F '{params.data_fname}' -M {params.max_files} -C {params.chunk_size} -D {wildcards.sample} > {log}"
@@ -61,8 +60,8 @@ rule ann_preprocessing:
         tX = os.path.join(models_dir, "isMuon_{part}_models/tX_{sample}.pkl"),
 
     log:
-        os.path.join(logs_dir, "ann-preprocessing_isMuon-{part}_{sample}.log")
-
+        "logs/ann-preprocessing_isMuon-{part}_{sample}.log"
+    
     shell:
         "python prepare_dataset.py -m isMuon -p {wildcards.part} -F '{params.data_fname}' -M {params.max_files} -C {params.chunk_size} -D {wildcards.sample} > {log}"
 
@@ -100,7 +99,7 @@ rule gan_training:
         directory(os.path.join(models_dir, "{model}_{part}_models/latest_{model}GAN-{part}_{sample}_model")),
 
     log:
-        os.path.join(logs_dir, "gan-training_{model}-{part}_{sample}.log")
+        "logs/gan-training_{model}-{part}_{sample}.log"
 
     shell:
         "python train_{wildcards.model}GAN.py -p {wildcards.part} -E {params.num_epochs} -C {params.chunk_size} -T {params.train_ratio} -D {wildcards.sample} --latest > {log}"
@@ -133,7 +132,7 @@ rule ann_training:
         directory(os.path.join(models_dir, "isMuon_{part}_models/latest_isMuonANN-{part}_{sample}_model")),
 
     log:
-        os.path.join(logs_dir, "ann-training_isMuon-{part}_{sample}.log")
+        "logs/ann-training_isMuon-{part}_{sample}.log"
 
     shell:
         "python train_isMuonANN.py -p {wildcards.part} -E {params.num_epochs} -C {params.chunk_size} -T {params.train_ratio} -D {wildcards.sample} --latest > {log}"
@@ -156,12 +155,9 @@ rule final_rule:
             sample=config["data_sample"],
         ),
 
-    params:
-        logs_dir,
-
     output:
         ".all_rules_completed"
 
     shell:
-        "rm {params}/*;"
+        "rm logs/*;"
         "touch {output}"
