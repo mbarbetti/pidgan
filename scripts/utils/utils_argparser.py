@@ -106,14 +106,13 @@ def argparser_training(model, description=None) -> ArgumentParser:
         choices=DATA_SAMPLES,
         help="prepare dataset from simulated/calibration samples",
     )
-    parser.set_defaults(fullsim=True)
     parser.add_argument(
         "--weights",
         action="store_true",
-        help=f"train the {model} model using weights when available (default: True)",
+        help=f"train the {model} model using weights when available (default: False)",
     )
     parser.add_argument("--no-weights", dest="weights", action="store_false")
-    parser.set_defaults(weights=True)
+    parser.set_defaults(weights=False)
     parser.add_argument(
         "--test",
         action="store_true",
@@ -191,15 +190,14 @@ def argparser_optimization(description=None) -> ArgumentParser:
         help="ensure that the optimization study is running on GPU (default: False)",
     )
     parser.add_argument("--no-gpu", dest="gpu", action="store_false")
-    parser.set_defaults(test=False)
-    parser.set_defaults(fullsim=True)
+    parser.set_defaults(gpu=False)
     parser.add_argument(
         "--weights",
         action="store_true",
-        help="optimize the GAN model using weights when available (default: True)",
+        help="optimize the GAN model using weights when available (default: False)",
     )
     parser.add_argument("--no-weights", dest="weights", action="store_false")
-    parser.set_defaults(weights=True)
+    parser.set_defaults(weights=False)
     parser.add_argument(
         "--test",
         action="store_true",

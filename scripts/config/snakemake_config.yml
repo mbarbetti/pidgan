@@ -1,4 +1,4 @@
-data_max_files: 100
+data_max_files: 150
 prep_chunk_size: 3_000_000
 data_sample: sim10-2016MU
 num_epochs: 500

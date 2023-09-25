@@ -21,6 +21,8 @@ from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 DTYPE = np.float32
 BATCHSIZE = 512
 
+here = os.path.abspath(os.path.dirname(__file__))
+
 # +------------------+
 # |   Parser setup   |
 # +------------------+
@@ -34,7 +36,7 @@ args = parser.parse_args()
 
 hp = initHPSingleton()
 
-with open("config/directories.yml") as file:
+with open(f"{here}/config/directories.yml") as file:
     config_dir = yaml.full_load(file)
 
 data_dir = config_dir["data_dir"]
@@ -232,7 +234,7 @@ if save_output:
         filepath=f"{export_model_dirname}/saved_model",
         save_format="tf",
     )
-    print(f"[INFO] Trained model correctly exported to {export_model_dirname}")
+    print(f"[INFO] Trained model correctly exported to '{export_model_dirname}'")
     hp.dump(
         f"{export_model_dirname}/hyperparams.yml"
     )  # export also list of hyperparams
@@ -325,4 +327,4 @@ prepare_validation_plots(
 
 report_fname = f"{reports_dir}/{prefix}_train-report.html"
 report.write_report(filename=report_fname)
-print(f"[INFO] Training report correctly exported to {report_fname}")
+print(f"[INFO] Training report correctly exported to '{report_fname}'")

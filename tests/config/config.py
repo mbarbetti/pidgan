@@ -4,6 +4,11 @@ from argparse import ArgumentParser
 import yaml
 
 here = os.path.dirname(__file__)
+
+# +------------------+
+# |   Parser setup   |
+# +------------------+
+
 parser = ArgumentParser(description="tests configuration")
 
 parser.add_argument("--interactive", action="store_true")
@@ -18,15 +23,28 @@ config_hopaas = dict()
 
 args = parser.parse_args()
 
+# +----------------------+
+# |   Interactive mode   |
+# +----------------------+
+
 if args.interactive:
     server = input(f"Address of the Hopaas service (default: '{args.server}'): ")
     config_hopaas["server"] = server if not (server == "") else args.server
 
     token = input(f"API token to access the Hopaas service (default: '{args.token}'): ")
     config_hopaas["token"] = token if not (token == "") else args.token
+
+# +-----------------------+
+# |   Command line mode   |
+# +-----------------------+
+
 else:
     config_hopaas["server"] = args.server
     config_hopaas["token"] = args.token
+
+# +------------------------+
+# |   Config dict export   |
+# +------------------------+
 
 with open(f"{here}/hopaas.yml", "w") as file:
     yaml.dump(config_hopaas, file)

@@ -11,7 +11,10 @@ import yaml
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.utils import shuffle
+from tqdm import trange
 from utils.utils_argparser import argparser_preprocessing
+
+here = os.path.abspath(os.path.dirname(__file__))
 
 # +------------------+
 # |   Parser setup   |
@@ -35,7 +38,7 @@ chunk_size = int(args.chunk_size)
 indices = np.random.permutation(len(data_fnames))
 data_fnames = data_fnames[indices][:max_files]
 
-with open("config/directories.yml") as file:
+with open(f"{here}/config/directories.yml") as file:
     config_dir = yaml.full_load(file)
 
 export_data_dir = config_dir["data_dir"]
@@ -53,21 +56,23 @@ for dirname in [export_model_fname, export_img_dirname]:
 # |   Data loading   |
 # +------------------+
 
-with open("config/selections.yml") as file:
+with open(f"{here}/config/selections.yml") as file:
     selections = yaml.full_load(file)[f"{args.model}"]
 
 start = time()
 dataframes = list()
 
-for fname in data_fnames:
-    with uproot.open(fname) as file:
+for i in trange(len(data_fnames), desc="Processing data files", unit="file"):
+    with uproot.open(data_fnames[i]) as file:
         dataframes.append(
             file[f"PidTupler/pid_{args.particle}"]
             .arrays(library="pd")
             .query(" and ".join([s for s in selections]))
         )
 
-print(f"[INFO] Data from {len(data_fnames)} correctly loaded in {time()-start:.2f} s")
+print(
+    f"[INFO] Data from {len(data_fnames)} files correctly loaded in {time()-start:.2f} s"
+)
 
 df = pd.concat(dataframes, ignore_index=True).dropna()
 df = shuffle(df).reset_index(drop=True)[:chunk_size]
@@ -182,20 +187,23 @@ for var in x_features:
     max_ = df[var].values.max()
     bins = np.linspace(min_, max_, 101)
 
-    plt.figure(figsize=(8, 5), dpi=300)
-    plt.title(f"{args.model} model - {args.particle} tracks", fontsize=14)
-    plt.xlabel(f"{var}", fontsize=12)
-    plt.ylabel("Candidates", fontsize=12)
-    plt.hist(
-        df[var].values,
-        bins=bins,
-        density=False,
-        weights=df[w_var].values if args.weights else None,
-        color="#3288bd",
-        label="data",
-    )
-    plt.legend(loc="upper right", fontsize=10)
-    plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png")
+    plt.figure(figsize=(16, 5))
+
+    for i, yscale in enumerate(["linear", "log"]):
+        plt.subplot(1, 2, i + 1)
+        plt.xlabel(f"{var}", fontsize=12)
+        plt.ylabel("Candidates", fontsize=12)
+        plt.hist(
+            df[var].values,
+            bins=bins,
+            weights=df[w_var].values if args.weights else None,
+            color="#3288bd",
+            label="data",
+        )
+        plt.yscale(yscale)
+        plt.legend(title=f"{args.particle} tracks".capitalize(), fontsize=10)
+
+    plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png", dpi=300)
     plt.close()
 
 # +---------------------------------+
@@ -208,20 +216,23 @@ if args.model != "isMuon":
         max_ = df[var].values.max()
         bins = np.linspace(min_, max_, 101)
 
-        plt.figure(figsize=(8, 5), dpi=300)
-        plt.title(f"{args.model} model - {args.particle} tracks", fontsize=14)
-        plt.xlabel(f"{var}", fontsize=12)
-        plt.ylabel("Candidates", fontsize=12)
-        plt.hist(
-            df[var].values,
-            bins=bins,
-            density=False,
-            weights=df[w_var].values if args.weights else None,
-            color="#3288bd",
-            label="data",
-        )
-        plt.legend(loc="upper right", fontsize=10)
-        plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png")
+        plt.figure(figsize=(16, 5))
+
+        for i, yscale in enumerate(["linear", "log"]):
+            plt.subplot(1, 2, i + 1)
+            plt.xlabel(f"{var}", fontsize=12)
+            plt.ylabel("Candidates", fontsize=12)
+            plt.hist(
+                df[var].values,
+                bins=bins,
+                weights=df[w_var].values if args.weights else None,
+                color="#3288bd",
+                label="data",
+            )
+            plt.yscale(yscale)
+            plt.legend(title=f"{args.particle} tracks".capitalize(), fontsize=10)
+
+        plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png", dpi=300)
         plt.close()
 
 # +--------------------------+
@@ -229,20 +240,21 @@ if args.model != "isMuon":
 # +--------------------------+
 
 export_data_fname = (
-    f"{export_data_dir}/pidgan-{args.model}-{args.particle}-{args.data_sample}-data"
+    f"{export_data_dir}/pidgan-{args.model}-{args.particle}-{args.data_sample}-data.npz"
 )
-npz_fname = f"{export_data_fname}.npz"
+
 np.savez(
-    file=npz_fname,
+    file=export_data_fname,
     x=df_preprocessed[x_vars].values,
     x_vars=x_vars,
-    y=df_preprocessed[y_vars],
+    y=df_preprocessed[y_vars].values,
     y_vars=y_vars,
-    w=df_preprocessed[w_var] if args.weights else None,
+    w=df_preprocessed[w_var].values if args.weights else None,
     w_var=w_var,
 )
+
 print(
-    f"[INFO] Training data of {len(df_preprocessed)} instances correctly saved to {npz_fname}"
+    f"[INFO] Training data of {len(df_preprocessed)} instances correctly saved to '{export_data_fname}'"
 )
 
 # +---------------------------------+
@@ -251,9 +263,9 @@ print(
 
 pkl_fname = f"{export_model_fname}/tX_{args.data_sample}.pkl"
 pickle.dump(x_scaler, open(pkl_fname, "wb"))
-print(f"[INFO] Input variables scaler correctly saved to {pkl_fname}")
+print(f"[INFO] Input variables scaler correctly saved to '{pkl_fname}'")
 
 if y_scaler is not None:
     pkl_fname = f"{export_model_fname}/tY_{args.data_sample}.pkl"
     pickle.dump(y_scaler, open(pkl_fname, "wb"))
-    print(f"[INFO] Output variables scaler correctly saved to {pkl_fname}")
+    print(f"[INFO] Output variables scaler correctly saved to '{pkl_fname}'")

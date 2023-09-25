@@ -1,5 +1,5 @@
 #  + - - - - - -
-#  |  run with: snakemake final_rule --forceall --cores 4 --config ...
+#  |  run with: snakemake final_rule --cores 4 --config ...
 #  + - - - 
 
 import os

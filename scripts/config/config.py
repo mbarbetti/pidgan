@@ -3,19 +3,24 @@ from argparse import ArgumentParser
 
 import yaml
 
+current_dir = os.getcwd()
 here = os.path.dirname(__file__)
+
+# +------------------+
+# |   Parser setup   |
+# +------------------+
+
 parser = ArgumentParser(description="scripts configuration")
 
 parser.add_argument("--interactive", action="store_true")
 parser.add_argument("--no-interactive", dest="interactive", action="store_false")
 parser.set_defaults(interactive=True)
 
-parser.add_argument("-D", "--data_dir", default="data")
-parser.add_argument("-L", "--logs_dir", default="logs")
-parser.add_argument("-M", "--models_dir", default="models")
-parser.add_argument("-I", "--images_dir", default="images")
-parser.add_argument("-R", "--reports_dir", default="html")
-parser.add_argument("-E", "--exports_dir", default="exports")
+parser.add_argument("-D", "--data_dir", default=f"{current_dir}/data")
+parser.add_argument("-M", "--models_dir", default=f"{current_dir}/models")
+parser.add_argument("-I", "--images_dir", default=f"{current_dir}/images")
+parser.add_argument("-R", "--reports_dir", default=f"{current_dir}/html")
+parser.add_argument("-E", "--exports_dir", default=f"{current_dir}/exports")
 config_dir = dict()
 
 parser.add_argument(
@@ -26,12 +31,13 @@ config_hopaas = dict()
 
 args = parser.parse_args()
 
+# +----------------------+
+# |   Interactive mode   |
+# +----------------------+
+
 if args.interactive:
     data_dir = input(f"Path for the data directory (default: '{args.data_dir}'): ")
     config_dir["data_dir"] = data_dir if not (data_dir == "") else args.data_dir
-
-    logs_dir = input(f"Path for the logs directory (default: '{args.logs_dir}'): ")
-    config_dir["logs_dir"] = logs_dir if not (logs_dir == "") else args.logs_dir
 
     models_dir = input(
         f"Path for the models directory (default: '{args.models_dir}'): "
@@ -62,9 +68,13 @@ if args.interactive:
 
     token = input(f"API token to access the Hopaas service (default: '{args.token}'): ")
     config_hopaas["token"] = token if not (token == "") else args.token
+
+# +-----------------------+
+# |   Command line mode   |
+# +-----------------------+
+
 else:
     config_dir["data_dir"] = args.data_dir
-    config_dir["logs_dir"] = args.logs_dir
     config_dir["models_dir"] = args.models_dir
     config_dir["images_dir"] = args.images_dir
     config_dir["reports_dir"] = args.reports_dir
@@ -72,6 +82,10 @@ else:
 
     config_hopaas["server"] = args.server
     config_hopaas["token"] = args.token
+
+# +------------------------+
+# |   Config dict export   |
+# +------------------------+
 
 with open(f"{here}/directories.yml", "w") as file:
     yaml.dump(config_dir, file)
