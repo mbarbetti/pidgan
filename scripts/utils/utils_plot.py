@@ -63,6 +63,7 @@ def learning_curves(
     plt.legend(loc=legend_loc, fontsize=10)
     if save_figure:
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=45%")
     plt.close()
 
@@ -100,6 +101,7 @@ def learn_rate_scheduling(
     plt.yscale("log")
     if save_figure:
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=45%")
     plt.close()
 
@@ -147,6 +149,7 @@ def metric_curves(
     plt.yscale(yscale)
     if save_figure:
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=45%")
     plt.close()
 
@@ -197,6 +200,7 @@ def validation_histogram(
     plt.legend(loc=legend_loc, fontsize=10)
     if save_figure:
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=45%")
     plt.close()
 
@@ -255,6 +259,7 @@ def correlation_histogram(
         if log_scale:
             export_fname += "-log"
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=95%")
     plt.close()
 
@@ -337,6 +342,7 @@ def binned_validation_histogram(
         if log_scale:
             export_fname += "-log"
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=45%")
     plt.close()
 
@@ -420,6 +426,7 @@ def selection_efficiency(
 
     if save_figure:
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=95%")
     plt.close()
 
@@ -476,6 +483,7 @@ def validation_2d_histogram(
         if log_scale:
             export_fname += "-log"
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=95%")
     plt.close()
 
@@ -633,5 +641,6 @@ def identification_efficiency(
 
     if save_figure:
         plt.savefig(f"{export_fname}.png")
+        print(f"[INFO] Figure correctly exported to '{export_fname}.png'")
     report.add_figure(options="width=75%")
     plt.close()

@@ -160,16 +160,11 @@ def argparser_optimization(description=None) -> ArgumentParser:
         help="name given to the computing node that runs the optimization study (default: IP address)",
     )
     parser.add_argument(
-        "-S",
-        "--min_score_for_report",
-        default=0.1,
-        help="minimum optimization score to produce the HTML report (default: 0.1)",
-    )
-    parser.add_argument(
-        "-C",
-        "--chunk_size",
-        default=-1,
-        help="maximum number of instancens to be used for a trial of training/validation (default: -1)",
+        "-D",
+        "--data_sample",
+        required=True,
+        choices=DATA_SAMPLES,
+        help="prepare dataset from simulated/calibration samples",
     )
     parser.add_argument(
         "-T",
@@ -178,11 +173,10 @@ def argparser_optimization(description=None) -> ArgumentParser:
         help="fraction of instances to be used for a trial of training (default: 0.7)",
     )
     parser.add_argument(
-        "-D",
-        "--data_sample",
-        required=True,
-        choices=DATA_SAMPLES,
-        help="prepare dataset from simulated/calibration samples",
+        "-S",
+        "--min_score_for_report",
+        default=0.1,
+        help="minimum optimization score to produce the HTML report (default: 0.1)",
     )
     parser.add_argument(
         "--gpu",
