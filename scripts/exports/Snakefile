@@ -20,7 +20,6 @@ with open("../config/directories.yml") as file:
 
 models_dir = config_dir["models_dir"]
 exports_dir = config_dir["exports_dir"]
-logs_dir = "logs"
 
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
@@ -44,7 +43,7 @@ rule deploy_gan_models:
         temp("/tmp/{model}-{part}_{sample}_{label}-gan.C"),
 
     log:
-        os.path.join(logs_dir, "deploy-gan-models_{model}-{part}_{sample}_{label}.log"),
+        "logs/deploy-gan-models_{model}-{part}_{sample}_{label}.log"
 
     shell:
         "python deploy_gan_models.py -m {wildcards.model} -p {wildcards.part} -D {wildcards.sample} -M {input} > {log}"
@@ -61,7 +60,7 @@ rule deploy_ann_models:
         temp("/tmp/isMuon-{part}_{sample}_{label}-ann.C"),
 
     log:
-        os.path.join(logs_dir, "deploy-ann-models_isMuon-{part}_{sample}_{label}.log"),
+        "logs/deploy-ann-models_isMuon-{part}_{sample}_{label}.log"
 
     shell:
         "python deploy_ann_models.py -m isMuon -p {wildcards.part} -D {wildcards.sample} -M {input} > {log}"
@@ -96,7 +95,7 @@ rule compile_full_pipes:
         flags = GCC_FLAGS,
 
     log:
-        os.path.join(logs_dir, "compile-full-pipes_{sample}_{label}.log"),
+        "logs/compile-full-pipes_{sample}_{label}.log"
 
     shell:
         "gcc {params.flags} -o {output} {input} > {log}"
@@ -114,7 +113,7 @@ rule test_transpilation:
         min_percentage = config["min_percentage"],
 
     log:
-        os.path.join(logs_dir, "test-transpilation_{part}_{sample}_{label}.log"),
+        "logs/test-transpilation_{part}_{sample}_{label}.log"
 
     shell:
         "python tests/test.py -o {input} -p {wildcards.part} -D {wildcards.sample} -E {params.max_rel_err} -P {params.min_percentage} > {log}"
@@ -138,12 +137,9 @@ rule final_rule:
             label=config["label"],
         )
 
-    params:
-        logs_dir = logs_dir,
-
     output:
         ".all_rules_completed"
 
     shell:
-        "rm {params.logs_dir}/*;"
+        "rm logs/*;"
         "touch {output}"
