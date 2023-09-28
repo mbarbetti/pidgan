@@ -1,4 +1,3 @@
 tensorflow>=2.7
 scikit-learn>=1.0
 #hopaas_client   # to be released on PyPI
-pyyaml

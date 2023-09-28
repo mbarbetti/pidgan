@@ -38,16 +38,18 @@ dependencies = [
   "tensorflow>=2.7",
   "scikit-learn>=1.0",
   # "hopaas-client",   # to be released on PyPI
-  "pyyaml"
 ]
 
 [project.optional-dependencies]
 lamarr = [
   "numpy",
+  "scipy",
   "pandas",
   "uproot",
+  "scikinC>=0.2.6",
   "matplotlib",
   "html-reports>=0.2",
+  "pyyaml",
 ]
 style = [
   "black",
@@ -57,6 +59,7 @@ style = [
 tests = [
   "pytest>=6.0",
   "pytest-cov",
+  "pyyaml",
 ]
 
 [project.urls]
