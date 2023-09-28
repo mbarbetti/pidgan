@@ -1,5 +1,5 @@
 debug: False
 label: latest
 data_sample: sim10-2016MU
-max_rel_err: 0.001
-min_percentage: 95.0
+max_q_err: 0.005
+err_patience: 1.0  # percentage [%]

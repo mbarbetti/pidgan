@@ -5,7 +5,7 @@
 import os
 import yaml
 
-MODELS = ["Rich", "Muon", "GlobalMuonId", "GlobalPID"]
+MODELS = ["Rich", "Muon", "GlobalPIDmu", "GlobalPIDh"] 
 PARTS = ["muon", "pion", "kaon", "proton"]
 GCC_FLAGS = ["-O3", "-lm", "--shared", "-fPIC"]
 
@@ -20,9 +20,6 @@ with open("../config/directories.yml") as file:
 
 models_dir = config_dir["models_dir"]
 exports_dir = config_dir["exports_dir"]
-
-if not os.path.exists(logs_dir):
-    os.makedirs(logs_dir)
 
 if config["debug"]:
     GCC_FLAGS.append("-DDEBUG")
@@ -109,14 +106,14 @@ rule test_transpilation:
         os.path.join(exports_dir, "CompiledModel_{sample}_{label}.so"),
 
     params:
-        max_rel_err = config["max_rel_err"],
-        min_percentage = config["min_percentage"],
+        max_q_err = config["max_q_err"],
+        err_patience = config["err_patience"],
 
     log:
         "logs/test-transpilation_{part}_{sample}_{label}.log"
 
     shell:
-        "python tests/test.py -o {input} -p {wildcards.part} -D {wildcards.sample} -E {params.max_rel_err} -P {params.min_percentage} > {log}"
+        "python tests/test.py -o {input} -p {wildcards.part} -D {wildcards.sample} -E {params.max_q_err} -P {params.err_patience} --figure > {log}"
 
 
 # +------------------+
@@ -131,7 +128,7 @@ rule final_rule:
             label=config["label"],
         ),
         expand(
-            os.path.join(logs_dir, "test-transpilation_{part}_{sample}_{label}.log"),
+            "logs/test-transpilation_{part}_{sample}_{label}.log",
             part=PARTS,
             sample=config["data_sample"],
             label=config["label"],
@@ -141,5 +138,4 @@ rule final_rule:
         ".all_rules_completed"
 
     shell:
-        "rm logs/*;"
         "touch {output}"

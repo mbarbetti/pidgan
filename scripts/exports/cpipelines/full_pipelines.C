@@ -13,12 +13,12 @@
 #define N_INPUT_MUON 4
 #endif 
 
-#ifndef N_INPUT_GLOBALPID
-#define N_INPUT_GLOBALPID 11
-#endif 
+#ifndef N_INPUT_GLOBALPID_MU  // MU: isMuon is True
+#define N_INPUT_GLOBALPID_MU 10
+#endif
 
-#ifndef N_INPUT_GLOBALMUONID
-#define N_INPUT_GLOBALMUONID 10
+#ifndef N_INPUT_GLOBALPID_HAD  // HAD: isMuon is False
+#define N_INPUT_GLOBALPID_HAD 8
 #endif 
 
 #ifndef N_OUTPUT_RICH
@@ -29,12 +29,12 @@
 #define N_OUTPUT_MUON 2
 #endif 
 
-#ifndef N_OUTPUT_GLOBALPID
-#define N_OUTPUT_GLOBALPID 7
+#ifndef N_OUTPUT_GLOBALPID_MU
+#define N_OUTPUT_GLOBALPID_MU 9
 #endif 
 
-#ifndef N_OUTPUT_GLOBALMUONID
-#define N_OUTPUT_GLOBALMUONID 2
+#ifndef N_OUTPUT_GLOBALPID_HAD
+#define N_OUTPUT_GLOBALPID_HAD 8
 #endif 
 
 #ifndef N_RANDOM_RICH
@@ -45,20 +45,24 @@
 #define N_RANDOM_MUON 64
 #endif 
 
-#ifndef N_RANDOM_GLOBALPID
-#define N_RANDOM_GLOBALPID 64
+#ifndef N_RANDOM_GLOBALPID_MU
+#define N_RANDOM_GLOBALPID_MU 64
 #endif 
 
-#ifndef N_RANDOM_GLOBALMUONID
-#define N_RANDOM_GLOBALMUONID 64
+#ifndef N_RANDOM_GLOBALPID_HAD
+#define N_RANDOM_GLOBALPID_HAD 64
 #endif 
 
 #ifndef N_OUTPUT
 #define N_OUTPUT 15
 #endif 
 
-#ifndef MUON_ERRORCODE
-#define MUON_ERRORCODE -1000
+#ifndef MUONLL_ERRORCODE
+#define MUONLL_ERRORCODE -1000
+#endif
+
+#ifndef PROBMU_ERRORCODE
+#define PROBMU_ERRORCODE -1
 #endif
 
 #ifdef DEBUG
@@ -98,37 +102,37 @@ extern "C" FLOAT_T* Muon_proton_tX                  (FLOAT_T *, const FLOAT_T *)
 extern "C" FLOAT_T* Muon_proton_tY_inverse          (FLOAT_T *, const FLOAT_T *);
 extern "C" FLOAT_T* Muon_proton_dnn                 (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalPID_muon_tX               (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_muon_tY_inverse       (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_muon_dnn              (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_muon_tX             (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_muon_tY_inverse     (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_muon_dnn            (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalPID_pion_tX               (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_pion_tY_inverse       (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_pion_dnn              (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_pion_tX             (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_pion_tY_inverse     (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_pion_dnn            (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalPID_kaon_tX               (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_kaon_tY_inverse       (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_kaon_dnn              (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_kaon_tX             (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_kaon_tY_inverse     (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_kaon_dnn            (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalPID_proton_tX             (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_proton_tY_inverse     (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalPID_proton_dnn            (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_proton_tX           (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_proton_tY_inverse   (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDmu_proton_dnn          (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalMuonId_muon_tX            (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_muon_tY_inverse    (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_muon_dnn           (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_muon_tX              (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_muon_tY_inverse      (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_muon_dnn             (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalMuonId_pion_tX            (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_pion_tY_inverse    (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_pion_dnn           (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_pion_tX              (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_pion_tY_inverse      (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_pion_dnn             (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalMuonId_kaon_tX            (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_kaon_tY_inverse    (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_kaon_dnn           (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_kaon_tX              (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_kaon_tY_inverse      (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_kaon_dnn             (FLOAT_T *, const FLOAT_T *);
 
-extern "C" FLOAT_T* GlobalMuonId_proton_tX          (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_proton_tY_inverse  (FLOAT_T *, const FLOAT_T *);
-extern "C" FLOAT_T* GlobalMuonId_proton_dnn         (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_proton_tX            (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_proton_tY_inverse    (FLOAT_T *, const FLOAT_T *);
+extern "C" FLOAT_T* GlobalPIDh_proton_dnn           (FLOAT_T *, const FLOAT_T *);
 
 typedef FLOAT_T* (*mlfun) (FLOAT_T *, const FLOAT_T *); 
 
@@ -174,14 +178,14 @@ FLOAT_T* gan_pipe ( mlfun tX               ,
 
 
 extern "C"
-FLOAT_T* GenericPipe ( FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *random ,
-                       mlfun richTx,  mlfun richModel,  mlfun richTy  , 
-                       mlfun muonTx,  mlfun muonModel,  mlfun muonTy  , 
-                       mlfun gpidTx,  mlfun gpidModel,  mlfun gpidTy  , 
-                       mlfun gmuidTx, mlfun gmuidModel, mlfun gmuidTy )
+FLOAT_T* GenericPipe ( FLOAT_T* output , const FLOAT_T *input , const FLOAT_T *random ,
+                       mlfun richTx   , mlfun richModel   , mlfun richTy   , 
+                       mlfun muonTx   , mlfun muonModel   , mlfun muonTy   , 
+                       mlfun gpidmuTx , mlfun gpidmuModel , mlfun gpidmuTy ,
+                       mlfun gpidhTx  , mlfun gpidhModel  , mlfun gpidhTy  )
 {
     short i, j;
-    float isMuon;
+    FLOAT_T isMuon;
 
     // Split the random array into four sub arrays
     j = 0; 
@@ -190,7 +194,7 @@ FLOAT_T* GenericPipe ( FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *ran
     const FLOAT_T* r1 = random + j;
     j += N_RANDOM_MUON; 
     const FLOAT_T* r2 = random + j;
-    j += N_RANDOM_GLOBALPID; 
+    j += N_RANDOM_GLOBALPID_MU; 
     const FLOAT_T* r3 = random + j;
 
     // Rich
@@ -213,20 +217,22 @@ FLOAT_T* GenericPipe ( FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *ran
                r0            ,
                N_INPUT_RICH  ,
                N_OUTPUT_RICH ,
-               N_RANDOM_RICH ); 
+               N_RANDOM_RICH );
 
-    // Muon
-    FLOAT_T muoninput [N_INPUT_MUON];
-    FLOAT_T muondll [N_OUTPUT_MUON];
-    for (i = 0; i < N_INPUT_MUON; ++i)
-        muoninput[i] = input[i]; 
-
-    #ifdef DEBUG
-    printf (" === MUON === \n");
-    #endif
     isMuon = input[N_INPUT_RICH];
 
     if (isMuon > 0.5){
+
+        // Muon
+        FLOAT_T muoninput [N_INPUT_MUON];
+        FLOAT_T muondll [N_OUTPUT_MUON];
+        for (i = 0; i < N_INPUT_MUON; ++i)
+            muoninput[i] = input[i]; 
+    
+        #ifdef DEBUG
+        printf (" === MUON === \n");
+        #endif
+
         gan_pipe ( muonTx        ,
                    muonModel     ,
                    muonTy        ,
@@ -236,87 +242,95 @@ FLOAT_T* GenericPipe ( FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *ran
                    N_INPUT_RICH  ,
                    N_OUTPUT_RICH ,
                    N_RANDOM_RICH );
-    }
-    else
+
+        // Global PID (muon)
+        FLOAT_T gpidmu_input [N_INPUT_GLOBALPID_MU];
+        FLOAT_T gpidmu_output [N_OUTPUT_GLOBALPID_MU];
+        j = 0;
+
+        // p, eta, nTracks, charge
+        for (i = 0; i < N_INPUT_RICH; ++i)
+            gpidmu_input[j++] = input[i]; 
+
+        // dlle, dllmu, dllk, dllp
+        for (i = 0; i < N_OUTPUT_RICH; ++i)
+            gpidmu_input[j++] = richdll[i];
+
+        // mullmu, mullbg
         for (i = 0; i < N_OUTPUT_MUON; ++i)
-            muondll[i] = MUON_ERRORCODE; 
+            gpidmu_input[j++] = muondll[i]; 
 
-    // Global PID
-    FLOAT_T gpid_input [N_INPUT_GLOBALPID];
-    FLOAT_T gpid_output [N_OUTPUT_GLOBALPID];
-    j = 0;
+        #ifdef DEBUG
+        printf (" === GLOBAL PID MUON === \n");
+        #endif
 
-    // p, eta, nTracks, charge
-    for (i = 0; i < N_INPUT_RICH; ++i)
-        gpid_input[j++] = input[i]; 
+        gan_pipe ( gpidmuTx              ,
+                   gpidmuModel           ,
+                   gpidmuTy              ,
+                   gpidmu_output         ,
+                   gpidmu_input          ,
+                   r2                    ,
+                   N_INPUT_GLOBALPID_MU  ,
+                   N_OUTPUT_GLOBALPID_MU ,
+                   N_RANDOM_GLOBALPID_MU ); 
     
-    // dlle, dllmu, dllk, dllp
-    for (i = 0; i < N_OUTPUT_RICH; ++i)
-        gpid_input[j++] = richdll[i]; 
+        // Format output 
+        j = 0;
+        for (i = 0; i < N_OUTPUT_RICH; ++i)
+            output[j++] = richdll[i]; 
 
-    // isMuon 
-    gpid_input[j++] = isMuon; 
+        for (i = 0; i < N_OUTPUT_MUON; ++i)
+            output[j++] = muondll[i]; 
 
-    // mullmu, mullbg
-    for (i = 0; i < N_OUTPUT_MUON; ++i)
-        gpid_input[j++] = muondll[i];
+        for (i = 0; i < N_OUTPUT_GLOBALPID_MU; ++i)
+            output[j++] = gpidmu_output[i];
 
-    #ifdef DEBUG
-    printf (" === GLOBAL PID === \n");
-    #endif
-    gan_pipe ( gpidTx             ,
-               gpidModel          ,
-               gpidTy             ,
-               gpid_output        ,
-               gpid_input         ,
-               r2                 ,
-               N_INPUT_GLOBALPID  ,
-               N_OUTPUT_GLOBALPID ,
-               N_RANDOM_GLOBALPID ); 
- 
-    // Global Muon ID
-    FLOAT_T gmuid_input [N_INPUT_GLOBALMUONID];
-    FLOAT_T gmuid_output [N_OUTPUT_GLOBALMUONID];
-    j = 0;
+    }
+    else {
 
-    // p, eta, nTracks, charge
-    for (i = 0; i < N_INPUT_RICH; ++i)
-        gmuid_input[j++] = input[i]; 
+        // Global PID (hadron)
+        FLOAT_T gpidh_input [N_INPUT_GLOBALPID_HAD];
+        FLOAT_T gpidh_output [N_OUTPUT_GLOBALPID_HAD];
+        j = 0;
+
+        // p, eta, nTracks, charge
+        for (i = 0; i < N_INPUT_RICH; ++i)
+            gpidh_input[j++] = input[i]; 
+
+        // dlle, dllmu, dllk, dllp
+        for (i = 0; i < N_OUTPUT_RICH; ++i)
+            gpidh_input[j++] = richdll[i];
+
+        #ifdef DEBUG
+        printf (" === GLOBAL PID HADRON === \n");
+        #endif
+
+        gan_pipe ( gpidhTx              ,
+                   gpidhModel           ,
+                   gpidhTy              ,
+                   gpidh_output         ,
+                   gpidh_input          ,
+                   r3                    ,
+                   N_INPUT_GLOBALPID_HAD  ,
+                   N_OUTPUT_GLOBALPID_HAD ,
+                   N_RANDOM_GLOBALPID_HAD ); 
     
-    // dlle, dllmu, dllk, dllp
-    for (i = 0; i < N_OUTPUT_RICH; ++i)
-        gmuid_input[j++] = richdll[i]; 
+        // Format output 
+        j = 0;
+        for (i = 0; i < N_OUTPUT_RICH; ++i)
+            output[j++] = richdll[i]; 
 
-    // mullmu, mullbg
-    for (i = 0; i < N_OUTPUT_MUON; ++i)
-        gmuid_input[j++] = muondll[i]; 
+        for (i = 0; i < N_OUTPUT_MUON; ++i)
+            output[j++] = MUONLL_ERRORCODE;
 
-    #ifdef DEBUG
-    printf (" === GLOBAL MUON ID === \n");
-    #endif
-    gan_pipe ( gmuidTx               ,
-               gmuidModel            ,
-               gmuidTy               ,
-               gmuid_output          ,
-               gmuid_input           ,
-               r3                    ,
-               N_INPUT_GLOBALMUONID  ,
-               N_OUTPUT_GLOBALMUONID ,
-               N_RANDOM_GLOBALMUONID ); 
-  
-    // Format output 
-    j = 0;
-    for (i = 0; i < N_OUTPUT_RICH; ++i)
-        output[j++] = richdll[i]; 
+        for (i = 0; i < N_OUTPUT_GLOBALPID_HAD; ++i)
+            output[j++] = gpidh_output[i];
 
-    for (i = 0; i < N_OUTPUT_MUON; ++i)
-        output[j++] = muondll[i]; 
-    
-    for (i = 0; i < N_OUTPUT_GLOBALPID; ++i)
-        output[j++] = gpid_output[i]; 
+        for (i = N_OUTPUT_GLOBALPID_HAD; i < N_OUTPUT_GLOBALPID_MU; ++i)
+            output[j++] = PROBMU_ERRORCODE;
 
-    for (i = 0; i < N_OUTPUT_GLOBALMUONID; ++i)
-        output[j++] = gmuid_output[i];
+    }
+
     #ifdef DEBUG
     printf (" === OUTPUT === \n");
     for (i = 0; i < N_OUTPUT; ++i)
@@ -342,10 +356,10 @@ FLOAT_T* full_muon_pipe (FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *r
     #endif 
 
     return GenericPipe ( output , input , random ,
-                         Rich_muon_tX         , Rich_muon_dnn         , Rich_muon_tY_inverse         ,
-                         Muon_muon_tX         , Muon_muon_dnn         , Muon_muon_tY_inverse         ,
-                         GlobalPID_muon_tX    , GlobalPID_muon_dnn    , GlobalPID_muon_tY_inverse    ,
-                         GlobalMuonId_muon_tX , GlobalMuonId_muon_dnn , GlobalMuonId_muon_tY_inverse ); 
+                         Rich_muon_tX        , Rich_muon_dnn        , Rich_muon_tY_inverse        ,
+                         Muon_muon_tX        , Muon_muon_dnn        , Muon_muon_tY_inverse        ,
+                         GlobalPIDmu_muon_tX , GlobalPIDmu_muon_dnn , GlobalPIDmu_muon_tY_inverse ,
+                         GlobalPIDh_muon_tX  , GlobalPIDh_muon_dnn  , GlobalPIDh_muon_tY_inverse  ); 
 }
 
 
@@ -364,10 +378,10 @@ FLOAT_T* full_pion_pipe (FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *r
     #endif 
 
     return GenericPipe ( output , input , random ,
-                         Rich_pion_tX         , Rich_pion_dnn         , Rich_pion_tY_inverse         ,
-                         Muon_pion_tX         , Muon_pion_dnn         , Muon_pion_tY_inverse         ,
-                         GlobalPID_pion_tX    , GlobalPID_pion_dnn    , GlobalPID_pion_tY_inverse    ,
-                         GlobalMuonId_pion_tX , GlobalMuonId_pion_dnn , GlobalMuonId_pion_tY_inverse ); 
+                         Rich_pion_tX        , Rich_pion_dnn        , Rich_pion_tY_inverse        ,
+                         Muon_pion_tX        , Muon_pion_dnn        , Muon_pion_tY_inverse        ,
+                         GlobalPIDmu_pion_tX , GlobalPIDmu_pion_dnn , GlobalPIDmu_pion_tY_inverse ,
+                         GlobalPIDh_pion_tX  , GlobalPIDh_pion_dnn  , GlobalPIDh_pion_tY_inverse  ); 
 }
 
 
@@ -386,10 +400,10 @@ FLOAT_T* full_kaon_pipe (FLOAT_T* output, const FLOAT_T *input, const FLOAT_T *r
     #endif 
 
     return GenericPipe ( output , input , random ,
-                         Rich_kaon_tX         , Rich_kaon_dnn         , Rich_kaon_tY_inverse         ,
-                         Muon_kaon_tX         , Muon_kaon_dnn         , Muon_kaon_tY_inverse         ,
-                         GlobalPID_kaon_tX    , GlobalPID_kaon_dnn    , GlobalPID_kaon_tY_inverse    ,
-                         GlobalMuonId_kaon_tX , GlobalMuonId_kaon_dnn , GlobalMuonId_kaon_tY_inverse ); 
+                         Rich_kaon_tX        , Rich_kaon_dnn        , Rich_kaon_tY_inverse        ,
+                         Muon_kaon_tX        , Muon_kaon_dnn        , Muon_kaon_tY_inverse        ,
+                         GlobalPIDmu_kaon_tX , GlobalPIDmu_kaon_dnn , GlobalPIDmu_kaon_tY_inverse ,
+                         GlobalPIDh_kaon_tX  , GlobalPIDh_kaon_dnn  , GlobalPIDh_kaon_tY_inverse  ); 
 }
 
 
@@ -408,8 +422,8 @@ FLOAT_T* full_proton_pipe (FLOAT_T* output, const FLOAT_T *input, const FLOAT_T 
     #endif 
 
     return GenericPipe ( output , input , random ,
-                         Rich_proton_tX         , Rich_proton_dnn         , Rich_proton_tY_inverse         ,
-                         Muon_proton_tX         , Muon_proton_dnn         , Muon_proton_tY_inverse         ,
-                         GlobalPID_proton_tX    , GlobalPID_proton_dnn    , GlobalPID_proton_tY_inverse    ,
-                         GlobalMuonId_proton_tX , GlobalMuonId_proton_dnn , GlobalMuonId_proton_tY_inverse ); 
+                         Rich_proton_tX        , Rich_proton_dnn        , Rich_proton_tY_inverse        ,
+                         Muon_proton_tX        , Muon_proton_dnn        , Muon_proton_tY_inverse        ,
+                         GlobalPIDmu_proton_tX , GlobalPIDmu_proton_dnn , GlobalPIDmu_proton_tY_inverse ,
+                         GlobalPIDh_proton_tX  , GlobalPIDh_proton_dnn  , GlobalPIDh_proton_tY_inverse  ); 
 }

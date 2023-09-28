@@ -3,7 +3,8 @@ import pickle
 import numpy as np
 from tensorflow import keras
 
-MUON_ERRORCODE = -1000.0
+MUONLL_ERRORCODE = -1000.0
+PROBMU_ERRORCODE = -1.0
 
 
 class GanPipe:
@@ -39,8 +40,8 @@ class FullPipe:
     def __init__(self, ml_pipes):
         self._rich = ml_pipes["Rich"]
         self._muon = ml_pipes["Muon"]
-        self._gpid = ml_pipes["GlobalPID"]
-        self._gmuid = ml_pipes["GlobalMuonId"]
+        self._gpidmu = ml_pipes["GlobalPIDmu"]
+        self._gpidh = ml_pipes["GlobalPIDh"]
 
     def predict(self, x, rnd_noise, ismuon_flag, batch_size=None):
         rich_out = self._rich.predict(
@@ -49,16 +50,22 @@ class FullPipe:
         muon_out = self._muon.predict(
             x, rnd_noise=rnd_noise[:, 0o100:0o200], batch_size=batch_size
         )
-        muon_out = np.where(ismuon_flag > 0.0, muon_out, MUON_ERRORCODE)
-        gpid_out = self._gpid.predict(
-            np.concatenate([x, rich_out, ismuon_flag, muon_out], axis=1),
+        gpidmu_out = self._gpidmu.predict(
+            np.concatenate([x, rich_out, muon_out], axis=1),
             rnd_noise=rnd_noise[:, 0o200:0o300],
             batch_size=batch_size,
         )
-        gmuid_out = self._gmuid.predict(
-            np.concatenate([x, rich_out, muon_out], axis=1),
+        gpidh_out = self._gpidh.predict(
+            np.concatenate([x, rich_out], axis=1),
             rnd_noise=rnd_noise[:, 0o300:0o400],
             batch_size=batch_size,
         )
-        full_out = np.concatenate([rich_out, muon_out, gpid_out, gmuid_out], axis=1)
+        full_mu = np.c_[rich_out, muon_out, gpidmu_out]
+        full_h = np.c_[
+            rich_out,
+            np.full_like(muon_out, MUONLL_ERRORCODE),
+            gpidh_out,
+            np.full(len(rich_out), PROBMU_ERRORCODE),
+        ]
+        full_out = np.where(ismuon_flag > 0.5, full_mu, full_h)
         return full_out

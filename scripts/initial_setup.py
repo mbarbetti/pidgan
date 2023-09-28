@@ -34,8 +34,8 @@ for key in ["models_dir", "images_dir", "reports_dir"]:
         os.makedirs(opt_dir)
         log_message(opt_dir)
 
-# Directories for logs
-for logs_dir in [f"{here}/logs", f"{here}/exports/logs"]:
-    if not os.path.exists(logs_dir):
-        os.makedirs(logs_dir)
-        log_message(logs_dir)
+# Directories for logs and tests
+for dir_ in [f"{here}/logs", f"{here}/exports/logs", f"{here}/exports/images"]:
+    if not os.path.exists(dir_):
+        os.makedirs(dir_)
+        log_message(dir_)

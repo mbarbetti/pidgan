@@ -63,4 +63,7 @@ models_to_deploy = {f"{args.model}_{args.particle}_pipe": pipe}
 label = f"{args.model_dir}".split("/")[-1].split("_")[0]
 c_fname = f"{args.model}-{args.particle}_{args.data_sample}_{label}-ann.C"
 
-print(scikinC.convert(models_to_deploy), file=open(f"/tmp/{c_fname}", "w"))
+print(
+    scikinC.convert(models_to_deploy, float_t="float"),
+    file=open(f"/tmp/{c_fname}", "w"),
+)

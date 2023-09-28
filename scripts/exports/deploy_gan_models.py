@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import scikinC
 from tensorflow import keras
 
-MODELS = ["Rich", "Muon", "GlobalPID", "GlobalMuonId"]
+MODELS = ["Rich", "Muon", "GlobalPIDmu", "GlobalPIDh"]
 PARTICLES = ["muon", "pion", "kaon", "proton"]
 DATA_SAMPLES = [f"{s}-2016MU" for s in ["sim9", "sim10", "calib"]]
 
@@ -66,4 +66,7 @@ models_to_deploy[f"{args.model}_{args.particle}_tY"] = y_scaler
 label = f"{args.model_dir}".split("/")[-1].split("_")[0]
 c_fname = f"{args.model}-{args.particle}_{args.data_sample}_{label}-gan.C"
 
-print(scikinC.convert(models_to_deploy), file=open(f"/tmp/{c_fname}", "w"))
+print(
+    scikinC.convert(models_to_deploy, float_t="float"),
+    file=open(f"/tmp/{c_fname}", "w"),
+)
