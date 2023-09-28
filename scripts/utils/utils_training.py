@@ -180,7 +180,7 @@ def prepare_validation_plots(
             new_y_pred = y_pred[:, idx_mu] - y_pred[:, idx_bg]
             y_pred = np.c_[y_pred, new_y_pred]
             y_vars += ["MuonLL"]
-        elif model == "GlobalPID":
+        elif "GlobalPID" in model:
             idx_p = y_vars.index("PIDp")
             idx_k = y_vars.index("PIDK")
             new_y_true = y_true[:, idx_p] - y_true[:, idx_k]

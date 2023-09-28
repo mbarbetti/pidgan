@@ -1,7 +1,7 @@
 import socket
 from argparse import ArgumentParser
 
-MODELS = ["Rich", "Muon", "GlobalPID", "GlobalMuonId", "isMuon"]
+MODELS = ["Rich", "Muon", "GlobalPIDmu", "GlobalPIDh", "isMuon"]
 PARTICLES = ["muon", "pion", "kaon", "proton"]
 DATA_SAMPLES = [f"{s}-2016MU" for s in ["sim9", "sim10", "calib"]]
 ADDRESS = socket.gethostbyname(socket.gethostname())

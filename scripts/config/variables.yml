@@ -24,7 +24,7 @@ Muon:
   w:
     - probe_sWeight
 
-GlobalPID:
+GlobalPIDmu:
   x:
     - probe_Brunel_P
     - probe_Brunel_ETA
@@ -34,7 +34,6 @@ GlobalPID:
     - probe_Brunel_RichDLLmu
     - probe_Brunel_RichDLLk
     - probe_Brunel_RichDLLp
-    - probe_Brunel_isMuon
     - probe_Brunel_MuonMuLL
     - probe_Brunel_MuonBgLL
   y:
@@ -45,10 +44,12 @@ GlobalPID:
     - probe_Brunel_MC15TuneV1_ProbNNpi
     - probe_Brunel_MC15TuneV1_ProbNNk
     - probe_Brunel_MC15TuneV1_ProbNNp
+    - probe_Brunel_PIDmu
+    - probe_Brunel_MC15TuneV1_ProbNNmu
   w:
     - probe_sWeight
 
-GlobalMuonId:
+GlobalPIDh:
   x:
     - probe_Brunel_P
     - probe_Brunel_ETA
@@ -58,11 +59,16 @@ GlobalMuonId:
     - probe_Brunel_RichDLLmu
     - probe_Brunel_RichDLLk
     - probe_Brunel_RichDLLp
-    - probe_Brunel_MuonMuLL
-    - probe_Brunel_MuonBgLL
+
   y:
+    - probe_Brunel_PIDe
+    - probe_Brunel_PIDK
+    - probe_Brunel_PIDp
+    - probe_Brunel_MC15TuneV1_ProbNNe
+    - probe_Brunel_MC15TuneV1_ProbNNpi
+    - probe_Brunel_MC15TuneV1_ProbNNk
+    - probe_Brunel_MC15TuneV1_ProbNNp
     - probe_Brunel_PIDmu
-    - probe_Brunel_MC15TuneV1_ProbNNmu
   w:
     - probe_sWeight
 

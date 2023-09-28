@@ -30,7 +30,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 # +------------------+
 
 parser = argparser_training(
-    model="GlobalMuonId", description="GlobalMuonIdGAN training setup"
+    model="GlobalPIDh", description="GlobalPIDhGAN training setup"
 )
 args = parser.parse_args()
 
@@ -57,7 +57,7 @@ train_ratio = float(args.train_ratio)
 # +------------------+
 
 npzfile = np.load(
-    f"{data_dir}/pidgan-GlobalMuonId-{args.particle}-{args.data_sample}-data.npz"
+    f"{data_dir}/pidgan-GlobalPIDh-{args.particle}-{args.data_sample}-data.npz"
 )
 
 x = npzfile["x"].astype(DTYPE)[:chunk_size]
@@ -237,14 +237,14 @@ print(f"[INFO] Model training completed in {duration}")
 # +---------------------+
 
 with open(
-    f"{models_dir}/GlobalMuonId_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/GlobalPIDh_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
 ) as file:
     x_scaler = pickle.load(file)
 
 x_post = invertColumnTransformer(x_scaler, x_val)
 
 with open(
-    f"{models_dir}/GlobalMuonId_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/GlobalPIDh_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
 ) as file:
     y_scaler = pickle.load(file)
 
@@ -274,12 +274,10 @@ else:
     timestamp = timestamp.split(".")[0].replace("-", "").replace(" ", "-")
     for time, unit in zip(timestamp.split(":"), ["h", "m", "s"]):
         prefix += time + unit  # YYYYMMDD-HHhMMmSSs
-prefix += f"_GlobalMuonIdGAN-{args.particle}_{args.data_sample}"
+prefix += f"_GlobalPIDhGAN-{args.particle}_{args.data_sample}"
 
-export_model_dirname = (
-    f"{models_dir}/GlobalMuonId_{args.particle}_models/{prefix}_model"
-)
-export_img_dirname = f"{images_dir}/GlobalMuonId_{args.particle}_img/{prefix}_img"
+export_model_dirname = f"{models_dir}/GlobalPIDh_{args.particle}_models/{prefix}_model"
+export_img_dirname = f"{images_dir}/GlobalPIDh_{args.particle}_img/{prefix}_img"
 
 if save_output:
     if not os.path.exists(export_model_dirname):
@@ -311,7 +309,7 @@ if save_output:
 # +---------------------+
 
 report = Report()
-report.add_markdown('<h1 align="center">GlobalMuonIdGAN training report</h1>')
+report.add_markdown('<h1 align="center">GlobalPIDhGAN training report</h1>')
 
 info = [
     f"- Script executed on **{socket.gethostname()}**",
@@ -370,7 +368,7 @@ report.add_markdown("---")
 ## Training plots
 prepare_training_plots(
     report=report,
-    model="GlobalMuonId",
+    model="GlobalPIDh",
     history=train.history,
     metrics=metrics,
     num_epochs=num_epochs,
@@ -383,7 +381,7 @@ prepare_training_plots(
 ## Validation plots
 prepare_validation_plots(
     report=report,
-    model="GlobalMuonId",
+    model="GlobalPIDh",
     x_true=x_post,
     y_true=y_post,
     y_pred=out_post,

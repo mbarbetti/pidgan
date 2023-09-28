@@ -82,7 +82,7 @@ print(f"[INFO] DataFrame of {len(df)} rows correctly created")
 # |   Dataframe preparation   |
 # +---------------------------+
 
-with open("config/variables.yml") as file:
+with open(f"{here}/config/variables.yml") as file:
     vars_dict = yaml.full_load(file)[f"{args.model}"]
 
 vars = vars_dict["x"] + vars_dict["y"]
@@ -122,7 +122,7 @@ if args.tricks:
         df.drop("MuonBgLL", axis=1, inplace=True)
         y_vars.remove("MuonBgLL")
 
-    elif args.model == "GlobalPID":
+    elif "GlobalPID" in args.model:
         df["PIDpk"] = df["PIDp"] - df["PIDK"]
         y_vars.append("PIDpk")
         df.drop("PIDp", axis=1, inplace=True)
@@ -139,39 +139,44 @@ start = time()
 df_preprocessed = df.copy()
 
 x_features = list()
+col_features = list()
 x_flags = list()
-for v in x_vars:
-    if v not in ["trackcharge", "isMuon"]:
+col_flags = list()
+for i, v in enumerate(x_vars):
+    if v not in ["trackcharge"]:
         x_features.append(v)
+        col_features.append(i)
     else:
         x_flags.append(v)
+        col_flags.append(i)
+new_x_vars = x_features + x_flags
 
 x_scaler = ColumnTransformer(
     [
         (
             "features",
-            QuantileTransformer(output_distribution="normal"),
-            np.arange(len(x_features)),
+            QuantileTransformer(n_quantiles=1000, output_distribution="normal"),
+            col_features,
         ),
-        ("flags", "passthrough", len(x_features) + np.arange(len(x_flags))),
+        ("flags", "passthrough", col_flags),
     ]
-).fit(df[x_features + x_flags].values)
-df_preprocessed[x_features + x_flags] = x_scaler.transform(
-    df[x_features + x_flags].values
-)
+).fit(df[x_vars].values)
+df_preprocessed[new_x_vars] = x_scaler.transform(df[x_vars].values)
 
 y_features = list()
 for v in y_vars:
-    if v not in ["trackcharge", "isMuon"]:
+    if v not in ["isMuon"]:
         y_features.append(v)
 
 if len(y_features) > 0:
-    y_scaler = QuantileTransformer(output_distribution="normal").fit(
+    y_scaler = QuantileTransformer(n_quantiles=1000, output_distribution="normal").fit(
         df[y_features].values
     )
     df_preprocessed[y_features] = y_scaler.transform(df[y_features].values)
+    y_vars = y_features
 else:
     y_scaler = None
+    y_vars = ["isMuon"]
 
 print(f"[INFO] Data preprocessing completed in {time()-start:.2f} s")
 
@@ -203,7 +208,12 @@ for var in x_features:
         plt.yscale(yscale)
         plt.legend(title=f"{args.particle} tracks".capitalize(), fontsize=10)
 
-    plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png", dpi=300)
+    fig_fname = f"{export_img_dirname}/{var}-hist-{args.data_sample}.png"
+    plt.savefig(fig_fname, dpi=300)
+
+    if args.verbose:
+        print(f"[INFO] Figure correctly exported to '{fig_fname}'")
+
     plt.close()
 
 # +---------------------------------+
@@ -232,7 +242,12 @@ if args.model != "isMuon":
             plt.yscale(yscale)
             plt.legend(title=f"{args.particle} tracks".capitalize(), fontsize=10)
 
-        plt.savefig(f"{export_img_dirname}/{var}-hist-{args.data_sample}.png", dpi=300)
+        fig_fname = f"{export_img_dirname}/{var}-hist-{args.data_sample}.png"
+        plt.savefig(fig_fname, dpi=300)
+
+        if args.verbose:
+            print(f"[INFO] Figure correctly exported to '{fig_fname}'")
+
         plt.close()
 
 # +--------------------------+
@@ -245,8 +260,8 @@ export_data_fname = (
 
 np.savez(
     file=export_data_fname,
-    x=df_preprocessed[x_vars].values,
-    x_vars=x_vars,
+    x=df_preprocessed[new_x_vars].values,
+    x_vars=new_x_vars,
     y=df_preprocessed[y_vars].values,
     y_vars=y_vars,
     w=df_preprocessed[w_var].values if args.weights else None,
