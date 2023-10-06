@@ -34,7 +34,7 @@
 
 ### Generative Adversarial Networks
 
-|  Algorithms  | Implementation | Lipschitz constraint |  Test  | Design inspired by |
+|  Algorithms* | Implementation | Lipschitz constraint |  Test  | Design inspired by |
 |:------------:|:--------------:|:--------------------:|:------:|:------------------:|
 |    `GAN`     |       ✅       |          ❌          |   ✅   | [1](https://arxiv.org/abs/1406.2661) , [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
 |   `BceGAN`   |       ✅       |          ❌          |   ✅   | [2](https://arxiv.org/abs/1511.06434), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
@@ -46,7 +46,7 @@
 | `CramerGAN`  |       ✅       |          ✅          |   ✅   | [6](https://arxiv.org/abs/1705.10743), [9](https://arxiv.org/abs/1606.03498) |
 |  `WGAN_ALP`  |       ✅       |          ✅          |   ✅   | [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) |
 
-**NOTE:** Each GAN algorithm is designed to operate taking conditions as input [[10](https://arxiv.org/abs/1411.1784)].
+*Each GAN algorithm is designed to operate taking __conditions__ as input [[10](https://arxiv.org/abs/1411.1784)]
 
 ### Generators
 
