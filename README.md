@@ -34,20 +34,43 @@
 
 ### Generative Adversarial Networks
 
-| Algorithms* | Implementation |  Test  |                         Paper                        |
-|:-----------:|:--------------:|:------:|:----------------------------------------------------:|
-|    `GAN`    |       ✅       |   ✅   |  [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)  |
-|  `BceGAN`   |       ✅       |   ✅   |                                                      |
-|   `LSGAN`   |       ✅       |   ✅   | [arXiv:1611.04076](https://arxiv.org/abs/1611.04076) |
-|   `WGAN`    |       ✅       |   ✅   | [arXiv:1701.07875](https://arxiv.org/abs/1701.07875) |
-|  `WGAN_GP`  |       ✅       |   ✅   | [arXiv:1704.00028](https://arxiv.org/abs/1704.00028) |
-| `CramerGAN` |       ✅       |   ✅   | [arXiv:1705.10743](https://arxiv.org/abs/1705.10743) |
-| `WGAN_ALP`  |       ✅       |   ✅   | [arXiv:1907.05681](https://arxiv.org/abs/1907.05681) |
+|  Algorithms  | Implementation | Lipschitz constraint |  Test  | Design inspired by |
+|:------------:|:--------------:|:--------------------:|:------:|:------------------:|
+|    `GAN`     |       ✅       |          ❌          |   ✅   | [1](https://arxiv.org/abs/1406.2661) , [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
+|   `BceGAN`   |       ✅       |          ❌          |   ✅   | [2](https://arxiv.org/abs/1511.06434), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
+| `BceGAN_GP`  |       🛠️       |          ✅          |   ❌   | [2](https://arxiv.org/abs/1511.06434), [5](https://arxiv.org/abs/1704.00028), [9](https://arxiv.org/abs/1606.03498) |
+| `BceGAN_ALP` |       🛠️       |          ✅          |   ❌   | [2](https://arxiv.org/abs/1511.06434), [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) |
+|   `LSGAN`    |       ✅       |          ❌          |   ✅   | [3](https://arxiv.org/abs/1611.04076), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
+|   `WGAN`     |       ✅       |          ✅          |   ✅   | [4](https://arxiv.org/abs/1701.07875), [9](https://arxiv.org/abs/1606.03498) |
+|  `WGAN_GP`   |       ✅       |          ✅          |   ✅   | [5](https://arxiv.org/abs/1704.00028), [9](https://arxiv.org/abs/1606.03498) |
+| `CramerGAN`  |       ✅       |          ✅          |   ✅   | [6](https://arxiv.org/abs/1705.10743), [9](https://arxiv.org/abs/1606.03498) |
+|  `WGAN_ALP`  |       ✅       |          ✅          |   ✅   | [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) |
 
-*Designed to operate according to the **conditional version** proposed in [arXiv:1411.1784](https://arxiv.org/abs/1411.1784)
+**NOTE:** Each GAN algorithm is designed to operate taking conditions as input [[10](https://arxiv.org/abs/1411.1784)].
 
-<!--
-#### Some tricks:
-* [arXiv:1606.03498](https://arxiv.org/abs/1606.03498)
-* [arXiv:1701.04862](https://arxiv.org/abs/1701.04862)
--->
+### Generators
+
+|    Models   | Implementation |  Test  | Design inspired by |
+|:-----------:|:--------------:|:------:|:------------------:|
+| `Generator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661) |
+
+### Discriminators
+
+|      Models     | Implementation |  Test  | Design inspired by |
+|:---------------:|:--------------:|:------:|:------------------:|
+| `Discriminator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661) |
+
+### References
+1. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)
+2. A. Radford, L. Metz, S. Chintala, "Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks", [arXiv:1511.06434](https://arxiv.org/abs/1511.06434)
+3. X. Mao _et al._, "Least Squares Generative Adversarial Networks", [arXiv:1611.04076](https://arxiv.org/abs/1611.04076)
+4. M. Arjovsky, S. Chintala, L. Bottou, "Wasserstein GAN", [arXiv:1701.07875](https://arxiv.org/abs/1701.07875)
+5. I. Gulrajani _et al._, "Improved Training of Wasserstein GANs", [arXiv:1704.00028](https://arxiv.org/abs/1704.00028)
+6. M.G. Bellemare _et al._, "The Cramer Distance as a Solution to Biased Wasserstein Gradients", [arXiv:1705.10743](https://arxiv.org/abs/1705.10743)
+7. D. Terjék, "Adversarial Lipschitz Regularization", [arXiv:1907.05681](https://arxiv.org/abs/1907.05681)
+8. M. Arjovsky, L. Bottou, "Towards Principled Methods for Training Generative Adversarial Networks", [arXiv:1701.04862](https://arxiv.org/abs/1701.04862)
+9. T. Salimans _et al._, "Improved Techniques for Training GANs", [arXiv:1606.03498](https://arxiv.org/abs/1606.03498)
+10. M. Mirza, S. Osindero, "Conditional Generative Adversarial Nets", [arXiv:1411.1784](https://arxiv.org/abs/1411.1784)
+
+### Credits
+Most of the GAN algorithms are an evolution of what provided by the [mbarbetti/tf-gen-models](https://github.com/mbarbetti/tf-gen-models) repository. The `BceGAN` model is freely inspired by the TensorFlow tutorial [Deep Convolutional Generative Adversarial Network](https://www.tensorflow.org/tutorials/generative/dcgan) and the Keras tutorial [Conditional GAN](https://keras.io/examples/generative/conditional_gan). The `WGAN_ALP` model is an adaptation of what provided by the [dterjek/adversarial_lipschitz_regularization](https://github.com/dterjek/adversarial_lipschitz_regularization) repository.

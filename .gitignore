@@ -8,8 +8,9 @@ old_files/
 *.root
 *.npz
 *.html
-scripts/images/
 scripts/models/
+scripts/images/
+scripts/exports/images/
 tests/*/*/tmp/
 
 # Byte-compiled / optimized / DLL files
