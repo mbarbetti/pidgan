@@ -1,16 +1,16 @@
 import tensorflow as tf
 
+from pidgan.algorithms.BceGAN_GP import BceGAN_GP
 from pidgan.algorithms.lipschitz_regularizations import (
     compute_AdversarialLipschitzPenalty,
 )
-from pidgan.algorithms.WGAN_GP import WGAN_GP
 
 LIPSCHITZ_CONSTANT = 1.0
 XI_MIN = 0.8
 XI_MAX = 1.2
 
 
-class WGAN_ALP(WGAN_GP):
+class BceGAN_ALP(BceGAN_GP):
     def __init__(
         self,
         generator,
@@ -19,7 +19,7 @@ class WGAN_ALP(WGAN_GP):
         lipschitz_penalty_strategy="one-sided",
         feature_matching_penalty=0.0,
         referee=None,
-        name="WGAN-ALP",
+        name="BceGAN-ALP",
         dtype=None,
     ):
         super().__init__(

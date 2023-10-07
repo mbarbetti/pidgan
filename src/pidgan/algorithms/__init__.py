@@ -1,4 +1,6 @@
 from .BceGAN import BceGAN
+from .BceGAN_ALP import BceGAN_ALP
+from .BceGAN_GP import BceGAN_GP
 from .CramerGAN import CramerGAN
 from .GAN import GAN
 from .LSGAN import LSGAN

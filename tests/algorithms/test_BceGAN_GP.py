@@ -22,11 +22,11 @@ gen = Generator(
 )
 
 disc = Discriminator(
-    output_dim=2,
+    output_dim=1,
     num_hidden_layers=4,
     mlp_hidden_units=32,
     dropout_rate=0.0,
-    output_activation=None,
+    output_activation="sigmoid",
 )
 
 ref = Classifier(
@@ -38,9 +38,9 @@ ref = Classifier(
 
 @pytest.fixture
 def model():
-    from pidgan.algorithms import CramerGAN
+    from pidgan.algorithms import BceGAN_GP
 
-    gan = CramerGAN(
+    gan = BceGAN_GP(
         generator=gen,
         discriminator=disc,
         lipschitz_penalty=1.0,
@@ -55,27 +55,26 @@ def model():
 
 
 def test_model_configuration(model):
-    from pidgan.algorithms import CramerGAN
+    from pidgan.algorithms import BceGAN_GP
     from pidgan.players.discriminators import Discriminator
     from pidgan.players.generators import Generator
     from pidgan.players.classifiers import Classifier
 
-    assert isinstance(model, CramerGAN)
+    assert isinstance(model, BceGAN_GP)
     assert isinstance(model.loss_name, str)
     assert isinstance(model.generator, Generator)
     assert isinstance(model.discriminator, Discriminator)
     assert isinstance(model.lipschitz_penalty, float)
     assert isinstance(model.lipschitz_penalty_strategy, str)
     assert isinstance(model.feature_matching_penalty, float)
-    assert isinstance(model.feature_matching_penalty, float)
     assert isinstance(model.referee, Classifier)
 
 
 @pytest.mark.parametrize("referee", [ref, None])
 def test_model_use(referee):
-    from pidgan.algorithms import CramerGAN
+    from pidgan.algorithms import BceGAN_GP
 
-    model = CramerGAN(
+    model = BceGAN_GP(
         generator=gen,
         discriminator=disc,
         lipschitz_penalty=1.0,
@@ -135,7 +134,7 @@ def test_model_compilation(model, metrics):
 @pytest.mark.parametrize("sample_weight", [w, None])
 @pytest.mark.parametrize("lipschitz_penalty_strategy", ["two-sided", "one-sided"])
 def test_model_train(referee, sample_weight, lipschitz_penalty_strategy):
-    from pidgan.algorithms import CramerGAN
+    from pidgan.algorithms import BceGAN_GP
 
     if sample_weight is not None:
         slices = (x, y, w)
@@ -148,11 +147,12 @@ def test_model_train(referee, sample_weight, lipschitz_penalty_strategy):
         .prefetch(tf.data.AUTOTUNE)
     )
 
-    model = CramerGAN(
+    model = BceGAN_GP(
         generator=gen,
         discriminator=disc,
         lipschitz_penalty=1.0,
         lipschitz_penalty_strategy=lipschitz_penalty_strategy,
+        feature_matching_penalty=1.0,
         referee=referee,
     )
     g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
@@ -167,7 +167,7 @@ def test_model_train(referee, sample_weight, lipschitz_penalty_strategy):
         referee_optimizer=r_opt,
         referee_upds_per_batch=1,
     )
-    model.fit(dataset, epochs=1)
+    model.fit(dataset, epochs=2)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])

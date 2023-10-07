@@ -1,15 +1,15 @@
 import tensorflow as tf
 
+from pidgan.algorithms import BceGAN
 from pidgan.algorithms.lipschitz_regularizations import (
     PENALTY_STRATEGIES,
     compute_GradientPenalty,
 )
-from pidgan.algorithms.WGAN import WGAN
 
 LIPSCHITZ_CONSTANT = 1.0
 
 
-class WGAN_GP(WGAN):
+class BceGAN_GP(BceGAN):
     def __init__(
         self,
         generator,
@@ -18,18 +18,20 @@ class WGAN_GP(WGAN):
         lipschitz_penalty_strategy="two-sided",
         feature_matching_penalty=0.0,
         referee=None,
-        name="WGAN-GP",
+        name="BceGAN-GP",
         dtype=None,
     ):
         super().__init__(
             generator=generator,
             discriminator=discriminator,
+            from_logits=True,
+            label_smoothing=0.0,
+            injected_noise_stddev=0.0,
             feature_matching_penalty=feature_matching_penalty,
             referee=referee,
             name=name,
             dtype=dtype,
         )
-        self._clip_param = None
 
         # Lipschitz penalty
         assert isinstance(lipschitz_penalty, (int, float))
@@ -46,15 +48,12 @@ class WGAN_GP(WGAN):
             )
         self._lipschitz_penalty_strategy = lipschitz_penalty_strategy
 
-    def _d_train_step(self, x, y, sample_weight=None) -> None:
-        super(WGAN, self)._d_train_step(x, y, sample_weight)
-
     def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         d_loss = super()._compute_d_loss(x, y, sample_weight, training)
-        lip_reg = self._lipschitz_regularization(
+        d_loss += self._lipschitz_regularization(
             self._discriminator, x, y, sample_weight, training_discriminator=training
         )
-        return d_loss + lip_reg
+        return d_loss
 
     def _lipschitz_regularization(
         self, discriminator, x, y, sample_weight=None, training_discriminator=True

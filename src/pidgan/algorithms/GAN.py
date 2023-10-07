@@ -1,11 +1,12 @@
 import tensorflow as tf
 from tensorflow import keras
 
+from pidgan.players.classifiers import Classifier
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
 from pidgan.utils.checks import checkMetrics, checkOptimizer
 
-MIN_LOG_VALUE = 1e-8
+MIN_LOG_VALUE = 1e-6
 MAX_LOG_VALUE = 1.0
 
 
@@ -14,12 +15,10 @@ class GAN(keras.Model):
         self,
         generator,
         discriminator,
-        referee=None,
         use_original_loss=True,
         injected_noise_stddev=0.0,
         feature_matching_penalty=0.0,
-        referee_from_logits=None,
-        referee_label_smoothing=None,
+        referee=None,
         name="GAN",
         dtype=None,
     ) -> None:
@@ -42,20 +41,22 @@ class GAN(keras.Model):
             )
         self._discriminator = discriminator
 
-        # Referee network
+        # Flag to use the original loss
+        assert isinstance(use_original_loss, bool)
+        self._use_original_loss = use_original_loss
+
+        # Referee network and loss
         if referee is not None:
-            if not isinstance(referee, Discriminator):
+            if not isinstance(referee, Classifier):
                 raise TypeError(
                     f"`referee` should be a pidgan's `Discriminator`, "
                     f"instead {type(referee)} passed"
                 )
             self._referee = referee
+            self._referee_loss = keras.losses.BinaryCrossentropy()
         else:
             self._referee = None
-
-        # Flag to use the original loss
-        assert isinstance(use_original_loss, bool)
-        self._use_original_loss = use_original_loss
+            self._referee_loss = None
 
         # Noise standard deviation
         assert isinstance(injected_noise_stddev, (int, float))
@@ -66,20 +67,6 @@ class GAN(keras.Model):
         assert isinstance(feature_matching_penalty, (int, float))
         assert feature_matching_penalty >= 0.0
         self._feature_matching_penalty = float(feature_matching_penalty)
-
-        # TensorFlow BinaryCrossentropy
-        if (referee_from_logits is not None) and (referee_label_smoothing is not None):
-            self._bce_loss = keras.losses.BinaryCrossentropy(
-                from_logits=referee_from_logits, label_smoothing=referee_label_smoothing
-            )
-            self._referee_from_logits = bool(referee_from_logits)
-            self._referee_label_smoothing = float(referee_label_smoothing)
-            self._referee_loss_name = "Binary cross-entropy"
-        else:
-            self._bce_loss = None
-            self._referee_from_logits = None
-            self._referee_label_smoothing = None
-            self._referee_loss_name = self._loss_name
 
     def call(self, x, y=None) -> tuple:
         g_out = self._generator(x)
@@ -111,10 +98,10 @@ class GAN(keras.Model):
         metrics=None,
         generator_optimizer="rmsprop",
         discriminator_optimizer="rmsprop",
-        referee_optimizer="rmsprop",
         generator_upds_per_batch=1,
         discriminator_upds_per_batch=1,
-        referee_upds_per_batch=1,
+        referee_optimizer=None,
+        referee_upds_per_batch=None,
     ) -> None:
         super().compile(weighted_metrics=[])
 
@@ -125,13 +112,9 @@ class GAN(keras.Model):
             self._r_loss = keras.metrics.Mean(name="r_loss")
         self._metrics = checkMetrics(metrics)
 
-        # Optimizers
+        # Gen/Disc optimizers
         self._g_opt = checkOptimizer(generator_optimizer)
         self._d_opt = checkOptimizer(discriminator_optimizer)
-        if self._referee is not None:
-            self._r_opt = checkOptimizer(referee_optimizer)
-        else:
-            self._r_opt = None
 
         # Generator updates per batch
         assert isinstance(generator_upds_per_batch, (int, float))
@@ -143,12 +126,20 @@ class GAN(keras.Model):
         assert discriminator_upds_per_batch >= 1
         self._d_upds_per_batch = int(discriminator_upds_per_batch)
 
-        # Referee updates per batch
+        # Referee settings
         if self._referee is not None:
-            assert isinstance(referee_upds_per_batch, (int, float))
-            assert referee_upds_per_batch >= 1
+            referee_optimizer = (
+                referee_optimizer if referee_optimizer is not None else "rmsprop"
+            )
+            self._r_opt = checkOptimizer(referee_optimizer)
+            if referee_upds_per_batch is not None:
+                assert isinstance(referee_upds_per_batch, (int, float))
+                assert referee_upds_per_batch >= 1
+            else:
+                referee_upds_per_batch = 1
             self._r_upds_per_batch = int(referee_upds_per_batch)
         else:
+            self._r_opt = None
             self._r_upds_per_batch = None
 
     def train_step(self, data) -> dict:
@@ -218,8 +209,7 @@ class GAN(keras.Model):
         gradients = tape.gradient(loss, trainable_vars)
         self._r_opt.apply_gradients(zip(gradients, trainable_vars))
 
-        threshold = self._compute_threshold(self._referee, x, y, sample_weight)
-        self._r_loss.update_state(loss - threshold)
+        self._r_loss.update_state(loss)
 
     def _prepare_trainset(
         self, x, y, sample_weight=None, training_generator=True
@@ -238,123 +228,98 @@ class GAN(keras.Model):
 
     @staticmethod
     def _standard_loss_func(
-        model,
+        discriminator,
         trainset_ref,
         trainset_gen,
         inj_noise_std=0.0,
-        model_training=False,
+        training_discriminator=False,
         original_loss=True,
+        generator_loss=True,
     ) -> tf.Tensor:
         x_ref, y_ref, w_ref = trainset_ref
         x_gen, y_gen, w_gen = trainset_gen
 
-        if inj_noise_std > 0.0:
-            rnd_noise = tf.random.normal(
-                shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
-                mean=0.0,
-                stddev=inj_noise_std,
-                dtype=y_ref.dtype,
-            )
-        else:
-            rnd_noise = 0.0
-
         x_concat = tf.concat([x_ref, x_gen], axis=0)
         y_concat = tf.concat([y_ref, y_gen], axis=0)
 
-        m_out = model((x_concat, y_concat + rnd_noise), training=model_training)
-        m_ref, m_gen = tf.split(m_out, 2, axis=0)
+        if inj_noise_std > 0.0:
+            rnd_noise = tf.random.normal(
+                shape=tf.shape(y_concat),
+                mean=0.0,
+                stddev=inj_noise_std,
+                dtype=y_concat.dtype,
+            )
+            y_concat += rnd_noise
+
+        d_out = discriminator((x_concat, y_concat), training=training_discriminator)
+        d_ref, d_gen = tf.split(d_out, 2, axis=0)
 
         real_loss = tf.reduce_sum(
             w_ref[:, None]
-            * tf.math.log(tf.clip_by_value(m_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
+            * tf.math.log(tf.clip_by_value(d_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
         ) / tf.reduce_sum(w_ref)
         if original_loss:
             fake_loss = tf.reduce_sum(
                 w_gen[:, None]
                 * tf.math.log(
-                    tf.clip_by_value(1.0 - m_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
+                    tf.clip_by_value(1.0 - d_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
                 )
             ) / tf.reduce_sum(w_gen)
         else:
             fake_loss = tf.reduce_sum(
                 -w_gen[:, None]
-                * tf.math.log(tf.clip_by_value(m_gen, MIN_LOG_VALUE, MAX_LOG_VALUE))
+                * tf.math.log(tf.clip_by_value(d_gen, MIN_LOG_VALUE, MAX_LOG_VALUE))
             )
-        return real_loss + fake_loss
+
+        if generator_loss:
+            return tf.stop_gradient(real_loss) + fake_loss
+        else:
+            return -(real_loss + fake_loss)
 
     def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
         return self._standard_loss_func(
-            model=self._discriminator,
+            discriminator=self._discriminator,
             trainset_ref=trainset_ref,
             trainset_gen=trainset_gen,
             inj_noise_std=self._inj_noise_std,
-            model_training=False,
+            training_discriminator=False,
             original_loss=self._use_original_loss,
+            generator_loss=True,
         )
 
     def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
-        return -self._standard_loss_func(
-            model=self._discriminator,
+        return self._standard_loss_func(
+            discriminator=self._discriminator,
             trainset_ref=trainset_ref,
             trainset_gen=trainset_gen,
             inj_noise_std=self._inj_noise_std,
-            model_training=training,
+            training_discriminator=training,
             original_loss=True,
+            generator_loss=False,
         )
-
-    def _bce_loss_func(
-        self, model, trainset_ref, trainset_gen, inj_noise_std=0.0, model_training=True
-    ) -> tf.Tensor:
-        x_ref, y_ref, w_ref = trainset_ref
-        x_gen, y_gen, w_gen = trainset_gen
-
-        if inj_noise_std > 0.0:
-            rnd_noise = tf.random.normal(
-                shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
-                mean=0.0,
-                stddev=inj_noise_std,
-                dtype=y_ref.dtype,
-            )
-        else:
-            rnd_noise = 0.0
-
-        x_concat = tf.concat([x_ref, x_gen], axis=0)
-        y_concat = tf.concat([y_ref, y_gen], axis=0)
-
-        m_out = model((x_concat, y_concat + rnd_noise), training=model_training)
-        m_ref, m_gen = tf.split(m_out, 2, axis=0)
-
-        real_loss = self._bce_loss(tf.ones_like(m_ref), m_ref, sample_weight=w_ref)
-        fake_loss = self._bce_loss(tf.zeros_like(m_gen), m_gen, sample_weight=w_gen)
-        return (real_loss + fake_loss) / 2.0
 
     def _compute_r_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
-        if self._bce_loss is not None:
-            return self._bce_loss_func(
-                model=self._referee,
-                trainset_ref=trainset_ref,
-                trainset_gen=trainset_gen,
-                inj_noise_std=0.0,
-                model_training=training,
-            )
-        else:
-            return -self._standard_loss_func(
-                model=self._referee,
-                trainset_ref=trainset_ref,
-                trainset_gen=trainset_gen,
-                inj_noise_std=0.0,
-                model_training=training,
-                original_loss=True,
-            )
+        x_ref, y_ref, w_ref = trainset_ref
+        x_gen, y_gen, w_gen = trainset_gen
+
+        x_concat = tf.concat([x_ref, x_gen], axis=0)
+        y_concat = tf.concat([y_ref, y_gen], axis=0)
+
+        r_out = self._referee((x_concat, y_concat), training=training)
+        r_ref, r_gen = tf.split(r_out, 2, axis=0)
+
+        real_loss = self._referee_loss(tf.ones_like(r_ref), r_ref, sample_weight=w_ref)
+        fake_loss = self._referee_loss(tf.zeros_like(r_gen), r_gen, sample_weight=w_gen)
+        return (real_loss + fake_loss) / 2.0
 
     def _compute_feature_matching(
         self, x, y, sample_weight=None, training=True
@@ -366,7 +331,9 @@ class GAN(keras.Model):
             x_ref, y_ref, _ = trainset_ref
             x_gen, y_gen, _ = trainset_gen
 
-            rnd_noise = 0.0
+            x_concat = tf.concat([x_ref, x_gen], axis=0)
+            y_concat = tf.concat([y_ref, y_gen], axis=0)
+
             if self._inj_noise_std is not None:
                 if self._inj_noise_std > 0.0:
                     rnd_noise = tf.random.normal(
@@ -375,13 +342,9 @@ class GAN(keras.Model):
                         stddev=self._inj_noise_std,
                         dtype=y_ref.dtype,
                     )
+                    y_concat += rnd_noise
 
-            x_concat = tf.concat([x_ref, x_gen], axis=0)
-            y_concat = tf.concat([y_ref, y_gen], axis=0)
-
-            d_feat_out = self._discriminator.hidden_feature(
-                (x_concat, y_concat + rnd_noise)
-            )
+            d_feat_out = self._discriminator.hidden_feature((x_concat, y_concat))
             d_feat_ref, d_feat_gen = tf.split(d_feat_out, 2, axis=0)
 
             feat_match_term = tf.norm(d_feat_ref - d_feat_gen, axis=-1) ** 2
@@ -401,17 +364,18 @@ class GAN(keras.Model):
 
         return (x_ref_1, y_ref_1, w_ref_1), (x_ref_2, y_ref_2, w_ref_2)
 
-    def _compute_threshold(self, model, x, y, sample_weight=None) -> tf.Tensor:
+    def _compute_threshold(self, discriminator, x, y, sample_weight=None) -> tf.Tensor:
         trainset_ref_1, trainset_ref_2 = self._prepare_trainset_threshold(
             x, y, sample_weight
         )
-        return -self._standard_loss_func(
-            model=model,
+        return self._standard_loss_func(
+            discriminator=discriminator,
             trainset_ref=trainset_ref_1,
             trainset_gen=trainset_ref_2,
             inj_noise_std=0.0,
-            model_training=False,
+            training_discriminator=False,
             original_loss=True,
+            generator_loss=False,
         )
 
     def test_step(self, data) -> dict:
@@ -427,8 +391,7 @@ class GAN(keras.Model):
 
         if self._referee is not None:
             r_loss = self._compute_r_loss(x, y, sample_weight, training=False)
-            threshold = self._compute_threshold(self._referee, x, y, sample_weight)
-            self._r_loss.update_state(r_loss - threshold)
+            self._r_loss.update_state(r_loss)
 
         train_dict = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
         if self._referee is not None:
@@ -462,14 +425,6 @@ class GAN(keras.Model):
         return self._discriminator
 
     @property
-    def referee(self):  # TODO: add Union[None, Discriminator]
-        return self._referee
-
-    @property
-    def referee_loss_name(self):  # TODO: add Union[None, str]
-        return self._referee_loss_name
-
-    @property
     def use_original_loss(self) -> bool:
         return self._use_original_loss
 
@@ -482,12 +437,8 @@ class GAN(keras.Model):
         return self._feature_matching_penalty
 
     @property
-    def referee_from_logits(self):  # TODO: add Union[None, bool]
-        return self._referee_from_logits
-
-    @property
-    def referee_label_smoothing(self):  # TODO: add Union[None, float]
-        return self._referee_label_smoothing
+    def referee(self):  # TODO: add Union[None, Discriminator]
+        return self._referee
 
     @property
     def metrics(self) -> list:
@@ -507,16 +458,16 @@ class GAN(keras.Model):
         return self._d_opt
 
     @property
-    def referee_optimizer(self):  # TODO: add Union[None, Optimizer]
-        return self._r_opt
-
-    @property
     def generator_upds_per_batch(self) -> int:
         return self._g_upds_per_batch
 
     @property
     def discriminator_upds_per_batch(self) -> int:
         return self._d_upds_per_batch
+
+    @property
+    def referee_optimizer(self):  # TODO: add Union[None, Optimizer]
+        return self._r_opt
 
     @property
     def referee_upds_per_batch(self):  # TODO: add Union[None, int]

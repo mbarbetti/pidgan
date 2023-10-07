@@ -4,6 +4,7 @@ from tensorflow import keras
 
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
+from pidgan.players.classifiers import Classifier
 
 CHUNK_SIZE = int(1e4)
 
@@ -28,12 +29,10 @@ disc = Discriminator(
     output_activation=None,
 )
 
-ref = Discriminator(
-    output_dim=1,
+ref = Classifier(
     num_hidden_layers=2,
     mlp_hidden_units=32,
     dropout_rate=0.0,
-    output_activation=None,
 )
 
 
@@ -44,11 +43,9 @@ def model():
     gan = WGAN(
         generator=gen,
         discriminator=disc,
-        referee=ref,
         clip_param=0.01,
         feature_matching_penalty=0.0,
-        referee_from_logits=True,
-        referee_label_smoothing=0.0,
+        referee=ref,
     )
     return gan
 
@@ -60,19 +57,15 @@ def test_model_configuration(model):
     from pidgan.algorithms import WGAN
     from pidgan.players.discriminators import Discriminator
     from pidgan.players.generators import Generator
+    from pidgan.players.classifiers import Classifier
 
     assert isinstance(model, WGAN)
     assert isinstance(model.loss_name, str)
     assert isinstance(model.generator, Generator)
     assert isinstance(model.discriminator, Discriminator)
-    assert isinstance(model.referee, Discriminator)
-    assert isinstance(model.referee_loss_name, str)
     assert isinstance(model.clip_param, float)
     assert isinstance(model.feature_matching_penalty, float)
-    if model.referee_from_logits is not None:
-        assert isinstance(model.referee_from_logits, bool)
-    if model.referee_label_smoothing is not None:
-        assert isinstance(model.referee_label_smoothing, float)
+    assert isinstance(model.referee, Classifier)
 
 
 @pytest.mark.parametrize("referee", [ref, None])
@@ -82,11 +75,9 @@ def test_model_use(referee):
     model = WGAN(
         generator=gen,
         discriminator=disc,
-        referee=referee,
         clip_param=0.01,
         feature_matching_penalty=0.0,
-        referee_from_logits=None,
-        referee_label_smoothing=None,
+        referee=referee,
     )
     outputs = model(x, y)
     if referee is not None:
@@ -122,24 +113,23 @@ def test_model_compilation(model, metrics):
         metrics=metrics,
         generator_optimizer=g_opt,
         discriminator_optimizer=d_opt,
-        referee_optimizer=r_opt,
         generator_upds_per_batch=1,
         discriminator_upds_per_batch=1,
+        referee_optimizer=r_opt,
         referee_upds_per_batch=1,
     )
     assert isinstance(model.metrics, list)
     assert isinstance(model.generator_optimizer, keras.optimizers.Optimizer)
     assert isinstance(model.discriminator_optimizer, keras.optimizers.Optimizer)
-    assert isinstance(model.referee_optimizer, keras.optimizers.Optimizer)
     assert isinstance(model.generator_upds_per_batch, int)
     assert isinstance(model.discriminator_upds_per_batch, int)
+    assert isinstance(model.referee_optimizer, keras.optimizers.Optimizer)
     assert isinstance(model.referee_upds_per_batch, int)
 
 
 @pytest.mark.parametrize("referee", [ref, None])
 @pytest.mark.parametrize("sample_weight", [w, None])
-@pytest.mark.parametrize("bce_options", [(True, 0.0), (None, None)])
-def test_model_train(referee, sample_weight, bce_options):
+def test_model_train(referee, sample_weight):
     from pidgan.algorithms import WGAN
 
     if sample_weight is not None:
@@ -153,16 +143,12 @@ def test_model_train(referee, sample_weight, bce_options):
         .prefetch(tf.data.AUTOTUNE)
     )
 
-    from_logits, label_smoothing = bce_options
-
     model = WGAN(
         generator=gen,
         discriminator=disc,
-        referee=referee,
         clip_param=0.01,
         feature_matching_penalty=1.0,
-        referee_from_logits=from_logits,
-        referee_label_smoothing=label_smoothing,
+        referee=referee,
     )
     g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
     d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
@@ -171,9 +157,9 @@ def test_model_train(referee, sample_weight, bce_options):
         metrics=None,
         generator_optimizer=g_opt,
         discriminator_optimizer=d_opt,
-        referee_optimizer=r_opt,
         generator_upds_per_batch=1,
         discriminator_upds_per_batch=1,
+        referee_optimizer=r_opt,
         referee_upds_per_batch=1,
     )
     model.fit(dataset, epochs=1)
@@ -188,9 +174,9 @@ def test_model_eval(model, sample_weight):
         metrics=None,
         generator_optimizer=g_opt,
         discriminator_optimizer=d_opt,
-        referee_optimizer=r_opt,
         generator_upds_per_batch=1,
         discriminator_upds_per_batch=1,
+        referee_optimizer=r_opt,
         referee_upds_per_batch=1,
     )
     model.evaluate(x, y, sample_weight=sample_weight)
