@@ -2,9 +2,9 @@ import pytest
 import tensorflow as tf
 from tensorflow import keras
 
+from pidgan.players.classifiers import Classifier
 from pidgan.players.discriminators import Discriminator
 from pidgan.players.generators import Generator
-from pidgan.players.classifiers import Classifier
 
 CHUNK_SIZE = int(1e4)
 
@@ -29,11 +29,7 @@ disc = Discriminator(
     output_activation=None,
 )
 
-ref = Classifier(
-    num_hidden_layers=2,
-    mlp_hidden_units=32,
-    dropout_rate=0.0,
-)
+ref = Classifier(num_hidden_layers=2, mlp_hidden_units=32, dropout_rate=0.0)
 
 
 @pytest.fixture
@@ -55,9 +51,9 @@ def model():
 
 def test_model_configuration(model):
     from pidgan.algorithms import WGAN
+    from pidgan.players.classifiers import Classifier
     from pidgan.players.discriminators import Discriminator
     from pidgan.players.generators import Generator
-    from pidgan.players.classifiers import Classifier
 
     assert isinstance(model, WGAN)
     assert isinstance(model.loss_name, str)
