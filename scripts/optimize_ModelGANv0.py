@@ -14,10 +14,21 @@ from utils.utils_argparser import argparser_optimization
 from utils.utils_training import prepare_training_plots, prepare_validation_plots
 
 import pidgan
-from pidgan.algorithms import GAN, LSGAN, WGAN, WGAN_ALP, WGAN_GP, BceGAN, CramerGAN
+from pidgan.algorithms import (
+    GAN,
+    LSGAN,
+    WGAN,
+    WGAN_ALP,
+    WGAN_GP,
+    BceGAN,
+    BceGAN_ALP,
+    BceGAN_GP,
+    CramerGAN,
+)
 from pidgan.callbacks.schedulers import LearnRateExpDecay
 from pidgan.optimization.scores import KSDistance
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.classifiers import Classifier
+from pidgan.players.discriminators import AuxDiscriminator
 from pidgan.players.generators import Generator
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
@@ -87,7 +98,17 @@ client = hpc.Client(server=server, token=token)
 
 properties = {
     "algo": hpc.suggestions.Categorical(
-        ["gan", "bce-gan", "lsgan", "wgan", "wgan-gp", "cramer-gan", "wgan-alp"]
+        [
+            "gan",
+            "bce-gan",
+            "bce-gan-gp",
+            "bce-gan-alp",
+            "lsgan",
+            "wgan",
+            "wgan-gp",
+            "cramer-gan",
+            "wgan-alp",
+        ]
     ),
     "g_lr0": hpc.suggestions.Float(1e-4, 1e-3),
     "d_lr0": hpc.suggestions.Float(1e-4, 1e-3),
@@ -126,7 +147,9 @@ with study.trial() as trial:
     # |   Data loading   |
     # +------------------+
 
-    npzfile = np.load(f"{data_dir}/pidgan-{args.model}-{args.particle}-{args.data_sample}-data.npz")
+    npzfile = np.load(
+        f"{data_dir}/pidgan-{args.model}-{args.particle}-{args.data_sample}-data.npz"
+    )
 
     x = npzfile["x"].astype(DTYPE)[:chunk_size]
     x_vars = [str(v) for v in npzfile["x_vars"]]
@@ -210,16 +233,31 @@ with study.trial() as trial:
 
     d_output_dim = 1 if trial.algo != "cramer-gan" else 256
     d_output_activation = (
-        "sigmoid" if trial.algo in ["gan", "bce-gan", "lsgan"] else "linear"
+        "sigmoid" if trial.algo in ["gan", "bce-gan", "lsgan"] else None
     )
+    if args.model == "Rich":
+        d_aux_features = [f"{y_vars.index('RichDLLp')} - {y_vars.index('RichDLLk')}"]
+    elif args.model == "Muon":
+        d_aux_features = [f"{y_vars.index('MuonMuLL')} - {y_vars.index('MuonBgLL')}"]
+    else:
+        d_aux_features = [f"{y_vars.index('PIDp')} - {y_vars.index('PIDK')}"]
 
-    discriminator = Discriminator(
+    discriminator = AuxDiscriminator(
         output_dim=hp.get("d_output_dim", d_output_dim),
+        aux_features=hp.get("d_aux_features", d_aux_features),
         num_hidden_layers=hp.get("d_num_hidden_layers", 5),
         mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
-        dropout_rate=hp.get("d_dropout_rate", 0.0),
+        dropout_rate=hp.get("d_dropout_rate", 0.1),
         output_activation=hp.get("d_output_activation", d_output_activation),
         name="discriminator",
+        dtype=DTYPE,
+    )
+
+    referee = Classifier(
+        num_hidden_layers=hp.get("r_num_hidden_layers", 5),
+        mlp_hidden_units=hp.get("r_mlp_hidden_units", 128),
+        dropout_rate=hp.get("r_dropout_rate", 0.1),
+        name="referee",
         dtype=DTYPE,
     )
 
@@ -229,31 +267,50 @@ with study.trial() as trial:
             discriminator=discriminator,
             use_original_loss=hp.get("gan_use_original_loss", True),
             injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.05),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+            referee=referee,
         )
     elif trial.algo == "bce-gan":
         gan = BceGAN(
             generator=generator,
             discriminator=discriminator,
-            injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.05),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
             from_logits=hp.get("gan_from_logits", False),
             label_smoothing=hp.get("gan_label_smoothing", 0.1),
+            injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.05),
+            referee=referee,
+        )
+    elif trial.algo == "bce-gan-gp":
+        gan = BceGAN_GP(
+            generator=generator,
+            discriminator=discriminator,
+            lipschitz_penalty=hp.get("gan_lipschitz_penalty", 1.0),
+            lipschitz_penalty_strategy=hp.get(
+                "gan_lipschitz_penalty_strategy", "two-sided"
+            ),
+            referee=referee,
+        )
+    elif trial.algo == "bce-gan-alp":
+        gan = BceGAN_ALP(
+            generator=generator,
+            discriminator=discriminator,
+            lipschitz_penalty=hp.get("gan_lipschitz_penalty", 1.0),
+            lipschitz_penalty_strategy=hp.get(
+                "gan_lipschitz_penalty_strategy", "one-sided"
+            ),
+            referee=referee,
         )
     elif trial.algo == "lsgan":
         gan = LSGAN(
             generator=generator,
             discriminator=discriminator,
             minimize_pearson_chi2=hp.get("gan_minimize_pearson_chi2", False),
-            injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.0),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+            referee=referee,
         )
     elif trial.algo == "wgan":
         gan = WGAN(
             generator=generator,
             discriminator=discriminator,
             clip_param=hp.get("gan_clip_param", 0.01),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+            referee=referee,
         )
     elif trial.algo == "wgan-gp":
         gan = WGAN_GP(
@@ -263,7 +320,7 @@ with study.trial() as trial:
             lipschitz_penalty_strategy=hp.get(
                 "gan_lipschitz_penalty_strategy", "two-sided"
             ),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+            referee=referee,
         )
     elif trial.algo == "cramer-gan":
         gan = CramerGAN(
@@ -273,17 +330,17 @@ with study.trial() as trial:
             lipschitz_penalty_strategy=hp.get(
                 "gan_lipschitz_penalty_strategy", "two-sided"
             ),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+            referee=referee,
         )
     elif trial.algo == "wgan-alp":
         gan = WGAN_ALP(
             generator=generator,
             discriminator=discriminator,
-            lipschitz_penalty=hp.get("gan_lipschitz_penalty", 10.0),
+            lipschitz_penalty=hp.get("gan_lipschitz_penalty", 1.0),
             lipschitz_penalty_strategy=hp.get(
                 "gan_lipschitz_penalty_strategy", "one-sided"
             ),
-            feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+            referee=referee,
         )
     hp.get("gan_name", gan.name)
 
@@ -300,6 +357,9 @@ with study.trial() as trial:
     d_opt = keras.optimizers.RMSprop(hp.get("d_lr0", trial.d_lr0))
     hp.get("d_optimizer", "RMSprop")
 
+    r_opt = keras.optimizers.RMSprop(hp.get("r_lr0", 0.001))
+    hp.get("r_optimizer", "RMSprop")
+
     # +----------------------------+
     # |   Training configuration   |
     # +----------------------------+
@@ -315,7 +375,9 @@ with study.trial() as trial:
         generator_optimizer=g_opt,
         discriminator_optimizer=d_opt,
         generator_upds_per_batch=hp.get("generator_upds_per_batch", 1),
-        discriminator_upds_per_batch=hp.get("discriminator_upds_per_batch", 1),
+        discriminator_upds_per_batch=hp.get("discriminator_upds_per_batch", 2),
+        referee_optimizer=r_opt,
+        referee_upds_per_batch=hp.get("referee_upds_per_batch", 1),
     )
 
     # +--------------------------+
@@ -346,6 +408,17 @@ with study.trial() as trial:
     hp.get("d_sched", d_sched.name)
     callbacks.append(d_sched)
 
+    r_sched = LearnRateExpDecay(
+        gan.referee_optimizer,
+        decay_rate=hp.get("r_decay_rate", 0.10),
+        decay_steps=hp.get("r_decay_steps", 100_000),
+        min_learning_rate=hp.get("r_min_learning_rate", 1e-6),
+        verbose=True,
+        key="r_lr",
+    )
+    hp.get("r_sched", r_sched.name)
+    callbacks.append(r_sched)
+
     # +------------------------+
     # |   Training procedure   |
     # +------------------------+
@@ -368,14 +441,16 @@ with study.trial() as trial:
     # +---------------------+
 
     with open(
-        f"{models_dir}/{args.model}_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
+        f"{models_dir}/{args.model}_{args.particle}_models/tX_{args.data_sample}.pkl",
+        "rb",
     ) as file:
         x_scaler = pickle.load(file)
 
     x_post = invertColumnTransformer(x_scaler, x_val)
 
     with open(
-        f"{models_dir}/{args.model}_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
+        f"{models_dir}/{args.model}_{args.particle}_models/tY_{args.data_sample}.pkl",
+        "rb",
     ) as file:
         y_scaler = pickle.load(file)
 
@@ -388,61 +463,53 @@ with study.trial() as trial:
     # |   Feedbacks to Hopaas server   |
     # +--------------------------------+
 
-    min_score = float(args.min_score_for_report)
-
-    dict_scores = dict()
     KS = KSDistance(dtype=DTYPE)
 
-    for iVar, var in enumerate(y_vars):
-        bin_scores = list()
+    bin_scores = list()
+    bin_entries = list()
+    for i in range(len(P_BOUNDARIES) - 1):
+        for j in range(len(ETA_BOUNDARIES) - 1):
+            for k in range(len(NTRACKS_BOUNDARIES) - 1):
+                p_query = (x_post[:, 0] / 1e3 >= P_BOUNDARIES[i]) & (
+                    x_post[:, 0] / 1e3 < P_BOUNDARIES[i + 1]
+                )
+                eta_query = (x_post[:, 1] >= ETA_BOUNDARIES[i]) & (
+                    x_post[:, 1] < ETA_BOUNDARIES[i + 1]
+                )
+                ntracks_query = (x_post[:, 2] >= NTRACKS_BOUNDARIES[i]) & (
+                    x_post[:, 2] < NTRACKS_BOUNDARIES[i + 1]
+                )
+                query = p_query & eta_query & ntracks_query
+                entries = np.count_nonzero(query)
 
-        for i in range(len(P_BOUNDARIES) - 1):
-            for j in range(len(ETA_BOUNDARIES) - 1):
-                for k in range(len(NTRACKS_BOUNDARIES) - 1):
-                    p_query = (x_post[:, 0] / 1e3 >= P_BOUNDARIES[i]) & (
-                        x_post[:, 0] / 1e3 < P_BOUNDARIES[i + 1]
-                    )
-                    eta_query = (x_post[:, 1] >= ETA_BOUNDARIES[i]) & (
-                        x_post[:, 1] < ETA_BOUNDARIES[i + 1]
-                    )
-                    ntracks_query = (x_post[:, 2] >= NTRACKS_BOUNDARIES[i]) & (
-                        x_post[:, 2] < NTRACKS_BOUNDARIES[i + 1]
-                    )
+                r_out_true = gan.referee((x_val[query], y_val[query]))
+                r_out_pred = gan.referee((x_val[query], out[query]))
 
-                    query = p_query & eta_query & ntracks_query
-                    mean, std = np.mean(y_post[:, iVar][query]), np.std(
-                        y_post[:, iVar][query]
-                    )
-                    min_ = mean - 4.0 * std
-                    max_ = mean + 4.0 * std
+                score = KS(
+                    x_true=r_out_true,
+                    x_pred=r_out_pred,
+                    bins=np.linspace(0.0, 1.0, 101),
+                    weights_true=w_val[query] if w_val is not None else None,
+                    weights_pred=w_val[query] if w_val is not None else None,
+                    min_entries=500,
+                )
 
-                    score = KS(
-                        x_true=y_post[:, iVar][query],
-                        x_pred=out_post[:, iVar][query],
-                        bins=np.linspace(min_, max_, 76),
-                        weights_true=w_val[query] if w_val is not None else None,
-                        weights_pred=w_val[query] if w_val is not None else None,
-                        min_entries=300,
-                    )
+                if score is not None:
+                    bin_scores.append(score)
+                    bin_entries.append(entries)
 
-                    if score is not None:
-                        bin_scores.append(score)
+    bin_scores = np.array(bin_scores)
+    bin_entries = np.array(bin_entries)
+    opt_score = np.sum(bin_scores * bin_entries) / np.sum(bin_entries)
+    trial.loss = opt_score
 
-        dict_scores[var] = bin_scores
-
-    opt_scores = list()
-    for score in dict_scores.values():
-        opt_scores += score
-    final_opt_score = np.mean(opt_scores)
-    trial.loss = final_opt_score
-
-    print(
-        f"[INFO] The trained model of Trial n. {trial.id} scored {final_opt_score:.3f}"
-    )
+    print(f"[INFO] The trained model of Trial n. {trial.id} scored {opt_score:.3f}")
 
     # +------------------+
     # |   Model export   |
     # +------------------+
+
+    min_score = float(args.min_score_for_report)
 
     prefix = f"suid{study.study_id[:8]}-trial{trial.id:04d}"
     prefix += f"_{args.model}GAN-{args.particle}-{args.data_sample}"
@@ -450,11 +517,9 @@ with study.trial() as trial:
     export_model_dirname = (
         f"{models_dir}/{args.model}_{args.particle}_models/{prefix}_model"
     )
-    export_img_dirname = (
-        f"{images_dir}/{args.model}_{args.particle}_img/{prefix}_img"
-    )
+    export_img_dirname = f"{images_dir}/{args.model}_{args.particle}_img/{prefix}_img"
 
-    if args.saving or final_opt_score <= min_score / 10.0:
+    if args.saving or opt_score <= min_score / 10.0:
         if not os.path.exists(export_model_dirname):
             os.makedirs(export_model_dirname)
         if not os.path.exists(export_img_dirname):
@@ -478,14 +543,12 @@ with study.trial() as trial:
             y_vars=y_vars,
             output=output,
         )  # export training results
-        with open(f"{export_model_dirname}/opt_scores.yml", "w") as file:
-            yaml.dump(dict_scores, file)
 
     # +---------------------+
     # |   Training report   |
     # +---------------------+
 
-    if final_opt_score <= min_score:
+    if opt_score <= min_score:
         report = Report()
         report.add_markdown(
             f'<h1 align="center">{args.model}GAN optimization report</h1>'
@@ -499,7 +562,7 @@ with study.trial() as trial:
         info = [
             f"- Script executed on **{socket.gethostname()}** (address: {args.node_name})",
             f"- Trial **#{trial.id:04d}** (suid: {study.study_id})",
-            f"- Optimization score (K-S distance): **{final_opt_score:.3f}**",
+            f"- Optimization score (K-S distance): **{opt_score:.3f}**",
             f"- Model training completed in **{duration}**",
             f"- Model training executed with **pidgan v{pidgan.__version__}**",
             f"- Report generated on **{date}** at **{hour}**",
@@ -552,6 +615,18 @@ with study.trial() as trial:
 
         report.add_markdown("---")
 
+        ## Referee architecture
+        report.add_markdown('<h2 align="center">Referee architecture</h2>')
+        report.add_markdown(f"**Model name:** {gan.referee.name}")
+        html_table, params_details = getSummaryHTML(gan.referee.export_model)
+        model_weights = ""
+        for k, n in zip(["Total", "Trainable", "Non-trainable"], params_details):
+            model_weights += f"- **{k} params:** {n}\n"
+        report.add_markdown(html_table)
+        report.add_markdown(model_weights)
+
+        report.add_markdown("---")
+
         ## Training plots
         prepare_training_plots(
             report=report,
@@ -560,7 +635,8 @@ with study.trial() as trial:
             metrics=metrics,
             num_epochs=num_epochs,
             loss_name=gan.loss_name,
-            is_from_validation_set=(train_ratio != 1.0),
+            from_validation_set=(train_ratio != 1.0),
+            referee_available=True,
             save_images=args.saving,
             images_dirname=export_img_dirname,
         )
@@ -574,7 +650,7 @@ with study.trial() as trial:
             y_pred=out_post,
             y_vars=y_vars,
             weights=w_val,
-            is_from_fullsim="sim" in args.data_sample,
+            from_fullsim="sim" in args.data_sample,
             save_images=args.saving,
             images_dirname=export_img_dirname,
         )

@@ -306,7 +306,7 @@ prepare_training_plots(
     metrics=None,
     num_epochs=num_epochs,
     loss_name=None,
-    is_from_validation_set=(train_ratio != 1.0),
+    from_validation_set=(train_ratio != 1.0),
     save_images=save_output,
     images_dirname=export_img_dirname,
 )
@@ -320,7 +320,7 @@ prepare_validation_plots(
     y_pred=probs.flatten(),
     y_vars=y_vars,
     weights=w_val,
-    is_from_fullsim="sim" in args.data_sample,
+    from_fullsim="sim" in args.data_sample,
     save_images=save_output,
     images_dirname=export_img_dirname,
 )

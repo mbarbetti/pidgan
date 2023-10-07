@@ -114,6 +114,13 @@ def argparser_training(model, description=None) -> ArgumentParser:
     parser.add_argument("--no-weights", dest="weights", action="store_false")
     parser.set_defaults(weights=False)
     parser.add_argument(
+        "--referee",
+        action="store_true",
+        help="enable the training of a third player (referee) during the minimax game (default: False)",
+    )
+    parser.add_argument("--no-referee", dest="referee", action="store_false")
+    parser.set_defaults(referee=False)
+    parser.add_argument(
         "--test",
         action="store_true",
         help="enable overwriting for model, images and reports since test execution (default: False)",
@@ -143,7 +150,7 @@ def argparser_optimization(description=None) -> ArgumentParser:
         "-m",
         "--model",
         required=True,
-        choices=MODELS,
+        choices=MODELS[:-1],
         help="optimize the GAN model for the selected LHCb sub-detector",
     )
     parser.add_argument(
@@ -157,7 +164,7 @@ def argparser_optimization(description=None) -> ArgumentParser:
         "-n",
         "--node_name",
         default=f"{ADDRESS}",
-        help="name given to the computing node that runs the optimization study (default: IP address)",
+        help=f"name given to the computing node that runs the optimization study (default: {ADDRESS})",
     )
     parser.add_argument(
         "-D",

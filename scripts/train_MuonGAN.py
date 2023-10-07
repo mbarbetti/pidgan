@@ -15,7 +15,8 @@ from utils.utils_training import prepare_training_plots, prepare_validation_plot
 import pidgan
 from pidgan.algorithms import BceGAN
 from pidgan.callbacks.schedulers import LearnRateExpDecay
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.classifiers import Classifier
+from pidgan.players.discriminators import AuxDiscriminator
 from pidgan.players.generators import Generator
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
@@ -136,23 +137,35 @@ generator = Generator(
     dtype=DTYPE,
 )
 
-discriminator = Discriminator(
+discriminator = AuxDiscriminator(
     output_dim=hp.get("d_output_dim", 1),
+    aux_features=hp.get(
+        "d_aux_features", [f"{y_vars.index('MuonMuLL')} - {y_vars.index('MuonBgLL')}"]
+    ),
     num_hidden_layers=hp.get("d_num_hidden_layers", 5),
     mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
-    dropout_rate=hp.get("d_dropout_rate", 0.0),
+    dropout_rate=hp.get("d_dropout_rate", 0.1),
     output_activation=hp.get("d_output_activation", "sigmoid"),
     name="discriminator",
+    dtype=DTYPE,
+)
+
+referee = Classifier(
+    num_hidden_layers=hp.get("r_num_hidden_layers", 5),
+    mlp_hidden_units=hp.get("r_mlp_hidden_units", 128),
+    dropout_rate=hp.get("r_dropout_rate", 0.1),
+    name="referee",
     dtype=DTYPE,
 )
 
 gan = BceGAN(
     generator=generator,
     discriminator=discriminator,
-    injected_noise_stddev=0.05,
-    feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
     from_logits=hp.get("gan_from_logits", False),
     label_smoothing=hp.get("gan_label_smoothing", 0.1),
+    injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.05),
+    feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
+    referee=referee if args.referee else None,
 )
 hp.get("gan_name", gan.name)
 
@@ -169,6 +182,10 @@ hp.get("g_optimizer", g_opt.name)
 d_opt = keras.optimizers.RMSprop(hp.get("d_lr0", 0.001))
 hp.get("d_optimizer", d_opt.name)
 
+if gan.referee is not None:
+    r_opt = keras.optimizers.RMSprop(hp.get("r_lr0", 0.001))
+    hp.get("r_optimizer", r_opt.name)
+
 # +----------------------------+
 # |   Training configuration   |
 # +----------------------------+
@@ -181,6 +198,8 @@ gan.compile(
     discriminator_optimizer=d_opt,
     generator_upds_per_batch=hp.get("generator_upds_per_batch", 1),
     discriminator_upds_per_batch=hp.get("discriminator_upds_per_batch", 1),
+    referee_optimizer=r_opt if gan.referee else None,
+    referee_upds_per_batch=hp.get("referee_upds_per_batch", 1) if gan.referee else None,
 )
 
 # +--------------------------+
@@ -210,6 +229,18 @@ d_lr_sched = LearnRateExpDecay(
 )
 hp.get("d_sched", d_lr_sched.name)
 callbacks.append(d_lr_sched)
+
+if gan.referee is not None:
+    r_lr_sched = LearnRateExpDecay(
+        gan.referee_optimizer,
+        decay_rate=hp.get("r_decay_rate", 0.10),
+        decay_steps=hp.get("r_decay_steps", 100_000),
+        min_learning_rate=hp.get("r_min_learning_rate", 1e-6),
+        verbose=True,
+        key="r_lr",
+    )
+    hp.get("r_sched", r_lr_sched.name)
+    callbacks.append(r_lr_sched)
 
 # +------------------------+
 # |   Training procedure   |
@@ -361,6 +392,19 @@ report.add_markdown(model_weights)
 
 report.add_markdown("---")
 
+## Referee architecture
+if gan.referee is not None:
+    report.add_markdown('<h2 align="center">Referee architecture</h2>')
+    report.add_markdown(f"**Model name:** {gan.referee.name}")
+    html_table, params_details = getSummaryHTML(gan.referee.export_model)
+    model_weights = ""
+    for k, n in zip(["Total", "Trainable", "Non-trainable"], params_details):
+        model_weights += f"- **{k} params:** {n}\n"
+    report.add_markdown(html_table)
+    report.add_markdown(model_weights)
+
+    report.add_markdown("---")
+
 ## Training plots
 prepare_training_plots(
     report=report,
@@ -369,7 +413,8 @@ prepare_training_plots(
     metrics=metrics,
     num_epochs=num_epochs,
     loss_name=gan.loss_name,
-    is_from_validation_set=(train_ratio != 1.0),
+    from_validation_set=(train_ratio != 1.0),
+    referee_available=gan.referee is not None,
     save_images=save_output,
     images_dirname=export_img_dirname,
 )
@@ -383,7 +428,7 @@ prepare_validation_plots(
     y_pred=out_post,
     y_vars=y_vars,
     weights=w_val,
-    is_from_fullsim="sim" in args.data_sample,
+    from_fullsim="sim" in args.data_sample,
     save_images=save_output,
     images_dirname=export_img_dirname,
 )

@@ -31,7 +31,8 @@ def prepare_training_plots(
     metrics=None,
     num_epochs=None,
     loss_name=None,
-    is_from_validation_set=True,
+    from_validation_set=True,
+    referee_available=False,
     save_images=False,
     images_dirname="./images",
 ) -> None:
@@ -48,12 +49,18 @@ def prepare_training_plots(
             report=report,
             history=history,
             start_epoch=start_epoch,
-            keys=["g_loss", "d_loss"],
-            colors=["#3288bd", "#fc8d59"],
-            labels=["generator", "discriminator"],
+            keys=["g_loss", "d_loss"]
+            if not referee_available
+            else ["g_loss", "d_loss", "r_loss"],
+            colors=["#3288bd", "#fc8d59"]
+            if not referee_available
+            else ["#3288bd", "#fc8d59", "#4dac26"],
+            labels=["generator", "discriminator"]
+            if not referee_available
+            else ["generator", "discriminator", "referee"],
             legend_loc=None,
             save_figure=save_images,
-            scale_curves=False,
+            scale_curves=True,
             export_fname=f"{images_dirname}/learn-curves",
         )
 
@@ -61,9 +68,15 @@ def prepare_training_plots(
             report=report,
             history=history,
             start_epoch=0,
-            keys=["g_lr", "d_lr"],
-            colors=["#3288bd", "#fc8d59"],
-            labels=["generator", "discriminator"],
+            keys=["g_lr", "d_lr"]
+            if not referee_available
+            else ["g_lr", "d_lr", "r_lr"],
+            colors=["#3288bd", "#fc8d59"]
+            if not referee_available
+            else ["#3288bd", "#fc8d59", "#4dac26"],
+            labels=["generator", "discriminator"]
+            if not referee_available
+            else ["generator", "discriminator", "referee"],
             legend_loc="upper right",
             save_figure=save_images,
             export_fname=f"{images_dirname}/lr-sched",
@@ -76,7 +89,7 @@ def prepare_training_plots(
             key="g_loss",
             ylabel=loss_name,
             title="Generator learning curves",
-            validation_set=is_from_validation_set,
+            validation_set=from_validation_set,
             colors=["#d01c8b", "#4dac26"],
             labels=["training set", "validation set"],
             legend_loc=None,
@@ -92,7 +105,7 @@ def prepare_training_plots(
             key="d_loss",
             ylabel=loss_name,
             title="Discriminator learning curves",
-            validation_set=is_from_validation_set,
+            validation_set=from_validation_set,
             colors=["#d01c8b", "#4dac26"],
             labels=["training set", "validation set"],
             legend_loc=None,
@@ -100,6 +113,23 @@ def prepare_training_plots(
             save_figure=save_images,
             export_fname=f"{images_dirname}/disc-loss",
         )
+
+        if referee_available:
+            metric_curves(
+                report=report,
+                history=history,
+                start_epoch=start_epoch,
+                key="r_loss",
+                ylabel="Binary cross-entropy",
+                title="Referee learning curves",
+                validation_set=from_validation_set,
+                colors=["#d01c8b", "#4dac26"],
+                labels=["training set", "validation set"],
+                legend_loc=None,
+                yscale="linear",
+                save_figure=save_images,
+                export_fname=f"{images_dirname}/ref-loss",
+            )
 
     else:
         metric_curves(
@@ -109,7 +139,7 @@ def prepare_training_plots(
             key="loss",
             ylabel="Binary cross-entropy",
             title="Learning curves",
-            validation_set=is_from_validation_set,
+            validation_set=from_validation_set,
             colors=["#d01c8b", "#4dac26"],
             labels=["training set", "validation set"],
             legend_loc=None,
@@ -139,7 +169,7 @@ def prepare_training_plots(
                 key=metric,
                 ylabel=METRIC_LABELS[metric],
                 title="Metric curves",
-                validation_set=is_from_validation_set,
+                validation_set=from_validation_set,
                 colors=["#d01c8b", "#4dac26"],
                 labels=["training set", "validation set"],
                 legend_loc=None,
@@ -159,7 +189,7 @@ def prepare_validation_plots(
     y_pred,
     y_vars,
     weights=None,
-    is_from_fullsim=True,
+    from_fullsim=True,
     save_images=False,
     images_dirname="./images",
 ) -> None:
@@ -201,7 +231,7 @@ def prepare_validation_plots(
                     weights_gen=weights,
                     xlabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     log_scale=log_scale,
@@ -221,7 +251,7 @@ def prepare_validation_plots(
                     xlabel="Momentum [GeV/$c$]",
                     ylabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     log_scale=log_scale,
@@ -240,7 +270,7 @@ def prepare_validation_plots(
                     weights_gen=weights,
                     xlabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     symbol_bin="$p$",
@@ -260,9 +290,7 @@ def prepare_validation_plots(
                 weights_gen=weights,
                 title=f"{y_var}",
                 xlabel="Momentum [GeV/$c$]",
-                label_ref="Full simulation"
-                if is_from_fullsim
-                else "Calibration samples",
+                label_ref="Full simulation" if from_fullsim else "Calibration samples",
                 label_gen="GAN-based model",
                 save_figure=save_images,
                 export_fname=f"{images_dirname}/{y_var}_vs_p-eff",
@@ -280,7 +308,7 @@ def prepare_validation_plots(
                     xlabel="Pseudorapidity",
                     ylabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     log_scale=log_scale,
@@ -299,7 +327,7 @@ def prepare_validation_plots(
                     weights_gen=weights,
                     xlabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     symbol_bin="$\eta$",
@@ -318,9 +346,7 @@ def prepare_validation_plots(
                 weights_gen=weights,
                 title=f"{y_var}",
                 xlabel="Pseudorapidity",
-                label_ref="Full simulation"
-                if is_from_fullsim
-                else "Calibration samples",
+                label_ref="Full simulation" if from_fullsim else "Calibration samples",
                 label_gen="GAN-based model",
                 save_figure=save_images,
                 export_fname=f"{images_dirname}/{y_var}_vs_eta-eff",
@@ -338,7 +364,7 @@ def prepare_validation_plots(
                     xlabel="$\mathtt{nTracks}$",
                     ylabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     log_scale=log_scale,
@@ -357,7 +383,7 @@ def prepare_validation_plots(
                     weights_gen=weights,
                     xlabel=f"{y_var}",
                     label_ref="Full simulation"
-                    if is_from_fullsim
+                    if from_fullsim
                     else "Calibration samples",
                     label_gen="GAN-based model",
                     symbol_bin="$\mathtt{nTracks}$",
@@ -376,9 +402,7 @@ def prepare_validation_plots(
                 weights_gen=weights,
                 title=f"{y_var}",
                 xlabel="$\mathtt{nTracks}$",
-                label_ref="Full simulation"
-                if is_from_fullsim
-                else "Calibration samples",
+                label_ref="Full simulation" if from_fullsim else "Calibration samples",
                 label_gen="GAN-based model",
                 save_figure=save_images,
                 export_fname=f"{images_dirname}/{y_var}_vs_nTracks-eff",
@@ -400,9 +424,7 @@ def prepare_validation_plots(
                 weights_pred=weights * y_pred if weights else y_pred,
                 xlabel="Momentum [GeV/$c$]",
                 ylabel="Pseudorapidity",
-                label_true="Full simulation"
-                if is_from_fullsim
-                else "Calibration samples",
+                label_true="Full simulation" if from_fullsim else "Calibration samples",
                 label_pred="ANN-based model",
                 log_scale=log_scale,
                 save_figure=save_images,
@@ -421,7 +443,7 @@ def prepare_validation_plots(
             weights_pred=weights,
             xlabel="Momentum [GeV/$c$]",
             label_model="isMuon",
-            label_true="Full simulation" if is_from_fullsim else "Calibration samples",
+            label_true="Full simulation" if from_fullsim else "Calibration samples",
             label_pred="ANN-based model",
             symbol_bin="$\eta$",
             save_figure=save_images,
@@ -439,9 +461,7 @@ def prepare_validation_plots(
                 weights_pred=weights * y_pred if weights else y_pred,
                 xlabel="Momentum [GeV/$c$]",
                 ylabel="$\mathtt{nTracks}$",
-                label_true="Full simulation"
-                if is_from_fullsim
-                else "Calibration samples",
+                label_true="Full simulation" if from_fullsim else "Calibration samples",
                 label_pred="ANN-based model",
                 log_scale=log_scale,
                 save_figure=save_images,
@@ -460,7 +480,7 @@ def prepare_validation_plots(
             weights_pred=weights,
             xlabel="Momentum [GeV/$c$]",
             label_model="isMuon",
-            label_true="Full simulation" if is_from_fullsim else "Calibration samples",
+            label_true="Full simulation" if from_fullsim else "Calibration samples",
             label_pred="ANN-based model",
             symbol_bin="$\mathtt{nTracks}$",
             save_figure=save_images,
@@ -478,9 +498,7 @@ def prepare_validation_plots(
                 weights_pred=weights * y_pred if weights else y_pred,
                 xlabel="Pseudorapidity",
                 ylabel="$\mathtt{nTracks}$",
-                label_true="Full simulation"
-                if is_from_fullsim
-                else "Calibration samples",
+                label_true="Full simulation" if from_fullsim else "Calibration samples",
                 label_pred="ANN-based model",
                 log_scale=log_scale,
                 save_figure=save_images,
@@ -499,7 +517,7 @@ def prepare_validation_plots(
             weights_pred=weights,
             xlabel="Pseudorapidity",
             label_model="isMuon",
-            label_true="Full simulation" if is_from_fullsim else "Calibration samples",
+            label_true="Full simulation" if from_fullsim else "Calibration samples",
             label_pred="ANN-based model",
             symbol_bin="$\mathtt{nTracks}$",
             save_figure=save_images,
