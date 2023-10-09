@@ -39,7 +39,8 @@ def compute_GradientPenalty(
         tape.watch(d_in_hat)
 
         # Value of the discriminator on interpolated points
-        x_hat, y_hat = tf.split(d_in_hat, 2, axis=-1)
+        x_hat = d_in_hat[:, :tf.shape(x_hat)[1]]
+        y_hat = d_in_hat[:, tf.shape(x_hat)[1]:]
         d_out_hat = discriminator((x_hat, y_hat), training=training_discriminator)
         grad = tape.gradient(d_out_hat, d_in_hat)
         norm = tf.norm(grad, axis=-1)
@@ -87,7 +88,8 @@ def compute_CriticGradientPenalty(
         tape.watch(c_in_hat)
 
         # Value of the critic on interpolated points
-        x_hat, y_hat = tf.split(c_in_hat, 2, axis=-1)
+        x_hat = c_in_hat[:, :tf.shape(x_hat)[1]]
+        y_hat = c_in_hat[:, tf.shape(x_hat)[1]:]
         c_out_hat = critic((x_hat, y_hat), (x_gen_2, y_gen_2), training=training_critic)
         grad = tape.gradient(c_out_hat, c_in_hat)
         norm = tf.norm(grad, axis=-1)
