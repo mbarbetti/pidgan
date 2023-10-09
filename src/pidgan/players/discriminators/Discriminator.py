@@ -90,12 +90,11 @@ class Discriminator(keras.Model):
         )
 
     def _prepare_input(self, inputs) -> tf.Tensor:
-        d_in = tf.concat(inputs, axis=-1)
-        return d_in
+        return tf.concat(inputs, axis=-1)
 
     def call(self, inputs) -> tf.Tensor:
-        d_in = self._prepare_input(inputs)
-        out = self._seq(d_in)
+        x = self._prepare_input(inputs)
+        out = self._seq(x)
         return out
 
     def summary(self, **kwargs) -> None:

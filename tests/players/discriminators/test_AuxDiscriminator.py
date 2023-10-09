@@ -87,10 +87,10 @@ def test_model_eval(model, sample_weight):
 
 
 def test_model_export(model):
-    out = model((x, y))
+    out, aux = model((x, y), return_aux_features=True)
     keras.models.save_model(model.export_model, export_dir, save_format="tf")
     model_reloaded = keras.models.load_model(export_dir)
-    in_reloaded = tf.concat((x, y), axis=-1)
+    in_reloaded = tf.concat((x, y, aux), axis=-1)
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()

@@ -50,12 +50,20 @@ class AuxDiscriminator(Discriminator):
             self._aux_features.append(aux_feat)
 
     def _prepare_input(self, inputs) -> tf.Tensor:
-        x, y = inputs
-        new_inputs = [x, y]
+        std_input_feats = tf.concat(inputs, axis=-1)
+        _, y = inputs
+        aux_input_feats = list()
         for aux_idx, aux_op in zip(self._aux_indices, self._aux_operators):
-            new_inputs.append(aux_op(y[:, aux_idx[0]], y[:, aux_idx[1]])[:, None])
-        d_in = tf.concat(new_inputs, axis=1)
-        return d_in
+            aux_input_feats.append(aux_op(y[:, aux_idx[0]], y[:, aux_idx[1]])[:, None])
+        self._aux_input_feats = tf.concat(aux_input_feats, axis=-1)
+        return tf.concat([std_input_feats, self._aux_input_feats], axis=-1)
+
+    def call(self, inputs, return_aux_features=False) -> tf.Tensor:
+        out = super().call(inputs)
+        if return_aux_features:
+            return out, self._aux_input_feats
+        else:
+            return out
 
     @property
     def aux_features(self) -> list:
