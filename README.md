@@ -59,7 +59,7 @@
 |      Players       | Implementation |  Test  | Design inspired by |
 |:------------------:|:--------------:|:------:|:------------------:|
 |  `Discriminator`   |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498) |
-| `AuxDiscriminator` |       🛠️       |   ❌   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [11](https://arxiv.org/abs/2207.06329) |
+| `AuxDiscriminator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [11](https://arxiv.org/abs/2207.06329) |
 
 ### References
 1. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)
