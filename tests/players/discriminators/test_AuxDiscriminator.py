@@ -8,7 +8,7 @@ CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
 
 here = os.path.dirname(__file__)
-export_dir = f"{here}/tmp/discriminator"
+export_dir = f"{here}/tmp/aux-discriminator"
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -19,10 +19,11 @@ labels = tf.cast(labels > 0.5, x.dtype)
 
 @pytest.fixture
 def model():
-    from pidgan.players.discriminators import Discriminator
+    from pidgan.players.discriminators import AuxDiscriminator
 
-    disc = Discriminator(
+    disc = AuxDiscriminator(
         output_dim=1,
+        aux_features=["0 + 1", "2 - 3", "4 * 5", "6 / 7"],
         num_hidden_layers=5,
         mlp_hidden_units=128,
         dropout_rate=0.0,
@@ -35,10 +36,11 @@ def model():
 
 
 def test_model_configuration(model):
-    from pidgan.players.discriminators import Discriminator
+    from pidgan.players.discriminators import AuxDiscriminator
 
-    assert isinstance(model, Discriminator)
+    assert isinstance(model, AuxDiscriminator)
     assert isinstance(model.output_dim, int)
+    assert isinstance(model.aux_features, list)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
     assert isinstance(model.dropout_rate, list)

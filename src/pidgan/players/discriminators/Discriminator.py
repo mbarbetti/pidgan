@@ -89,9 +89,13 @@ class Discriminator(keras.Model):
             )
         )
 
+    def _prepare_input(self, inputs) -> tf.Tensor:
+        d_in = tf.concat(inputs, axis=-1)
+        return d_in
+
     def call(self, inputs) -> tf.Tensor:
-        x = tf.concat(inputs, axis=1)
-        out = self._seq(x)
+        d_in = self._prepare_input(inputs)
+        out = self._seq(d_in)
         return out
 
     def summary(self, **kwargs) -> None:
@@ -101,7 +105,7 @@ class Discriminator(keras.Model):
         hidden_idx = int((self._num_hidden_layers + 1) / 2.0)
         if hidden_idx < 1:
             hidden_idx += 1
-        x = tf.concat(inputs, axis=1)
+        x = self._prepare_input(inputs)
         for layer in self._seq.layers[: 3 * hidden_idx]:  # dense + relu + dropout
             x = layer(x)
         if return_hidden_idx:

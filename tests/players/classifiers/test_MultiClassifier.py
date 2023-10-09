@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import pytest
 import tensorflow as tf
 from tensorflow import keras
@@ -8,41 +9,39 @@ CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
 
 here = os.path.dirname(__file__)
-export_dir = f"{here}/tmp/discriminator"
+export_dir = f"{here}/tmp/multi-classifier"
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
 w = tf.random.uniform(shape=(CHUNK_SIZE,))
-labels = tf.random.uniform(shape=(CHUNK_SIZE,), minval=0.0, maxval=1.0)
-labels = tf.cast(labels > 0.5, x.dtype)
+labels = np.random.choice(3, size=(CHUNK_SIZE,), p=[0.4, 0.2, 0.4])
+labels = tf.one_hot(labels, depth=3, on_value=1.0, off_value=0.0)
 
 
 @pytest.fixture
 def model():
-    from pidgan.players.discriminators import Discriminator
+    from pidgan.players.classifiers import MultiClassifier
 
-    disc = Discriminator(
-        output_dim=1,
+    clf = MultiClassifier(
+        num_multiclasses=labels.shape[1],
         num_hidden_layers=5,
         mlp_hidden_units=128,
         dropout_rate=0.0,
-        output_activation="sigmoid",
     )
-    return disc
+    return clf
 
 
 ###########################################################################
 
 
 def test_model_configuration(model):
-    from pidgan.players.discriminators import Discriminator
+    from pidgan.players.classifiers import MultiClassifier
 
-    assert isinstance(model, Discriminator)
-    assert isinstance(model.output_dim, int)
+    assert isinstance(model, MultiClassifier)
+    assert isinstance(model.num_multiclasses, int)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
     assert isinstance(model.dropout_rate, list)
-    # assert isinstance(model.output_activation, str)
     assert isinstance(model.export_model, keras.Sequential)
 
 
@@ -50,12 +49,8 @@ def test_model_use(model):
     out = model((x, y))
     model.summary()
     test_shape = [x.shape[0]]
-    test_shape.append(model.output_dim)
+    test_shape.append(model.num_multiclasses)
     assert out.shape == tuple(test_shape)
-    hidden_feat, hidden_idx = model.hidden_feature((x, y), return_hidden_idx=True)
-    test_shape = [x.shape[0]]
-    test_shape.append(model.mlp_hidden_units[hidden_idx])
-    assert hidden_feat.shape == tuple(test_shape)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
@@ -71,17 +66,17 @@ def test_model_train(model, sample_weight):
         .prefetch(tf.data.AUTOTUNE)
     )
     adam = keras.optimizers.Adam(learning_rate=0.001)
-    bce = keras.losses.BinaryCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=bce, metrics=["mse"])
+    cce = keras.losses.CategoricalCrossentropy(from_logits=False)
+    model.compile(optimizer=adam, loss=cce, metrics=["mse"])
     model.fit(dataset, epochs=1)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
     adam = keras.optimizers.Adam(learning_rate=0.001)
-    bce = keras.losses.BinaryCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=bce, metrics=["mse"])
-    model.evaluate((x, y), sample_weight=sample_weight)
+    cce = keras.losses.CategoricalCrossentropy(from_logits=False)
+    model.compile(optimizer=adam, loss=cce, metrics=["mse"])
+    model.evaluate(x, sample_weight=sample_weight)
 
 
 def test_model_export(model):

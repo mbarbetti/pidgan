@@ -39,7 +39,7 @@ def test_model_configuration(model):
 
 
 def test_model_use(model):
-    out = model(x)
+    out = model((x, y))
     model.summary()
     test_shape = [x.shape[0], 1]
     assert out.shape == tuple(test_shape)
@@ -48,9 +48,9 @@ def test_model_use(model):
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_train(model, sample_weight):
     if sample_weight is not None:
-        slices = (x, labels, w)
+        slices = ((x, y), labels, w)
     else:
-        slices = (x, labels)
+        slices = ((x, y), labels)
     dataset = (
         tf.data.Dataset.from_tensor_slices(slices)
         .batch(batch_size=BATCH_SIZE, drop_remainder=True)
@@ -72,9 +72,10 @@ def test_model_eval(model, sample_weight):
 
 
 def test_model_export(model):
-    out = model(x)
+    out = model((x, y))
     keras.models.save_model(model.export_model, export_dir, save_format="tf")
     model_reloaded = keras.models.load_model(export_dir)
-    out_reloaded = model_reloaded(x)
+    in_reloaded = tf.concat((x, y), axis=-1)
+    out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()
