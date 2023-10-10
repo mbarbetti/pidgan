@@ -52,14 +52,22 @@
 
 |   Players   | Implementation |  Test  | Design inspired by |
 |:-----------:|:--------------:|:------:|:------------------:|
-| `Generator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661) |
+| `Generator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [10](https://arxiv.org/abs/1411.1784) |
 
 ### Discriminators
 
 |      Players       | Implementation |  Test  | Design inspired by |
 |:------------------:|:--------------:|:------:|:------------------:|
-|  `Discriminator`   |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498) |
-| `AuxDiscriminator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [11](https://arxiv.org/abs/2207.06329) |
+|  `Discriminator`   |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [10](https://arxiv.org/abs/1411.1784) |
+| `AuxDiscriminator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [10](https://arxiv.org/abs/1411.1784), [11](https://arxiv.org/abs/2207.06329) |
+
+### Other players
+
+|      Players       | Implementation |  Test  |
+|:------------------:|:--------------:|:------:|
+|    `Classifier`    |       ✅       |   ✅   |
+|   `AuxClassifier`  |       🛠️       |   ❌   |
+| `MultiClassifier`  |       ✅       |   ✅   |
 
 ### References
 1. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)

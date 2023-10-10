@@ -46,7 +46,11 @@ class AuxDiscriminator(Discriminator):
                 self._aux_operators.append(tf.math.divide)
                 self._aux_indices.append([int(i) for i in aux_feat.split("/")])
             else:
-                raise ValueError("")
+                raise ValueError(
+                    f"Operator for auxiliary features not supported. "
+                    f"Operators should be selected in ['+', '-', '*', '/'], "
+                    f"instead '{aux_feat}' passed."
+                )
             self._aux_features.append(aux_feat)
 
     def _prepare_input(self, inputs) -> tf.Tensor:
