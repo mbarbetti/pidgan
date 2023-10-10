@@ -345,7 +345,7 @@ report.add_markdown('<h1 align="center">GlobalPIDmuGAN training report</h1>')
 info = [
     f"- Script executed on **{socket.gethostname()}**",
     f"- Model training completed in **{duration}**",
-    f"- Model training executed with **pidgan v{pidgan.__version__}**",
+    f"- Model training executed with **TF{tf.__version__}** and **pidgan v{pidgan.__version__}**",
     f"- Report generated on **{date}** at **{hour}**",
     f"- Model trained on **{args.particle}** tracks",
 ]

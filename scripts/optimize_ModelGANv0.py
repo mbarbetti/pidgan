@@ -564,7 +564,7 @@ with study.trial() as trial:
             f"- Trial **#{trial.id:04d}** (suid: {study.study_id})",
             f"- Optimization score (K-S distance): **{opt_score:.3f}**",
             f"- Model training completed in **{duration}**",
-            f"- Model training executed with **pidgan v{pidgan.__version__}**",
+            f"- Model training executed with **TF{tf.__version__}** and **pidgan v{pidgan.__version__}**",
             f"- Report generated on **{date}** at **{hour}**",
             f"- Model trained on **{args.particle}** tracks",
         ]
