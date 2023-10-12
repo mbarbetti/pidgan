@@ -34,40 +34,41 @@
 
 ### Generative Adversarial Networks
 
-|  Algorithms* | Implementation | Lipschitz constraint |  Test  | Design inspired by |
-|:------------:|:--------------:|:--------------------:|:------:|:------------------:|
-|    `GAN`     |       ✅       |          ❌          |   ✅   | [1](https://arxiv.org/abs/1406.2661) , [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
-|   `BceGAN`   |       ✅       |          ❌          |   ✅   | [2](https://arxiv.org/abs/1511.06434), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
-| `BceGAN_GP`  |       ✅       |          ✅          |   ✅   | [2](https://arxiv.org/abs/1511.06434), [5](https://arxiv.org/abs/1704.00028), [9](https://arxiv.org/abs/1606.03498) |
-| `BceGAN_ALP` |       ✅       |          ✅          |   ✅   | [2](https://arxiv.org/abs/1511.06434), [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) |
-|   `LSGAN`    |       ✅       |          ❌          |   ✅   | [3](https://arxiv.org/abs/1611.04076), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) |
-|   `WGAN`     |       ✅       |          ✅          |   ✅   | [4](https://arxiv.org/abs/1701.07875), [9](https://arxiv.org/abs/1606.03498) |
-|  `WGAN_GP`   |       ✅       |          ✅          |   ✅   | [5](https://arxiv.org/abs/1704.00028), [9](https://arxiv.org/abs/1606.03498) |
-| `CramerGAN`  |       ✅       |          ✅          |   ✅   | [6](https://arxiv.org/abs/1705.10743), [9](https://arxiv.org/abs/1606.03498) |
-|  `WGAN_ALP`  |       ✅       |          ✅          |   ✅   | [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) |
+| Algorithms* | Avail | Lipschitz constraint** | Test | Design inspired by | Tutorial |
+|:-----------:|:-----:|:----------------------:|:----:|:------------------:|:--------:|
+| [`GAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/GAN.py) | ✅ | ❌ | ✅ | [1](https://arxiv.org/abs/1406.2661), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-GAN-LHCb_RICH.ipynb) |
+| [`BceGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/BceGAN.py) | ✅ | ❌ | ✅ | [2](https://arxiv.org/abs/1511.06434), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN-LHCb_RICH.ipynb) |
+| [`BceGAN_GP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/BceGAN_GP.py) | ✅ | ✅ | ✅ | [2](https://arxiv.org/abs/1511.06434), [5](https://arxiv.org/abs/1704.00028), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN_GP-LHCb_RICH.ipynb) |
+| [`BceGAN_ALP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/BceGAN_ALP.py) | ✅ | ✅ | ✅ | [2](https://arxiv.org/abs/1511.06434), [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN_ALP-LHCb_RICH.ipynb) |
+| [`LSGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/LSGAN.py) | ✅ | ❌ | ✅ | [3](https://arxiv.org/abs/1611.04076), [8](https://arxiv.org/abs/1701.04862), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-LSGAN-LHCb_RICH.ipynb) |
+| [`WGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/WGAN.py) | ✅ | ✅ | ✅ | [4](https://arxiv.org/abs/1701.07875), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN-LHCb_RICH.ipynb) |
+| [`WGAN_GP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/WGAN_GP.py) | ✅ | ✅ | ✅ | [5](https://arxiv.org/abs/1704.00028), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN_GP-LHCb_RICH.ipynb) |
+| [`CramerGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/CramerGAN.py) | ✅ | ✅ | ✅ | [6](https://arxiv.org/abs/1705.10743), [9](https://arxiv.org/abs/1606.03498) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-CramerGAN-LHCb_RICH.ipynb) |
+| [`WGAN_ALP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/WGAN_ALP.py) | ✅ | ✅ | ✅ | [7](https://arxiv.org/abs/1907.05681), [9](https://arxiv.org/abs/1606.03498) |  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN_ALP-LHCb_RICH.ipynb) |
 
 *each GAN algorithm is designed to operate taking __conditions__ as input [[10](https://arxiv.org/abs/1411.1784)]
+**the GAN training is regularized to ensure that the discriminator encodes a 1-Lipschitz function
 
 ### Generators
 
-|   Players   | Implementation |  Test  | Design inspired by |
-|:-----------:|:--------------:|:------:|:------------------:|
-| `Generator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [10](https://arxiv.org/abs/1411.1784) |
+| Players | Avail | Test | Design inspired by |
+|:-------:|:-----:|:----:|:------------------:|
+| [`Generator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/Generator.py) | ✅ | ✅ | [1](https://arxiv.org/abs/1406.2661), [10](https://arxiv.org/abs/1411.1784) |
 
 ### Discriminators
 
-|      Players       | Implementation |  Test  | Design inspired by |
-|:------------------:|:--------------:|:------:|:------------------:|
-|  `Discriminator`   |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [10](https://arxiv.org/abs/1411.1784) |
-| `AuxDiscriminator` |       ✅       |   ✅   | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [10](https://arxiv.org/abs/1411.1784), [11](https://arxiv.org/abs/2207.06329) |
+| Players | Avail | Test | Design inspired by |
+|:-------:|:-----:|:----:|:------------------:|
+| [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) | ✅ | ✅ | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [10](https://arxiv.org/abs/1411.1784) |
+| [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) | ✅ | ✅ | [1](https://arxiv.org/abs/1406.2661), [9](https://arxiv.org/abs/1606.03498), [10](https://arxiv.org/abs/1411.1784), [11](https://arxiv.org/abs/2207.06329) |
 
 ### Other players
 
-|      Players       | Implementation |  Test  |
-|:------------------:|:--------------:|:------:|
-|    `Classifier`    |       ✅       |   ✅   |
-|   `AuxClassifier`  |       🛠️       |   ❌   |
-| `MultiClassifier`  |       ✅       |   ✅   |
+| Players | Avail | Test | Inherit from |
+|:-------:|:-----:|:----:|:------------:|
+| [`Classifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/Classifier.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) |
+| `AuxClassifier` | 🛠️ | ❌ | [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) |
+| [`MultiClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiClassifier.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) |
 
 ### References
 1. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661](https://arxiv.org/abs/1406.2661)
