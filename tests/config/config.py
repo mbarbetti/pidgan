@@ -15,9 +15,7 @@ parser.add_argument("--interactive", action="store_true")
 parser.add_argument("--no-interactive", dest="interactive", action="store_false")
 parser.set_defaults(interactive=True)
 
-parser.add_argument(
-    "-s", "--server", default="http://hopaas.cloud.infn.it:11756"
-)  # https://hopaas.cloud.infn.it
+parser.add_argument("-s", "--server", default="https://hopaas.cloud.infn.it")
 parser.add_argument("-t", "--token", default="user-api-token")
 config_hopaas = dict()
 
