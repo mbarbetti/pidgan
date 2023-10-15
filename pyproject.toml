@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-lamarr = [
+hep = [
   "numpy",
   "scipy",
   "pandas",
