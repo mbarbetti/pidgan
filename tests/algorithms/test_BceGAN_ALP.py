@@ -17,7 +17,7 @@ gen = Generator(
     latent_dim=64,
     num_hidden_layers=4,
     mlp_hidden_units=32,
-    dropout_rate=0.1,
+    mlp_dropout_rates=0.1,
     output_activation=None,
 )
 
@@ -25,11 +25,11 @@ disc = Discriminator(
     output_dim=1,
     num_hidden_layers=4,
     mlp_hidden_units=32,
-    dropout_rate=0.0,
+    mlp_dropout_rates=0.0,
     output_activation="sigmoid",
 )
 
-ref = Classifier(num_hidden_layers=2, mlp_hidden_units=32, dropout_rate=0.0)
+ref = Classifier(num_hidden_layers=2, mlp_hidden_units=32, mlp_dropout_rates=0.0)
 
 
 @pytest.fixture

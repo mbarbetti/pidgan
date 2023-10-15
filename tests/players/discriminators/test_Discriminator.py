@@ -25,7 +25,7 @@ def model():
         output_dim=1,
         num_hidden_layers=5,
         mlp_hidden_units=128,
-        dropout_rate=0.0,
+        mlp_dropout_rates=0.0,
         output_activation="sigmoid",
     )
     return disc
@@ -41,12 +41,24 @@ def test_model_configuration(model):
     assert isinstance(model.output_dim, int)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
-    assert isinstance(model.dropout_rate, list)
+    assert isinstance(model.mlp_dropout_rates, list)
     # assert isinstance(model.output_activation, str)
     assert isinstance(model.export_model, keras.Sequential)
 
 
-def test_model_use(model):
+@pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
+@pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
+@pytest.mark.parametrize("output_activation", ["sigmoid", None])
+def test_model_use(mlp_hidden_units, mlp_dropout_rates, output_activation):
+    from pidgan.players.discriminators import Discriminator
+
+    model = Discriminator(
+        output_dim=1,
+        num_hidden_layers=3,
+        mlp_hidden_units=mlp_hidden_units,
+        mlp_dropout_rates=mlp_dropout_rates,
+        output_activation=output_activation,
+    )
     out = model((x, y))
     model.summary()
     test_shape = [x.shape[0]]

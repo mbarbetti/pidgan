@@ -8,7 +8,7 @@ class Classifier(Discriminator):
         self,
         num_hidden_layers=5,
         mlp_hidden_units=128,
-        dropout_rate=0.0,
+        mlp_dropout_rates=0.0,
         name=None,
         dtype=None,
     ) -> None:
@@ -16,7 +16,7 @@ class Classifier(Discriminator):
             output_dim=1,
             num_hidden_layers=num_hidden_layers,
             mlp_hidden_units=mlp_hidden_units,
-            dropout_rate=dropout_rate,
+            mlp_dropout_rates=mlp_dropout_rates,
             output_activation="sigmoid",
             name=name,
             dtype=dtype,

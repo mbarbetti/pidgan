@@ -10,7 +10,7 @@ class Discriminator(keras.Model):
         output_dim,
         num_hidden_layers=5,
         mlp_hidden_units=128,
-        dropout_rate=0.0,
+        mlp_dropout_rates=0.0,
         output_activation="sigmoid",
         name=None,
         dtype=None,
@@ -36,21 +36,23 @@ class Discriminator(keras.Model):
             self._mlp_hidden_units = list()
             for units in mlp_hidden_units:
                 assert isinstance(units, (int, float))
-                assert mlp_hidden_units >= 1
+                assert units >= 1
                 self._mlp_hidden_units.append(int(units))
 
         # Dropout rate
-        if isinstance(dropout_rate, (int, float)):
-            assert dropout_rate >= 0.0 and dropout_rate < 1.0
-            self._dropout_rate = [float(dropout_rate)] * self._num_hidden_layers
+        if isinstance(mlp_dropout_rates, (int, float)):
+            assert mlp_dropout_rates >= 0.0 and mlp_dropout_rates < 1.0
+            self._mlp_dropout_rates = [
+                float(mlp_dropout_rates)
+            ] * self._num_hidden_layers
         else:
-            dropout_rate = list(dropout_rate)
-            assert len(dropout_rate) == self._num_hidden_layers
-            self._dropout_rate = list()
-            for rate in dropout_rate:
+            mlp_dropout_rates = list(mlp_dropout_rates)
+            assert len(mlp_dropout_rates) == self._num_hidden_layers
+            self._mlp_dropout_rates = list()
+            for rate in mlp_dropout_rates:
                 assert isinstance(rate, (int, float))
                 assert rate >= 0.0 and rate < 1.0
-                self._dropout_rate.append(float(rate))
+                self._mlp_dropout_rates.append(float(rate))
 
         # Output activation
         self._output_activation = output_activation
@@ -58,7 +60,7 @@ class Discriminator(keras.Model):
         # Model
         self._seq = keras.Sequential(name=f"{name}_seq" if name else None)
         for i, (units, rate) in enumerate(
-            zip(self._mlp_hidden_units, self._dropout_rate)
+            zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
             self._seq.add(
                 keras.layers.Dense(
@@ -125,8 +127,8 @@ class Discriminator(keras.Model):
         return self._mlp_hidden_units
 
     @property
-    def dropout_rate(self) -> list:
-        return self._dropout_rate
+    def mlp_dropout_rates(self) -> list:
+        return self._mlp_dropout_rates
 
     @property
     def output_activation(self):

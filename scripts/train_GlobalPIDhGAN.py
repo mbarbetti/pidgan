@@ -136,7 +136,7 @@ generator = Generator(
     latent_dim=hp.get("g_latent_dim", 64),
     num_hidden_layers=hp.get("g_num_hidden_layers", 5),
     mlp_hidden_units=hp.get("g_mlp_hidden_units", 128),
-    dropout_rate=hp.get("g_dropout_rate", 0.0),
+    mlp_dropout_rates=hp.get("g_mlp_dropout_rates", 0.0),
     name="generator",
     dtype=DTYPE,
 )
@@ -148,7 +148,7 @@ discriminator = AuxDiscriminator(
     ),
     num_hidden_layers=hp.get("d_num_hidden_layers", 5),
     mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
-    dropout_rate=hp.get("d_dropout_rate", 0.1),
+    mlp_dropout_rates=hp.get("d_mlp_dropout_rates", 0.1),
     output_activation=hp.get("d_output_activation", "sigmoid"),
     name="discriminator",
     dtype=DTYPE,
@@ -157,7 +157,7 @@ discriminator = AuxDiscriminator(
 referee = Classifier(
     num_hidden_layers=hp.get("r_num_hidden_layers", 5),
     mlp_hidden_units=hp.get("r_mlp_hidden_units", 128),
-    dropout_rate=hp.get("r_dropout_rate", 0.1),
+    mlp_dropout_rates=hp.get("r_mlp_dropout_rates", 0.1),
     name="referee",
     dtype=DTYPE,
 )

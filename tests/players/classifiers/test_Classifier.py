@@ -21,7 +21,7 @@ labels = tf.cast(labels > 0.5, x.dtype)
 def model():
     from pidgan.players.classifiers import Classifier
 
-    clf = Classifier(num_hidden_layers=5, mlp_hidden_units=128, dropout_rate=0.0)
+    clf = Classifier(num_hidden_layers=5, mlp_hidden_units=128, mlp_dropout_rates=0.0)
     return clf
 
 
@@ -34,11 +34,20 @@ def test_model_configuration(model):
     assert isinstance(model, Classifier)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
-    assert isinstance(model.dropout_rate, list)
+    assert isinstance(model.mlp_dropout_rates, list)
     assert isinstance(model.export_model, keras.Sequential)
 
 
-def test_model_use(model):
+@pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
+@pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
+def test_model_use(mlp_hidden_units, mlp_dropout_rates):
+    from pidgan.players.classifiers import Classifier
+
+    model = Classifier(
+        num_hidden_layers=3,
+        mlp_hidden_units=mlp_hidden_units,
+        mlp_dropout_rates=mlp_dropout_rates,
+    )
     out = model((x, y))
     model.summary()
     test_shape = [x.shape[0], 1]

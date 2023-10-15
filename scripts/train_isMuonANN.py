@@ -129,7 +129,7 @@ else:
 classifier = Classifier(
     num_hidden_layers=hp.get("num_hidden_layers", 5),
     mlp_hidden_units=hp.get("mlp_hidden_units", 128),
-    dropout_rate=hp.get("dropout_rate", 0.1),
+    mlp_dropout_rates=hp.get("mlp_dropout_rates", 0.1),
     name="classifier",
     dtype=DTYPE,
 )
