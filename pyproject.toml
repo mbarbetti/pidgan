@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pidgan"
 dynamic = ["version"]
-description = "GAN-based models to fast-simulate the LHCb PID detectors"
+description = "GAN-based models to flash-simulate the LHCb PID detectors"
 readme = "README.md"
-requires-python = ">=3.7, <=3.11"
+requires-python = ">=3.7, <3.12"
 license = {text = "GPLv3 License"}
 authors = [
-  {name = "Matteo Barbetti", email = "matteo.barbetti@fi.infn.it"},
+  {name = "Matteo Barbetti", email = "matteo.barbetti@cnaf.infn.it"},
   {name = "Lucio Anderlini", email = "lucio.anderlini@fi.infn.it"},
 ]
 keywords = [

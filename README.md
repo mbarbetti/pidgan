@@ -7,7 +7,7 @@
 <h1 align="center">PIDGAN</h1>
 
 <h2 align="center">
-  <em>GAN-based models to fast-simulate the LHCb PID detectors</em>
+  <em>GAN-based models to flash-simulate the LHCb PID detectors</em>
 </h2>
 
 <p align="center">
