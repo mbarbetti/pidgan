@@ -25,13 +25,12 @@ class LearnRateBaseScheduler(keras.callbacks.Callback):
         init_lr = K.get_value(self._optimizer.learning_rate)
         self._init_lr = tf.identity(init_lr)
         self._dtype = self._init_lr.dtype
-        self._step = -1
+        self._step = tf.cast(-1.0, self._dtype)
 
     def on_batch_begin(self, batch, logs=None) -> None:
-        self._step += 1
-        step = tf.cast(self._step, self._dtype)
+        self._step += 1.0
         K.set_value(
-            self._optimizer.learning_rate, self._scheduled_lr(self._init_lr, step)
+            self._optimizer.learning_rate, self._scheduled_lr(self._init_lr, self._step)
         )
 
     def _scheduled_lr(self, init_lr, step) -> tf.Tensor:
