@@ -17,10 +17,11 @@ keywords = [
   "tensorflow",
   "machine learning",
   "deep learning",
+  "generative models",
   "generative adversarial nets",
   "lhcb experiment",
   "lamarr",
-  "ultra-fast simulation",
+  "flash-simulation",
   "particle identification",
 ]
 classifiers = [
@@ -52,9 +53,7 @@ hep = [
   "pyyaml",
 ]
 style = [
-  "black",
-  "flake8",
-  "isort[colors]",
+  "ruff",
 ]
 tests = [
   "pytest>=6.0",
