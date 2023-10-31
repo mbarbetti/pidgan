@@ -216,10 +216,12 @@ if err_percentage > err_patience:
     print(ismuon_err_df[["q_err_isMuon", "abs_err_isMuon"]].describe(), "\n")
     print("*** Number error instances ***")
     print(
-        f"abs(q_err_isMuon) > {max_q_err} & abs_err_isMuon > {MAX_ABS_ERR} : {err_counts} / {len(ismuon_err_df['q_err_isMuon'])}\n"
+        f"abs(q_err_isMuon) > {max_q_err} & abs_err_isMuon > {MAX_ABS_ERR} : "
+        f"{err_counts} / {len(ismuon_err_df['q_err_isMuon'])}\n"
     )
     raise Exception(
-        f"C and Python isMuon model implementations were found inconsistent ({100 * err_percentage:.2f}%)"
+        f"C and Python isMuon model implementations were found "
+        f"inconsistent ({100 * err_percentage:.2f}%)"
     )
 
 if args.verbose:
@@ -271,10 +273,13 @@ for model, n_out in zip(
             )
             print("*** Number error instances ***")
             print(
-                f"abs(q_err_{out_vars[model][j]}) > {max_q_err} & abs_err_{out_vars[model][j]} > {MAX_ABS_ERR} : {err_counts} / {len(model_err_df[f'q_err_{out_vars[model][j]}'])}\n"
+                f"abs(q_err_{out_vars[model][j]}) > {max_q_err} & "
+                f"abs_err_{out_vars[model][j]} > {MAX_ABS_ERR} : "
+                f"{err_counts} / {len(model_err_df[f'q_err_{out_vars[model][j]}'])}\n"
             )
             raise Exception(
-                f"C and Python {out_vars[model][j]} model implementations were found inconsistent ({100 * err_percentage:.2f}%)"
+                f"C and Python {out_vars[model][j]} model implementations "
+                f"were found inconsistent ({100 * err_percentage:.2f}%)"
             )
 
     if args.verbose:

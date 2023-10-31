@@ -71,7 +71,8 @@ for i in trange(len(data_fnames), desc="Processing data files", unit="file"):
         )
 
 print(
-    f"[INFO] Data from {len(data_fnames)} files correctly loaded in {time()-start:.2f} s"
+    f"[INFO] Data from {len(data_fnames)} files "
+    f"correctly loaded in {time()-start:.2f} s"
 )
 
 df = pd.concat(dataframes, ignore_index=True).dropna()
@@ -269,7 +270,8 @@ np.savez(
 )
 
 print(
-    f"[INFO] Training data of {len(df_preprocessed)} instances correctly saved to '{export_data_fname}'"
+    f"[INFO] Training data of {len(df_preprocessed)} "
+    f"instances correctly saved to '{export_data_fname}'"
 )
 
 # +---------------------------------+

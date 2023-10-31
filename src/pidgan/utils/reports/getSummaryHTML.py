@@ -27,9 +27,7 @@ def getSummaryHTML(model) -> tuple:
     table_html = '<table width="40%" border="1px solid black">\n \
                   <thead>\n{}</thead>\n \
                   <tbody>\n{}</tbody>\n \
-                  </table>'.format(
-        heads_html, rows_html
-    )
+                  </table>'.format(heads_html, rows_html)
 
     params_details = (train_params + nontrain_params, train_params, nontrain_params)
 

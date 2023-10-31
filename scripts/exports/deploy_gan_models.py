@@ -32,7 +32,8 @@ parser.add_argument(
     "--data_sample",
     required=True,
     choices=DATA_SAMPLES,
-    help="data samples used to train the parameterizations provided within model directory",
+    help="data samples used to train the parameterizations "
+    "provided within model directory",
 )
 parser.add_argument(
     "-M",

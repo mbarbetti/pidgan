@@ -411,7 +411,7 @@ def prepare_validation_plots(
             report.add_markdown("---")
 
     else:
-        report.add_markdown(f'<h2 align="center">Validation plots</h2>')
+        report.add_markdown('<h2 align="center">Validation plots</h2>')
 
         for log_scale in [False, True]:
             validation_2d_histogram(

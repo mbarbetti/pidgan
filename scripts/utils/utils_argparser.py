@@ -27,7 +27,8 @@ def argparser_preprocessing(description=None) -> ArgumentParser:
         "-F",
         "--filename",
         default="./data/LamarrPidTraining.root",
-        help="path of the files from which downoloading data (default: './data/LamarrPidTraining.root')",
+        help="path of the files from which downoloading "
+        "data (default: './data/LamarrPidTraining.root')",
     )
     parser.add_argument(
         "-M",
@@ -39,7 +40,8 @@ def argparser_preprocessing(description=None) -> ArgumentParser:
         "-C",
         "--chunk_size",
         default=-1,
-        help="maximum number of instancens downloaded from the overall files (default: -1)",
+        help="maximum number of instancens downloaded from "
+        "the overall files (default: -1)",
     )
     parser.add_argument(
         "-D",
@@ -58,7 +60,8 @@ def argparser_preprocessing(description=None) -> ArgumentParser:
     parser.add_argument(
         "--tricks",
         action="store_true",
-        help="combine smartly some of the varibles downloaded from the data files (default: False)",
+        help="combine smartly some of the varibles downloaded "
+        "from the data files (default: False)",
     )
     parser.add_argument("--no-tricks", dest="tricks", action="store_false")
     parser.set_defaults(tricks=False)
@@ -91,7 +94,8 @@ def argparser_training(model, description=None) -> ArgumentParser:
         "-C",
         "--chunk_size",
         default=-1,
-        help="maximum number of instancens to be used for training/validation (default: -1)",
+        help="maximum number of instancens to be used for "
+        "training/validation (default: -1)",
     )
     parser.add_argument(
         "-T",
@@ -116,28 +120,32 @@ def argparser_training(model, description=None) -> ArgumentParser:
     parser.add_argument(
         "--referee",
         action="store_true",
-        help="enable the training of a third player (referee) during the minimax game (default: False)",
+        help="enable the training of a third player (referee) "
+        "during the minimax game (default: False)",
     )
     parser.add_argument("--no-referee", dest="referee", action="store_false")
     parser.set_defaults(referee=False)
     parser.add_argument(
         "--test",
         action="store_true",
-        help="enable overwriting for model, images and reports since test execution (default: False)",
+        help="enable overwriting for model, images and reports "
+        "since test execution (default: False)",
     )
     parser.add_argument("--no-test", dest="test", action="store_false")
     parser.set_defaults(test=False)
     parser.add_argument(
         "--saving",
         action="store_true",
-        help="enable to save the trained model and all the images produced (default: False)",
+        help="enable to save the trained model and all the "
+        "images produced (default: False)",
     )
     parser.add_argument("--no-saving", dest="saving", action="store_false")
     parser.set_defaults(saving=False)
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="enable overwriting for model, images and reports since latest execution (default: False)",
+        help="enable overwriting for model, images and reports "
+        "since latest execution (default: False)",
     )
     parser.add_argument("--no-latest", dest="latest", action="store_false")
     parser.set_defaults(latest=False)
@@ -164,7 +172,8 @@ def argparser_optimization(description=None) -> ArgumentParser:
         "-n",
         "--node_name",
         default=f"{ADDRESS}",
-        help=f"name given to the computing node that runs the optimization study (default: {ADDRESS})",
+        help=f"name given to the computing node that runs the "
+        f"optimization study (default: {ADDRESS})",
     )
     parser.add_argument(
         "-D",
@@ -202,14 +211,16 @@ def argparser_optimization(description=None) -> ArgumentParser:
     parser.add_argument(
         "--test",
         action="store_true",
-        help="enable overwriting for model, images and reports since test execution (default: False)",
+        help="enable overwriting for model, images and reports "
+        "since test execution (default: False)",
     )
     parser.add_argument("--no-test", dest="test", action="store_false")
     parser.set_defaults(test=False)
     parser.add_argument(
         "--saving",
         action="store_true",
-        help="enable to save the trained model and all the images produced (default: False)",
+        help="enable to save the trained model and all "
+        "the images produced (default: False)",
     )
     parser.add_argument("--no-saving", dest="saving", action="store_false")
     parser.set_defaults(saving=False)

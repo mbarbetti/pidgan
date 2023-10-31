@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
 out_vars = {
     "isMuon": ["isMuon"],

@@ -56,10 +56,10 @@ def learning_curves(
     plt.title("Learning curves", fontsize=14)
     plt.xlabel("Training epochs", fontsize=12)
     plt.ylabel("Loss", fontsize=12)
-    for i, (k, l, c) in enumerate(zip(keys, labels, colors)):
-        num_epochs = np.arange(len(history[k]))[start_epoch:]
-        loss = np.array(history[k])[start_epoch:] * scales[i]
-        plt.plot(num_epochs, loss, lw=1.5, color=c, label=l)
+    for i, (key, label, color) in enumerate(zip(keys, labels, colors)):
+        num_epochs = np.arange(len(history[key]))[start_epoch:]
+        loss = np.array(history[key])[start_epoch:] * scales[i]
+        plt.plot(num_epochs, loss, lw=1.5, color=color, label=label)
     plt.legend(loc=legend_loc, fontsize=10)
     if save_figure:
         plt.savefig(f"{export_fname}.png")
@@ -93,10 +93,10 @@ def learn_rate_scheduling(
     plt.title("Learning rate scheduling", fontsize=14)
     plt.xlabel("Training epochs", fontsize=12)
     plt.ylabel("Learning rate", fontsize=12)
-    for k, l, c in zip(keys, labels, colors):
-        num_epochs = np.arange(len(history[k]))[start_epoch:]
-        lr = np.array(history[k])[start_epoch:]
-        plt.plot(num_epochs, lr, lw=1.5, color=c, label=l)
+    for key, label, color in zip(keys, labels, colors):
+        num_epochs = np.arange(len(history[key]))[start_epoch:]
+        lr = np.array(history[key])[start_epoch:]
+        plt.plot(num_epochs, lr, lw=1.5, color=color, label=label)
     plt.legend(loc=legend_loc, fontsize=10)
     plt.yscale("log")
     if save_figure:
@@ -140,10 +140,10 @@ def metric_curves(
     plt.title(title, fontsize=14)
     plt.xlabel("Training epochs", fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
-    for k, l, c in zip(keys, labels, colors):
-        num_epochs = np.arange(len(history[k]))[start_epoch:]
-        metric = np.array(history[k])[start_epoch:]
-        plt.plot(num_epochs, metric, lw=1.5, color=c, label=l, zorder=zorder)
+    for key, label, color in zip(keys, labels, colors):
+        num_epochs = np.arange(len(history[key]))[start_epoch:]
+        metric = np.array(history[key])[start_epoch:]
+        plt.plot(num_epochs, metric, lw=1.5, color=color, label=label, zorder=zorder)
         zorder -= 1
     plt.legend(loc=legend_loc, fontsize=10)
     plt.yscale(yscale)
