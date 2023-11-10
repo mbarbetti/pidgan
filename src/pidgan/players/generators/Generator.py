@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow import keras
 
 LEAKY_ALPHA = 0.1
-SEED = 42
 
 
 class Generator(keras.Model):
@@ -106,7 +105,7 @@ class Generator(keras.Model):
         self._seq.summary(**kwargs)
 
     def generate(self, x, seed=None, return_latent_sample=False) -> tf.Tensor:
-        tf.random.set_seed(seed=SEED)
+        tf.random.set_seed(seed=seed)
         x, latent_sample = self._prepare_input(x, seed=seed)
         out = self._seq(x)
         if return_latent_sample:

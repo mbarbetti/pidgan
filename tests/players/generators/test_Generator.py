@@ -94,10 +94,13 @@ def test_model_eval(model, sample_weight):
 
 
 def test_model_generate(model):
-    out = model.generate(x, seed=42)
-    comparison = out.numpy() == model.generate(x, seed=42).numpy()
+    no_seed_out = model.generate(x, seed=None)
+    comparison = no_seed_out.numpy() != model.generate(x, seed=None).numpy()
     assert comparison.all()
-    comparison = out.numpy() != model.generate(x, seed=24).numpy()
+    seed_out = model.generate(x, seed=42)
+    comparison = seed_out.numpy() == model.generate(x, seed=42).numpy()
+    assert comparison.all()
+    comparison = seed_out.numpy() != model.generate(x, seed=24).numpy()
     assert comparison.any()
 
 
