@@ -25,6 +25,7 @@ def model():
         aux_features=["0 + 1", "2 - 3", "4 * 5", "6 / 7"],
         num_hidden_layers=5,
         mlp_hidden_units=128,
+        mlp_hidden_activation="relu",
         mlp_dropout_rates=0.0,
         enable_residual_blocks=False,
     )
@@ -41,19 +42,22 @@ def test_model_configuration(model):
     assert isinstance(model.aux_features, list)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, int)
+    # assert isinstance(model.mlp_hidden_activation, str)
     assert isinstance(model.mlp_dropout_rates, float)
     assert isinstance(model.enable_residual_blocks, bool)
 
 
+@pytest.mark.parametrize("mlp_hidden_activation", ["relu", "leaky_relu"])
 @pytest.mark.parametrize("enable_res_blocks", [True, False])
 @pytest.mark.parametrize("inputs", [y, (x, y)])
-def test_model_use(enable_res_blocks, inputs):
+def test_model_use(mlp_hidden_activation, enable_res_blocks, inputs):
     from pidgan.players.classifiers import AuxClassifier
 
     model = AuxClassifier(
         aux_features=["0 + 1", "2 - 3", "4 * 5", "6 / 7"],
         num_hidden_layers=3,
         mlp_hidden_units=128,
+        mlp_hidden_activation=mlp_hidden_activation,
         mlp_dropout_rates=0.0,
         enable_residual_blocks=enable_res_blocks,
     )

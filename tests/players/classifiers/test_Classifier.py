@@ -21,7 +21,12 @@ labels = tf.cast(labels > 0.5, x.dtype)
 def model():
     from pidgan.players.classifiers import Classifier
 
-    clf = Classifier(num_hidden_layers=5, mlp_hidden_units=128, mlp_dropout_rates=0.0)
+    clf = Classifier(
+        num_hidden_layers=5,
+        mlp_hidden_units=128,
+        mlp_hidden_activation="relu",
+        mlp_dropout_rates=0.0,
+    )
     return clf
 
 
@@ -34,25 +39,28 @@ def test_model_configuration(model):
     assert isinstance(model, Classifier)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
+    # assert isinstance(model.mlp_hidden_activation, str)
     assert isinstance(model.mlp_dropout_rates, list)
-    assert isinstance(model.export_model, keras.Sequential)
 
 
 @pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
+@pytest.mark.parametrize("mlp_hidden_activation", ["relu", "leaky_relu"])
 @pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
 @pytest.mark.parametrize("inputs", [y, (x, y)])
-def test_model_use(mlp_hidden_units, mlp_dropout_rates, inputs):
+def test_model_use(mlp_hidden_units, mlp_hidden_activation, mlp_dropout_rates, inputs):
     from pidgan.players.classifiers import Classifier
 
     model = Classifier(
         num_hidden_layers=3,
         mlp_hidden_units=mlp_hidden_units,
+        mlp_hidden_activation=mlp_hidden_activation,
         mlp_dropout_rates=mlp_dropout_rates,
     )
     out = model(inputs)
     model.summary()
     test_shape = [x.shape[0], 1]
     assert out.shape == tuple(test_shape)
+    assert isinstance(model.export_model, keras.Sequential)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])

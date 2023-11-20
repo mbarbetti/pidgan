@@ -17,6 +17,8 @@ class Generator(keras.Model):
         dtype=None,
     ) -> None:
         super().__init__(name=name, dtype=dtype)
+        self._hidden_activation_func = None
+        self._model = None
 
         # Output dimension
         assert output_dim >= 1
@@ -62,39 +64,49 @@ class Generator(keras.Model):
         # Output activation
         self._output_activation = output_activation
 
-        # Model
-        self._model = keras.Sequential(name=f"{name}_seq" if name else None)
+    def _define_arch(self) -> keras.Sequential:
+        model = keras.Sequential(name=f"{self.name}_seq" if self.name else None)
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
-            self._model.add(
+            model.add(
                 keras.layers.Dense(
                     units=units,
-                    activation=None,
+                    activation=self._hidden_activation_func,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
-                    name=f"dense_{i}" if name else None,
+                    name=f"dense_{i}" if self.name else None,
                     dtype=self.dtype,
                 )
             )
-            self._model.add(
-                keras.layers.LeakyReLU(
-                    alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None
+            if self._hidden_activation_func is None:
+                model.add(
+                    keras.layers.LeakyReLU(
+                        alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if self.name else None
+                    )
+                )
+            model.add(
+                keras.layers.Dropout(
+                    rate=rate, name=f"dropout_{i}" if self.name else None
                 )
             )
-            self._model.add(
-                keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None)
-            )
-        self._model.add(
+        model.add(
             keras.layers.Dense(
-                units=output_dim,
-                activation=output_activation,
+                units=self._output_dim,
+                activation=self._output_activation,
                 kernel_initializer="glorot_uniform",
                 bias_initializer="zeros",
-                name="dense_out" if name else None,
+                name="dense_out" if self.name else None,
                 dtype=self.dtype,
             )
         )
+        return model
+
+    def _build_model(self, x) -> None:
+        if self._model is None:
+            self._model = self._define_arch()
+        else:
+            pass
 
     def _prepare_input(self, x, seed=None) -> tuple:
         latent_sample = tf.random.normal(
@@ -106,9 +118,6 @@ class Generator(keras.Model):
         )
         x = tf.concat([x, latent_sample], axis=-1)
         return x, latent_sample
-
-    def _build_model(self, x) -> None:
-        pass
 
     def call(self, x) -> tf.Tensor:
         x, _ = self._prepare_input(x, seed=None)

@@ -43,7 +43,6 @@ def test_model_configuration(model):
     assert isinstance(model.mlp_hidden_units, list)
     assert isinstance(model.mlp_dropout_rates, list)
     # assert isinstance(model.output_activation, str)
-    assert isinstance(model.export_model, keras.Sequential)
 
 
 @pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
@@ -65,6 +64,7 @@ def test_model_use(mlp_hidden_units, mlp_dropout_rates, output_activation):
     test_shape = [x.shape[0]]
     test_shape.append(model.output_dim)
     assert output.shape == tuple(test_shape)
+    assert isinstance(model.export_model, keras.Sequential)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])

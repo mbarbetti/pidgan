@@ -22,7 +22,10 @@ def model():
     from pidgan.players.classifiers import ResClassifier
 
     clf = ResClassifier(
-        num_hidden_layers=5, mlp_hidden_units=128, mlp_dropout_rates=0.0
+        num_hidden_layers=5,
+        mlp_hidden_units=128,
+        mlp_hidden_activation="relu",
+        mlp_dropout_rates=0.0,
     )
     return clf
 
@@ -36,11 +39,21 @@ def test_model_configuration(model):
     assert isinstance(model, ResClassifier)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, int)
+    # assert isinstance(model.mlp_hidden_activation, str)
     assert isinstance(model.mlp_dropout_rates, float)
 
 
+@pytest.mark.parametrize("mlp_hidden_activation", ["relu", "leaky_relu"])
 @pytest.mark.parametrize("inputs", [y, (x, y)])
-def test_model_use(model, inputs):
+def test_model_use(mlp_hidden_activation, inputs):
+    from pidgan.players.classifiers import ResClassifier
+
+    model = ResClassifier(
+        num_hidden_layers=3,
+        mlp_hidden_units=128,
+        mlp_hidden_activation=mlp_hidden_activation,
+        mlp_dropout_rates=0.0,
+    )
     out = model(inputs)
     model.summary()
     test_shape = [x.shape[0], 1]

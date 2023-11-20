@@ -16,6 +16,8 @@ class Discriminator(keras.Model):
         dtype=None,
     ) -> None:
         super().__init__(name=name, dtype=dtype)
+        self._hidden_activation_func = None
+        self._model = None
 
         # Output dimension
         assert output_dim >= 1
@@ -57,47 +59,54 @@ class Discriminator(keras.Model):
         # Output activation
         self._output_activation = output_activation
 
-        # Model
-        self._model = keras.Sequential(name=f"{name}_seq" if name else None)
+    def _define_arch(self) -> keras.Sequential:
+        model = keras.Sequential(name=f"{self.name}_seq" if self.name else None)
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
-            self._model.add(
+            model.add(
                 keras.layers.Dense(
                     units=units,
-                    activation=None,
+                    activation=self._hidden_activation_func,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
-                    name=f"dense_{i}" if name else None,
+                    name=f"dense_{i}" if self.name else None,
                     dtype=self.dtype,
                 )
             )
-            self._model.add(
-                keras.layers.LeakyReLU(
-                    alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None
+            if self._hidden_activation_func is None:
+                model.add(
+                    keras.layers.LeakyReLU(
+                        alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if self.name else None
+                    )
+                )
+            model.add(
+                keras.layers.Dropout(
+                    rate=rate, name=f"dropout_{i}" if self.name else None
                 )
             )
-            self._model.add(
-                keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None)
-            )
-        self._model.add(
+        model.add(
             keras.layers.Dense(
-                units=output_dim,
-                activation=output_activation,
+                units=self._output_dim,
+                activation=self._output_activation,
                 kernel_initializer="glorot_uniform",
                 bias_initializer="zeros",
-                name="dense_out" if name else None,
+                name="dense_out" if self.name else None,
                 dtype=self.dtype,
             )
         )
+        return model
+
+    def _build_model(self, x) -> None:
+        if self._model is None:
+            self._model = self._define_arch()
+        else:
+            pass
 
     def _prepare_input(self, x) -> tf.Tensor:
         if isinstance(x, (list, tuple)):
             x = tf.concat(x, axis=-1)
         return x
-
-    def _build_model(self, x) -> None:
-        pass
 
     def call(self, x) -> tf.Tensor:
         x = self._prepare_input(x)
@@ -109,11 +118,15 @@ class Discriminator(keras.Model):
         self._model.summary(**kwargs)
 
     def hidden_feature(self, x, return_hidden_idx=False):
+        x = self._prepare_input(x)
+        if self._hidden_activation_func is None:
+            multiple = 3  # dense + leaky_relu + dropout
+        else:
+            multiple = 2  # dense + dropout
         hidden_idx = int((self._num_hidden_layers + 1) / 2.0)
         if hidden_idx < 1:
             hidden_idx += 1
-        x = self._prepare_input(x)
-        for layer in self._model.layers[: 3 * hidden_idx]:  # dense + relu + dropout
+        for layer in self._model.layers[: multiple * hidden_idx]:
             x = layer(x)
         if return_hidden_idx:
             return x, hidden_idx

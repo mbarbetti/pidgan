@@ -16,6 +16,7 @@ class ResDiscriminator(Discriminator):
         dtype=None,
     ) -> None:
         super(Discriminator, self).__init__(name=name, dtype=dtype)
+        self._hidden_activation_func = None
         self._enable_res_blocks = True
         self._model = None
 
@@ -41,51 +42,52 @@ class ResDiscriminator(Discriminator):
         # Output activation
         self._output_activation = output_activation
 
-        # Model hidden layers
+    def _define_arch(self) -> None:
         self._hidden_layers = list()
         for i in range(self._num_hidden_layers):
             seq = list()
             seq.append(
                 keras.layers.Dense(
                     units=self._mlp_hidden_units,
-                    activation=None,
+                    activation=self._hidden_activation_func,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
-                    name=f"dense_{i}" if name else None,
+                    name=f"dense_{i}" if self.name else None,
                     dtype=self.dtype,
                 )
             )
-            seq.append(
-                keras.layers.LeakyReLU(
-                    alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None
+            if self._hidden_activation_func is None:
+                seq.append(
+                    keras.layers.LeakyReLU(
+                        alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if self.name else None
+                    )
                 )
-            )
             seq.append(
                 keras.layers.Dropout(
-                    rate=self._mlp_dropout_rates, name=f"dropout_{i}" if name else None
+                    rate=self._mlp_dropout_rates,
+                    name=f"dropout_{i}" if self.name else None,
                 )
             )
             self._hidden_layers.append(seq)
 
-        # Model add layers
         self._add_layers = list()
         for i in range(self._num_hidden_layers - 1):
             self._add_layers.append(
-                keras.layers.Add(name=f"add_{i}-{i+1}" if name else None)
+                keras.layers.Add(name=f"add_{i}-{i+1}" if self.name else None)
             )
 
-        # Model output layer
         self._out = keras.layers.Dense(
-            units=output_dim,
-            activation=output_activation,
+            units=self._output_dim,
+            activation=self._output_activation,
             kernel_initializer="glorot_uniform",
             bias_initializer="zeros",
-            name="dense_out" if name else None,
+            name="dense_out" if self.name else None,
             dtype=self.dtype,
         )
 
     def _build_model(self, x) -> None:
         if self._model is None:
+            self._define_arch()
             inputs = keras.layers.Input(shape=x.shape[1:])
             x_ = inputs
             for layer in self._hidden_layers[0]:
@@ -107,8 +109,8 @@ class ResDiscriminator(Discriminator):
         else:
             pass
 
-    def hidden_feature(self, inputs, return_hidden_idx=False):
-        x = self._prepare_input(inputs)
+    def hidden_feature(self, x, return_hidden_idx=False):
+        x = self._prepare_input(x)
         for layer in self._hidden_layers[0]:
             x = layer(x)
         hidden_idx = int((self._num_hidden_layers + 1) / 2.0)
