@@ -1,21 +1,26 @@
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.discriminators import AuxDiscriminator
 
 
-class Classifier(Discriminator):
+class AuxMultiClassifier(AuxDiscriminator):
     def __init__(
         self,
+        num_multiclasses,
+        aux_features,
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_dropout_rates=0.0,
+        enable_residual_blocks=False,
         name=None,
         dtype=None,
     ) -> None:
         super().__init__(
-            output_dim=1,
+            output_dim=num_multiclasses,
+            aux_features=aux_features,
             num_hidden_layers=num_hidden_layers,
             mlp_hidden_units=mlp_hidden_units,
             mlp_dropout_rates=mlp_dropout_rates,
-            output_activation="sigmoid",
+            enable_residual_blocks=enable_residual_blocks,
+            output_activation="softmax",
             name=name,
             dtype=dtype,
         )
@@ -25,3 +30,7 @@ class Classifier(Discriminator):
             "Only the `discriminators` family has the "
             "`hidden_feature()` method implemented."
         )
+
+    @property
+    def num_multiclasses(self) -> int:
+        return self._output_dim

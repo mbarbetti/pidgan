@@ -9,7 +9,7 @@ CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
 
 here = os.path.dirname(__file__)
-export_dir = f"{here}/tmp/multi-classifier"
+export_dir = f"{here}/tmp/aux-multi-classifier"
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -20,13 +20,15 @@ labels = tf.one_hot(labels, depth=3, on_value=1.0, off_value=0.0)
 
 @pytest.fixture
 def model():
-    from pidgan.players.classifiers import MultiClassifier
+    from pidgan.players.classifiers import AuxMultiClassifier
 
-    clf = MultiClassifier(
+    clf = AuxMultiClassifier(
         num_multiclasses=labels.shape[1],
+        aux_features=["0 + 1", "2 - 3", "4 * 5", "6 / 7"],
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_dropout_rates=0.0,
+        enable_residual_blocks=False,
     )
     return clf
 
@@ -35,32 +37,34 @@ def model():
 
 
 def test_model_configuration(model):
-    from pidgan.players.classifiers import MultiClassifier
+    from pidgan.players.classifiers import AuxMultiClassifier
 
-    assert isinstance(model, MultiClassifier)
-    assert isinstance(model.num_multiclasses, int)
+    assert isinstance(model, AuxMultiClassifier)
+    assert isinstance(model.aux_features, list)
     assert isinstance(model.num_hidden_layers, int)
-    assert isinstance(model.mlp_hidden_units, list)
-    assert isinstance(model.mlp_dropout_rates, list)
-    assert isinstance(model.export_model, keras.Sequential)
+    assert isinstance(model.mlp_hidden_units, int)
+    assert isinstance(model.mlp_dropout_rates, float)
+    assert isinstance(model.enable_residual_blocks, bool)
 
 
-@pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
-@pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
+@pytest.mark.parametrize("enable_res_blocks", [True, False])
 @pytest.mark.parametrize("inputs", [y, (x, y)])
-def test_model_use(mlp_hidden_units, mlp_dropout_rates, inputs):
-    from pidgan.players.classifiers import MultiClassifier
+def test_model_use(enable_res_blocks, inputs):
+    from pidgan.players.classifiers import AuxMultiClassifier
 
-    model = MultiClassifier(
+    model = AuxMultiClassifier(
         num_multiclasses=labels.shape[1],
+        aux_features=["0 + 1", "2 - 3", "4 * 5", "6 / 7"],
         num_hidden_layers=3,
-        mlp_hidden_units=mlp_hidden_units,
-        mlp_dropout_rates=mlp_dropout_rates,
+        mlp_hidden_units=128,
+        mlp_dropout_rates=0.0,
+        enable_residual_blocks=enable_res_blocks,
     )
     out = model(inputs)
     model.summary()
     test_shape = [x.shape[0], model.num_multiclasses]
     assert out.shape == tuple(test_shape)
+    assert isinstance(model.export_model, keras.Model)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
@@ -93,13 +97,13 @@ def test_model_eval(model, inputs, sample_weight):
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
 def test_model_export(model, inputs):
-    out = model(inputs)
+    out, aux = model(inputs, return_aux_features=True)
     keras.models.save_model(model.export_model, export_dir, save_format="tf")
     model_reloaded = keras.models.load_model(export_dir)
     if isinstance(inputs, (list, tuple)):
-        in_reloaded = tf.concat((x, y), axis=-1)
+        in_reloaded = tf.concat((x, y, aux), axis=-1)
     else:
-        in_reloaded = inputs
+        in_reloaded = tf.concat((y, aux), axis=-1)
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()

@@ -1,7 +1,7 @@
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.discriminators import ResDiscriminator
 
 
-class Classifier(Discriminator):
+class ResClassifier(ResDiscriminator):
     def __init__(
         self,
         num_hidden_layers=5,

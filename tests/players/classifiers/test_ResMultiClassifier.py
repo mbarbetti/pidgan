@@ -9,7 +9,7 @@ CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
 
 here = os.path.dirname(__file__)
-export_dir = f"{here}/tmp/multi-classifier"
+export_dir = f"{here}/tmp/res-multi-classifier"
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -20,9 +20,9 @@ labels = tf.one_hot(labels, depth=3, on_value=1.0, off_value=0.0)
 
 @pytest.fixture
 def model():
-    from pidgan.players.classifiers import MultiClassifier
+    from pidgan.players.classifiers import ResMultiClassifier
 
-    clf = MultiClassifier(
+    clf = ResMultiClassifier(
         num_multiclasses=labels.shape[1],
         num_hidden_layers=5,
         mlp_hidden_units=128,
@@ -35,32 +35,22 @@ def model():
 
 
 def test_model_configuration(model):
-    from pidgan.players.classifiers import MultiClassifier
+    from pidgan.players.classifiers import ResMultiClassifier
 
-    assert isinstance(model, MultiClassifier)
+    assert isinstance(model, ResMultiClassifier)
     assert isinstance(model.num_multiclasses, int)
     assert isinstance(model.num_hidden_layers, int)
-    assert isinstance(model.mlp_hidden_units, list)
-    assert isinstance(model.mlp_dropout_rates, list)
-    assert isinstance(model.export_model, keras.Sequential)
+    assert isinstance(model.mlp_hidden_units, int)
+    assert isinstance(model.mlp_dropout_rates, float)
 
 
-@pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
-@pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
 @pytest.mark.parametrize("inputs", [y, (x, y)])
-def test_model_use(mlp_hidden_units, mlp_dropout_rates, inputs):
-    from pidgan.players.classifiers import MultiClassifier
-
-    model = MultiClassifier(
-        num_multiclasses=labels.shape[1],
-        num_hidden_layers=3,
-        mlp_hidden_units=mlp_hidden_units,
-        mlp_dropout_rates=mlp_dropout_rates,
-    )
+def test_model_use(model, inputs):
     out = model(inputs)
     model.summary()
     test_shape = [x.shape[0], model.num_multiclasses]
     assert out.shape == tuple(test_shape)
+    assert isinstance(model.export_model, keras.Model)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])

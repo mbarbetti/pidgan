@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 from pidgan.players.discriminators import Discriminator
 
 
@@ -23,7 +21,7 @@ class MultiClassifier(Discriminator):
             dtype=dtype,
         )
 
-    def hidden_feature(self, x) -> tf.Tensor:
+    def hidden_feature(self, x, return_hidden_idx=False):
         raise NotImplementedError(
             "Only the `discriminators` family has the "
             "`hidden_feature()` method implemented."

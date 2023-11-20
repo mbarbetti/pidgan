@@ -48,10 +48,12 @@ class GAN(keras.Model):
         # Referee network and loss
         if referee is not None:
             if not isinstance(referee, Classifier):
-                raise TypeError(
-                    f"`referee` should be a pidgan's `Discriminator`, "
-                    f"instead {type(referee)} passed"
-                )
+                if not isinstance(referee, Discriminator):
+                    raise TypeError(
+                        f"`referee` should be a pidgan's `Classifier` "
+                        f"(or `Discriminator`), instead "
+                        f"{type(referee)} passed"
+                    )
             self._referee = referee
             self._referee_loss = keras.losses.BinaryCrossentropy()
         else:
