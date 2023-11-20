@@ -27,6 +27,7 @@ def model():
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_dropout_rates=0.0,
+        enable_residual_blocks=False,
         output_activation="sigmoid",
     )
     return disc
@@ -42,23 +43,24 @@ def test_model_configuration(model):
     assert isinstance(model.output_dim, int)
     assert isinstance(model.aux_features, list)
     assert isinstance(model.num_hidden_layers, int)
-    assert isinstance(model.mlp_hidden_units, list)
-    assert isinstance(model.mlp_dropout_rates, list)
+    assert isinstance(model.mlp_hidden_units, int)
+    assert isinstance(model.mlp_dropout_rates, float)
+    assert isinstance(model.enable_residual_blocks, bool)
     # assert isinstance(model.output_activation, str)
-    assert isinstance(model.export_model, keras.Sequential)
 
 
-@pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
-@pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
+@pytest.mark.parametrize("enable_res_blocks", [True, False])
 @pytest.mark.parametrize("output_activation", ["sigmoid", None])
-def test_model_use(mlp_hidden_units, mlp_dropout_rates, output_activation):
-    from pidgan.players.discriminators import Discriminator
+def test_model_use(enable_res_blocks, output_activation):
+    from pidgan.players.discriminators import AuxDiscriminator
 
-    model = Discriminator(
+    model = AuxDiscriminator(
         output_dim=1,
+        aux_features=["0 + 1", "2 - 3", "4 * 5", "6 / 7"],
         num_hidden_layers=3,
-        mlp_hidden_units=mlp_hidden_units,
-        mlp_dropout_rates=mlp_dropout_rates,
+        mlp_hidden_units=128,
+        mlp_dropout_rates=0.0,
+        enable_residual_blocks=enable_res_blocks,
         output_activation=output_activation,
     )
     out = model((x, y))
@@ -66,10 +68,11 @@ def test_model_use(mlp_hidden_units, mlp_dropout_rates, output_activation):
     test_shape = [x.shape[0]]
     test_shape.append(model.output_dim)
     assert out.shape == tuple(test_shape)
-    hidden_feat, hidden_idx = model.hidden_feature((x, y), return_hidden_idx=True)
+    hidden_feat = model.hidden_feature((x, y))
     test_shape = [x.shape[0]]
-    test_shape.append(model.mlp_hidden_units[hidden_idx])
+    test_shape.append(model.mlp_hidden_units)
     assert hidden_feat.shape == tuple(test_shape)
+    assert isinstance(model.export_model, keras.Model)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
@@ -87,7 +90,7 @@ def test_model_train(model, sample_weight):
     adam = keras.optimizers.Adam(learning_rate=0.001)
     bce = keras.losses.BinaryCrossentropy(from_logits=False)
     model.compile(optimizer=adam, loss=bce, metrics=["mse"])
-    model.fit(dataset, epochs=1)
+    model.fit(dataset, epochs=2)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])

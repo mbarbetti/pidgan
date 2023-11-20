@@ -1,32 +1,27 @@
 from tensorflow import keras
-from pidgan.players.generators.Generator import Generator
+from pidgan.players.discriminators.Discriminator import Discriminator
 
 LEAKY_ALPHA = 0.1
 
 
-class ResGenerator(Generator):
+class ResDiscriminator(Discriminator):
     def __init__(
         self,
         output_dim,
-        latent_dim,
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_dropout_rates=0.0,
-        output_activation=None,
+        output_activation="sigmoid",
         name=None,
         dtype=None,
     ) -> None:
-        super(Generator, self).__init__(name=name, dtype=dtype)
+        super(Discriminator, self).__init__(name=name, dtype=dtype)
         self._enable_res_blocks = True
         self._model = None
 
         # Output dimension
         assert output_dim >= 1
         self._output_dim = int(output_dim)
-
-        # Latent space dimension
-        assert latent_dim >= 1
-        self._latent_dim = int(latent_dim)
 
         # Number of hidden layers
         assert isinstance(num_hidden_layers, (int, float))
@@ -111,6 +106,25 @@ class ResGenerator(Generator):
             )
         else:
             pass
+
+    def hidden_feature(self, inputs, return_hidden_idx=False):
+        x = self._prepare_input(inputs)
+        for layer in self._hidden_layers[0]:
+            x = layer(x)
+        hidden_idx = int((self._num_hidden_layers + 1) / 2.0)
+        if hidden_idx > 1:
+            for i in range(1, hidden_idx):
+                h = x
+                for layer in self._hidden_layers[i]:
+                    h = layer(h)
+                if self._enable_res_blocks:
+                    x = self._add_layers[i - 1]([x, h])
+                else:
+                    x = h
+        if return_hidden_idx:
+            return x, hidden_idx
+        else:
+            return x
 
     @property
     def mlp_hidden_units(self) -> int:

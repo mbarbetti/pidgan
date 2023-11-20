@@ -58,11 +58,11 @@ class Discriminator(keras.Model):
         self._output_activation = output_activation
 
         # Model
-        self._seq = keras.Sequential(name=f"{name}_seq" if name else None)
+        self._model = keras.Sequential(name=f"{name}_seq" if name else None)
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
-            self._seq.add(
+            self._model.add(
                 keras.layers.Dense(
                     units=units,
                     activation=None,
@@ -72,15 +72,15 @@ class Discriminator(keras.Model):
                     dtype=self.dtype,
                 )
             )
-            self._seq.add(
+            self._model.add(
                 keras.layers.LeakyReLU(
                     alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None
                 )
             )
-            self._seq.add(
+            self._model.add(
                 keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None)
             )
-        self._seq.add(
+        self._model.add(
             keras.layers.Dense(
                 units=output_dim,
                 activation=output_activation,
@@ -91,23 +91,29 @@ class Discriminator(keras.Model):
             )
         )
 
-    def _prepare_input(self, inputs) -> tf.Tensor:
-        return tf.concat(inputs, axis=-1)
+    def _prepare_input(self, x) -> tf.Tensor:
+        if isinstance(x, (list, tuple)):
+            x = tf.concat(x, axis=-1)
+        return x
 
-    def call(self, inputs) -> tf.Tensor:
-        x = self._prepare_input(inputs)
-        out = self._seq(x)
+    def _build_model(self, x) -> None:
+        pass
+
+    def call(self, x) -> tf.Tensor:
+        x = self._prepare_input(x)
+        self._build_model(x)
+        out = self._model(x)
         return out
 
     def summary(self, **kwargs) -> None:
-        self._seq.summary(**kwargs)
+        self._model.summary(**kwargs)
 
-    def hidden_feature(self, inputs, return_hidden_idx=False):
+    def hidden_feature(self, x, return_hidden_idx=False):
         hidden_idx = int((self._num_hidden_layers + 1) / 2.0)
         if hidden_idx < 1:
             hidden_idx += 1
-        x = self._prepare_input(inputs)
-        for layer in self._seq.layers[: 3 * hidden_idx]:  # dense + relu + dropout
+        x = self._prepare_input(x)
+        for layer in self._model.layers[: 3 * hidden_idx]:  # dense + relu + dropout
             x = layer(x)
         if return_hidden_idx:
             return x, hidden_idx
@@ -136,4 +142,4 @@ class Discriminator(keras.Model):
 
     @property
     def export_model(self) -> keras.Sequential:
-        return self._seq
+        return self._model
