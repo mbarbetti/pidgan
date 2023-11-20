@@ -1,7 +1,7 @@
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.discriminators import ResDiscriminator
 
 
-class MultiClassifier(Discriminator):
+class ResMultiClassifier(ResDiscriminator):
     def __init__(
         self,
         num_multiclasses,

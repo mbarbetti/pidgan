@@ -2,9 +2,9 @@ import pytest
 import tensorflow as tf
 from tensorflow import keras
 
-from pidgan.players.classifiers import Classifier
-from pidgan.players.discriminators import Discriminator
-from pidgan.players.generators import Generator
+from pidgan.players.classifiers import AuxClassifier
+from pidgan.players.discriminators import AuxDiscriminator
+from pidgan.players.generators import ResGenerator
 
 CHUNK_SIZE = int(1e4)
 
@@ -12,7 +12,7 @@ x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
 w = tf.random.uniform(shape=(CHUNK_SIZE,))
 
-gen = Generator(
+gen = ResGenerator(
     output_dim=y.shape[1],
     latent_dim=64,
     num_hidden_layers=4,
@@ -21,15 +21,21 @@ gen = Generator(
     output_activation=None,
 )
 
-disc = Discriminator(
+disc = AuxDiscriminator(
     output_dim=1,
+    aux_features=["0 + 1", "2 - 3"],
     num_hidden_layers=4,
     mlp_hidden_units=32,
     mlp_dropout_rates=0.0,
     output_activation=None,
 )
 
-ref = Classifier(num_hidden_layers=2, mlp_hidden_units=32, mlp_dropout_rates=0.0)
+ref = AuxClassifier(
+    aux_features=["0 + 1", "2 - 3"],
+    num_hidden_layers=2,
+    mlp_hidden_units=32,
+    mlp_dropout_rates=0.0,
+)
 
 
 @pytest.fixture
@@ -52,7 +58,6 @@ def model():
 
 def test_model_configuration(model):
     from pidgan.algorithms import WGAN_GP
-    from pidgan.players.classifiers import Classifier
     from pidgan.players.discriminators import Discriminator
     from pidgan.players.generators import Generator
 
@@ -64,7 +69,7 @@ def test_model_configuration(model):
     assert isinstance(model.lipschitz_penalty_strategy, str)
     assert isinstance(model.feature_matching_penalty, float)
     assert isinstance(model.feature_matching_penalty, float)
-    assert isinstance(model.referee, Classifier)
+    assert isinstance(model.referee, Discriminator)
 
 
 @pytest.mark.parametrize("referee", [ref, None])
@@ -164,7 +169,7 @@ def test_model_train(referee, sample_weight, lipschitz_penalty_strategy):
         referee_optimizer=r_opt,
         referee_upds_per_batch=1,
     )
-    model.fit(dataset, epochs=1)
+    model.fit(dataset, epochs=2)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])

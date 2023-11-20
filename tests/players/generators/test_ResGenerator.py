@@ -8,7 +8,7 @@ CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
 
 here = os.path.dirname(__file__)
-export_dir = f"{here}/tmp/generator"
+export_dir = f"{here}/tmp/res-generator"
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -17,9 +17,9 @@ w = tf.random.uniform(shape=(CHUNK_SIZE,))
 
 @pytest.fixture
 def model():
-    from pidgan.players.generators import Generator
+    from pidgan.players.generators import ResGenerator
 
-    gen = Generator(
+    gen = ResGenerator(
         output_dim=y.shape[1],
         latent_dim=64,
         num_hidden_layers=5,
@@ -34,29 +34,27 @@ def model():
 
 
 def test_model_configuration(model):
-    from pidgan.players.generators import Generator
+    from pidgan.players.generators import ResGenerator
 
-    assert isinstance(model, Generator)
+    assert isinstance(model, ResGenerator)
     assert isinstance(model.output_dim, int)
     assert isinstance(model.latent_dim, int)
     assert isinstance(model.num_hidden_layers, int)
-    assert isinstance(model.mlp_hidden_units, list)
-    assert isinstance(model.mlp_dropout_rates, list)
+    assert isinstance(model.mlp_hidden_units, int)
+    assert isinstance(model.mlp_dropout_rates, float)
     # assert isinstance(model.output_activation, str)
 
 
-@pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
-@pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
 @pytest.mark.parametrize("output_activation", ["linear", None])
-def test_model_use(mlp_hidden_units, mlp_dropout_rates, output_activation):
-    from pidgan.players.generators import Generator
+def test_model_use(output_activation):
+    from pidgan.players.generators import ResGenerator
 
-    model = Generator(
+    model = ResGenerator(
         output_dim=y.shape[1],
         latent_dim=64,
         num_hidden_layers=3,
-        mlp_hidden_units=mlp_hidden_units,
-        mlp_dropout_rates=mlp_dropout_rates,
+        mlp_hidden_units=128,
+        mlp_dropout_rates=0.0,
         output_activation=output_activation,
     )
     output = model(x)
@@ -64,7 +62,7 @@ def test_model_use(mlp_hidden_units, mlp_dropout_rates, output_activation):
     test_shape = [x.shape[0]]
     test_shape.append(model.output_dim)
     assert output.shape == tuple(test_shape)
-    assert isinstance(model.export_model, keras.Sequential)
+    assert isinstance(model.export_model, keras.Model)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])

@@ -26,6 +26,7 @@ def model():
         num_multiclasses=labels.shape[1],
         num_hidden_layers=5,
         mlp_hidden_units=128,
+        mlp_hidden_activation="relu",
         mlp_dropout_rates=0.0,
     )
     return clf
@@ -41,34 +42,38 @@ def test_model_configuration(model):
     assert isinstance(model.num_multiclasses, int)
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, list)
+    # assert isinstance(model.mlp_hidden_activation, str)
     assert isinstance(model.mlp_dropout_rates, list)
-    assert isinstance(model.export_model, keras.Sequential)
 
 
 @pytest.mark.parametrize("mlp_hidden_units", [128, [128, 128, 128]])
+@pytest.mark.parametrize("mlp_hidden_activation", ["relu", "leaky_relu"])
 @pytest.mark.parametrize("mlp_dropout_rates", [0.0, [0.0, 0.0, 0.0]])
-def test_model_use(mlp_hidden_units, mlp_dropout_rates):
+@pytest.mark.parametrize("inputs", [y, (x, y)])
+def test_model_use(mlp_hidden_units, mlp_hidden_activation, mlp_dropout_rates, inputs):
     from pidgan.players.classifiers import MultiClassifier
 
     model = MultiClassifier(
         num_multiclasses=labels.shape[1],
         num_hidden_layers=3,
         mlp_hidden_units=mlp_hidden_units,
+        mlp_hidden_activation=mlp_hidden_activation,
         mlp_dropout_rates=mlp_dropout_rates,
     )
-    out = model((x, y))
+    out = model(inputs)
     model.summary()
-    test_shape = [x.shape[0]]
-    test_shape.append(model.num_multiclasses)
+    test_shape = [x.shape[0], model.num_multiclasses]
     assert out.shape == tuple(test_shape)
+    assert isinstance(model.export_model, keras.Sequential)
 
 
+@pytest.mark.parametrize("inputs", [y, (x, y)])
 @pytest.mark.parametrize("sample_weight", [w, None])
-def test_model_train(model, sample_weight):
+def test_model_train(model, inputs, sample_weight):
     if sample_weight is not None:
-        slices = ((x, y), labels, w)
+        slices = (inputs, labels, w)
     else:
-        slices = ((x, y), labels)
+        slices = (inputs, labels)
     dataset = (
         tf.data.Dataset.from_tensor_slices(slices)
         .batch(batch_size=BATCH_SIZE, drop_remainder=True)
@@ -78,22 +83,27 @@ def test_model_train(model, sample_weight):
     adam = keras.optimizers.Adam(learning_rate=0.001)
     cce = keras.losses.CategoricalCrossentropy(from_logits=False)
     model.compile(optimizer=adam, loss=cce, metrics=["mse"])
-    model.fit(dataset, epochs=1)
+    model.fit(dataset, epochs=2)
 
 
+@pytest.mark.parametrize("inputs", [y, (x, y)])
 @pytest.mark.parametrize("sample_weight", [w, None])
-def test_model_eval(model, sample_weight):
+def test_model_eval(model, inputs, sample_weight):
     adam = keras.optimizers.Adam(learning_rate=0.001)
     cce = keras.losses.CategoricalCrossentropy(from_logits=False)
     model.compile(optimizer=adam, loss=cce, metrics=["mse"])
-    model.evaluate(x, sample_weight=sample_weight)
+    model.evaluate(inputs, sample_weight=sample_weight)
 
 
-def test_model_export(model):
-    out = model((x, y))
+@pytest.mark.parametrize("inputs", [y, (x, y)])
+def test_model_export(model, inputs):
+    out = model(inputs)
     keras.models.save_model(model.export_model, export_dir, save_format="tf")
     model_reloaded = keras.models.load_model(export_dir)
-    in_reloaded = tf.concat((x, y), axis=-1)
+    if isinstance(inputs, (list, tuple)):
+        in_reloaded = tf.concat((x, y), axis=-1)
+    else:
+        in_reloaded = inputs
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()

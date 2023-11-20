@@ -1,10 +1,9 @@
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.discriminators import ResDiscriminator
 
 
-class MultiClassifier(Discriminator):
+class ResClassifier(ResDiscriminator):
     def __init__(
         self,
-        num_multiclasses,
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_hidden_activation="leaky_relu",
@@ -13,11 +12,11 @@ class MultiClassifier(Discriminator):
         dtype=None,
     ) -> None:
         super().__init__(
-            output_dim=num_multiclasses,
+            output_dim=1,
             num_hidden_layers=num_hidden_layers,
             mlp_hidden_units=mlp_hidden_units,
             mlp_dropout_rates=mlp_dropout_rates,
-            output_activation="softmax",
+            output_activation="sigmoid",
             name=name,
             dtype=dtype,
         )
@@ -33,10 +32,6 @@ class MultiClassifier(Discriminator):
             "Only the `discriminators` family has the "
             "`hidden_feature()` method implemented."
         )
-
-    @property
-    def num_multiclasses(self) -> int:
-        return self._output_dim
 
     @property
     def mlp_hidden_activation(self):

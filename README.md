@@ -52,24 +52,29 @@
 
 ### Generators
 
-| Players | Avail | Test | Design inspired by |
-|:-------:|:-----:|:----:|:------------------:|
-| [`Generator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/Generator.py) | ✅ | ✅ | [1][1], [10][10] |
+| Players | Avail | Test | Inherit from | Design inspired by |
+|:-------:|:-----:|:----:|:------------:|:------------------:|
+| [`Generator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/Generator.py) | ✅ | ✅ | [`tf.keras.Model`](https://www.tensorflow.org/api_docs/python/tf/keras/Model) | [1][1], [10][10] |
+| [`ResGenerator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/ResGenerator.py) | ✅ | ✅ | [`Generator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/Generator.py) | [1][1], [10][10], [11][11] |
 
 ### Discriminators
 
-| Players | Avail | Test | Design inspired by |
-|:-------:|:-----:|:----:|:------------------:|
-| [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) | ✅ | ✅ | [1][1], [9][9], [10][10] |
-| [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) | ✅ | ✅ | [1][1], [9][9], [10][10], [11][11] |
+| Players | Avail | Test | Inherit from | Design inspired by |
+|:-------:|:-----:|:----:|:------------:|:------------------:|
+| [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) | ✅ | ✅ | [`tf.keras.Model`](https://www.tensorflow.org/api_docs/python/tf/keras/Model) | [1][1], [9][9], [10][10] |
+| [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) | [1][1], [9][9], [10][10], [11][11] |
+| [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) | ✅ | ✅ | [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) | [1][1], [9][9], [10][10], [11][11], [12][12] |
 
 ### Other players
 
 | Players | Avail | Test | Inherit from |
 |:-------:|:-----:|:----:|:------------:|
 | [`Classifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/Classifier.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) |
-| `AuxClassifier` | 🛠️ | ❌ | [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) |
+| [`ResClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/ResClassifier.py) | ✅ | ✅ | [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) |
+| [`AuxClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxClassifier.py) | ✅ | ✅ | [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) |
 | [`MultiClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiClassifier.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) |
+| [`MultiResClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiResClassifier.py) | ✅ | ✅ | [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) |
+| [`AuxMultiClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxMultiClassifier.py) | ✅ | ✅ | [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) |
 
 ### References
 1. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661][1]
@@ -82,7 +87,8 @@
 8. M. Arjovsky, L. Bottou, "Towards Principled Methods for Training Generative Adversarial Networks", [arXiv:1701.04862][8]
 9. T. Salimans _et al._, "Improved Techniques for Training GANs", [arXiv:1606.03498][9]
 10. M. Mirza, S. Osindero, "Conditional Generative Adversarial Nets", [arXiv:1411.1784][10]
-11. A. Rogachev, F. Ratnikov, "GAN with an Auxiliary Regressor for the Fast Simulation of the Electromagnetic Calorimeter Response", [arXiv:2207.06329][11]
+11. K. He _et al._, "Deep Residual Learning for Image Recognition", [arXiv:1512.03385][11]
+12. A. Rogachev, F. Ratnikov, "GAN with an Auxiliary Regressor for the Fast Simulation of the Electromagnetic Calorimeter Response", [arXiv:2207.06329][12]
 
 [1]: https://arxiv.org/abs/1406.2661
 [2]: https://arxiv.org/abs/1511.06434
@@ -94,7 +100,8 @@
 [8]: https://arxiv.org/abs/1701.04862
 [9]: https://arxiv.org/abs/1606.03498
 [10]: https://arxiv.org/abs/1411.1784
-[11]: https://arxiv.org/abs/2207.06329
+[11]: https://arxiv.org/abs/1512.03385
+[12]: https://arxiv.org/abs/2207.06329
 
 ### Credits
 Most of the GAN algorithms are an evolution of what provided by the [mbarbetti/tf-gen-models](https://github.com/mbarbetti/tf-gen-models) repository. The `BceGAN` model is freely inspired by the TensorFlow tutorial [Deep Convolutional Generative Adversarial Network](https://www.tensorflow.org/tutorials/generative/dcgan) and the Keras tutorial [Conditional GAN](https://keras.io/examples/generative/conditional_gan). The `WGAN_ALP` model is an adaptation of what provided by the [dterjek/adversarial_lipschitz_regularization](https://github.com/dterjek/adversarial_lipschitz_regularization) repository.

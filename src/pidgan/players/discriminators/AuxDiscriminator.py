@@ -1,9 +1,9 @@
 import tensorflow as tf
 
-from pidgan.players.discriminators.Discriminator import Discriminator
+from pidgan.players.discriminators.ResDiscriminator import ResDiscriminator
 
 
-class AuxDiscriminator(Discriminator):
+class AuxDiscriminator(ResDiscriminator):
     def __init__(
         self,
         output_dim,
@@ -11,6 +11,7 @@ class AuxDiscriminator(Discriminator):
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_dropout_rates=0,
+        enable_residual_blocks=False,
         output_activation="sigmoid",
         name=None,
         dtype=None,
@@ -25,6 +26,11 @@ class AuxDiscriminator(Discriminator):
             dtype=dtype,
         )
 
+        # Residual blocks
+        assert isinstance(enable_residual_blocks, bool)
+        self._enable_res_blocks = enable_residual_blocks
+
+        # Auxiliary features
         self._aux_features = list()
         if isinstance(aux_features, str):
             aux_features = [aux_features]
@@ -53,22 +59,29 @@ class AuxDiscriminator(Discriminator):
                 )
             self._aux_features.append(aux_feat)
 
-    def _prepare_input(self, inputs) -> tf.Tensor:
-        std_input_feats = tf.concat(inputs, axis=-1)
-        _, y = inputs
-        aux_input_feats = list()
+    def _prepare_input(self, x) -> tf.Tensor:
+        in_feats = super()._prepare_input(x)
+        if isinstance(x, (list, tuple)):
+            _, y = x
+        else:
+            y = x
+        aux_feats = list()
         for aux_idx, aux_op in zip(self._aux_indices, self._aux_operators):
-            aux_input_feats.append(aux_op(y[:, aux_idx[0]], y[:, aux_idx[1]])[:, None])
-        self._aux_input_feats = tf.concat(aux_input_feats, axis=-1)
-        return tf.concat([std_input_feats, self._aux_input_feats], axis=-1)
+            aux_feats.append(aux_op(y[:, aux_idx[0]], y[:, aux_idx[1]])[:, None])
+        self._aux_feats = tf.concat(aux_feats, axis=-1)
+        return tf.concat([in_feats, self._aux_feats], axis=-1)
 
-    def call(self, inputs, return_aux_features=False) -> tf.Tensor:
-        out = super().call(inputs)
+    def call(self, x, return_aux_features=False) -> tf.Tensor:
+        out = super().call(x)
         if return_aux_features:
-            return out, self._aux_input_feats
+            return out, self._aux_feats
         else:
             return out
 
     @property
     def aux_features(self) -> list:
         return self._aux_features
+
+    @property
+    def enable_residual_blocks(self) -> bool:
+        return self._enable_res_blocks

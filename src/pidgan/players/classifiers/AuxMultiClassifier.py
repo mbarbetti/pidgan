@@ -1,22 +1,26 @@
-from pidgan.players.discriminators import Discriminator
+from pidgan.players.discriminators import AuxDiscriminator
 
 
-class MultiClassifier(Discriminator):
+class AuxMultiClassifier(AuxDiscriminator):
     def __init__(
         self,
         num_multiclasses,
+        aux_features,
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_hidden_activation="leaky_relu",
         mlp_dropout_rates=0.0,
+        enable_residual_blocks=False,
         name=None,
         dtype=None,
     ) -> None:
         super().__init__(
             output_dim=num_multiclasses,
+            aux_features=aux_features,
             num_hidden_layers=num_hidden_layers,
             mlp_hidden_units=mlp_hidden_units,
             mlp_dropout_rates=mlp_dropout_rates,
+            enable_residual_blocks=enable_residual_blocks,
             output_activation="softmax",
             name=name,
             dtype=dtype,
