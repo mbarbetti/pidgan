@@ -63,11 +63,11 @@ class Generator(keras.Model):
         self._output_activation = output_activation
 
         # Model
-        self._seq = keras.Sequential(name=f"{name}_seq" if name else None)
+        self._model = keras.Sequential(name=f"{name}_seq" if name else None)
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
-            self._seq.add(
+            self._model.add(
                 keras.layers.Dense(
                     units=units,
                     activation=None,
@@ -77,15 +77,15 @@ class Generator(keras.Model):
                     dtype=self.dtype,
                 )
             )
-            self._seq.add(
+            self._model.add(
                 keras.layers.LeakyReLU(
                     alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if name else None
                 )
             )
-            self._seq.add(
+            self._model.add(
                 keras.layers.Dropout(rate=rate, name=f"dropout_{i}" if name else None)
             )
-        self._seq.add(
+        self._model.add(
             keras.layers.Dense(
                 units=output_dim,
                 activation=output_activation,
@@ -95,23 +95,6 @@ class Generator(keras.Model):
                 dtype=self.dtype,
             )
         )
-
-    def call(self, x) -> tf.Tensor:
-        x, _ = self._prepare_input(x, seed=None)
-        out = self._seq(x)
-        return out
-
-    def summary(self, **kwargs) -> None:
-        self._seq.summary(**kwargs)
-
-    def generate(self, x, seed=None, return_latent_sample=False) -> tf.Tensor:
-        tf.random.set_seed(seed=seed)
-        x, latent_sample = self._prepare_input(x, seed=seed)
-        out = self._seq(x)
-        if return_latent_sample:
-            return out, latent_sample
-        else:
-            return out
 
     def _prepare_input(self, x, seed=None) -> tuple:
         latent_sample = tf.random.normal(
@@ -123,6 +106,28 @@ class Generator(keras.Model):
         )
         x = tf.concat([x, latent_sample], axis=-1)
         return x, latent_sample
+
+    def _build_model(self, x) -> None:
+        pass
+
+    def call(self, x) -> tf.Tensor:
+        x, _ = self._prepare_input(x, seed=None)
+        self._build_model(x)
+        out = self._model(x)
+        return out
+
+    def summary(self, **kwargs) -> None:
+        self._model.summary(**kwargs)
+
+    def generate(self, x, seed=None, return_latent_sample=False) -> tf.Tensor:
+        tf.random.set_seed(seed=seed)
+        x, latent_sample = self._prepare_input(x, seed=seed)
+        self._build_model(x)
+        out = self._model(x)
+        if return_latent_sample:
+            return out, latent_sample
+        else:
+            return out
 
     @property
     def output_dim(self) -> int:
@@ -150,4 +155,4 @@ class Generator(keras.Model):
 
     @property
     def export_model(self) -> keras.Sequential:
-        return self._seq
+        return self._model
