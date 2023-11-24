@@ -17,6 +17,7 @@ class Discriminator(keras.Model):
     ) -> None:
         super().__init__(name=name, dtype=dtype)
         self._hidden_activation_func = None
+        self._hidden_kernel_reg = None
         self._model = None
 
         # Output dimension
@@ -70,6 +71,7 @@ class Discriminator(keras.Model):
                     activation=self._hidden_activation_func,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
+                    kernel_regularizer=self._hidden_kernel_reg,
                     name=f"dense_{i}" if self.name else None,
                     dtype=self.dtype,
                 )

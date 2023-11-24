@@ -25,6 +25,7 @@ def model():
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_hidden_activation="relu",
+        mlp_hidden_kernel_regularizer="l2",
         mlp_dropout_rates=0.0,
     )
     return clf
@@ -40,6 +41,7 @@ def test_model_configuration(model):
     assert isinstance(model.num_hidden_layers, int)
     assert isinstance(model.mlp_hidden_units, int)
     # assert isinstance(model.mlp_hidden_activation, str)
+    # assert isinstance(model.mlp_hidden_kernel_regularizer, str)
     assert isinstance(model.mlp_dropout_rates, float)
 
 

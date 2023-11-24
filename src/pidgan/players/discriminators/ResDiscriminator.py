@@ -17,6 +17,7 @@ class ResDiscriminator(Discriminator):
     ) -> None:
         super(Discriminator, self).__init__(name=name, dtype=dtype)
         self._hidden_activation_func = None
+        self._hidden_kernel_reg = None
         self._enable_res_blocks = True
         self._model = None
 
@@ -52,6 +53,7 @@ class ResDiscriminator(Discriminator):
                     activation=self._hidden_activation_func,
                     kernel_initializer="glorot_uniform",
                     bias_initializer="zeros",
+                    kernel_regularizer=self._hidden_kernel_reg,
                     name=f"dense_{i}" if self.name else None,
                     dtype=self.dtype,
                 )
@@ -76,14 +78,16 @@ class ResDiscriminator(Discriminator):
                 keras.layers.Add(name=f"add_{i}-{i+1}" if self.name else None)
             )
 
-        self._out = keras.layers.Dense(
-            units=self._output_dim,
-            activation=self._output_activation,
-            kernel_initializer="glorot_uniform",
-            bias_initializer="zeros",
-            name="dense_out" if self.name else None,
-            dtype=self.dtype,
-        )
+        self._out = [
+            keras.layers.Dense(
+                units=self._output_dim,
+                activation=self._output_activation,
+                kernel_initializer="glorot_uniform",
+                bias_initializer="zeros",
+                name="dense_out" if self.name else None,
+                dtype=self.dtype,
+            )
+        ]
 
     def _build_model(self, x) -> None:
         if self._model is None:
@@ -100,7 +104,9 @@ class ResDiscriminator(Discriminator):
                     x_ = self._add_layers[i - 1]([x_, h_])
                 else:
                     x_ = h_
-            outputs = self._out(x_)
+            outputs = x_
+            for layer in self._out:
+                outputs = layer(outputs)
             self._model = keras.Model(
                 inputs=inputs,
                 outputs=outputs,

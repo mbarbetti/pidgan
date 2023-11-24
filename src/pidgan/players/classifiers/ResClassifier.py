@@ -7,6 +7,7 @@ class ResClassifier(ResDiscriminator):
         num_hidden_layers=5,
         mlp_hidden_units=128,
         mlp_hidden_activation="leaky_relu",
+        mlp_hidden_kernel_regularizer=None,
         mlp_dropout_rates=0.0,
         name=None,
         dtype=None,
@@ -27,6 +28,9 @@ class ResClassifier(ResDiscriminator):
         else:
             self._hidden_activation_func = mlp_hidden_activation
 
+        # Kernel regularizer
+        self._hidden_kernel_reg = mlp_hidden_kernel_regularizer
+
     def hidden_feature(self, x, return_hidden_idx=False):
         raise NotImplementedError(
             "Only the `discriminators` family has the "
@@ -36,3 +40,7 @@ class ResClassifier(ResDiscriminator):
     @property
     def mlp_hidden_activation(self):
         return self._hidden_activation_func
+
+    @property
+    def mlp_hidden_kernel_regularizer(self):
+        return self._hidden_kernel_reg
