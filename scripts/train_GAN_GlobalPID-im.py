@@ -17,12 +17,12 @@ from pidgan.algorithms import BceGAN
 from pidgan.callbacks.schedulers import LearnRateExpDecay
 from pidgan.players.classifiers import Classifier
 from pidgan.players.discriminators import AuxDiscriminator
-from pidgan.players.generators import Generator
+from pidgan.players.generators import ResGenerator
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 
 DTYPE = np.float32
-BATCHSIZE = 512
+BATCHSIZE = 1024
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -31,7 +31,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 # +------------------+
 
 parser = argparser_training(
-    model="GlobalPIDmu", description="GlobalPIDmuGAN training setup"
+    model="GlobalPID-im", description="GlobalPIDGAN-im training setup"
 )
 args = parser.parse_args()
 
@@ -58,14 +58,14 @@ train_ratio = float(args.train_ratio)
 # +------------------+
 
 npzfile = np.load(
-    f"{data_dir}/pidgan-GlobalPIDmu-{args.particle}-{args.data_sample}-data.npz"
+    f"{data_dir}/GlobalPID-im-{args.particle}-{args.data_sample}-trainset.npz"
 )
 
 x = npzfile["x"].astype(DTYPE)[:chunk_size]
 x_vars = [str(v) for v in npzfile["x_vars"]]
 y = npzfile["y"].astype(DTYPE)[:chunk_size]
 y_vars = [str(v) for v in npzfile["y_vars"]]
-if "sim" not in args.data_sample:
+if "calib" in args.data_sample:
     if args.weights:
         w = npzfile["w"].astype(DTYPE)[:chunk_size]
         w_var = [str(v) for v in npzfile["w_var"]]
@@ -102,7 +102,6 @@ else:
 train_ds = (
     tf.data.Dataset.from_tensor_slices(train_slices)
     .batch(hp.get("batch_size", BATCHSIZE), drop_remainder=True)
-    .cache()
     .prefetch(tf.data.AUTOTUNE)
 )
 
@@ -118,7 +117,6 @@ if train_ratio != 1.0:
     val_ds = (
         tf.data.Dataset.from_tensor_slices(val_slices)
         .batch(BATCHSIZE, drop_remainder=True)
-        .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
 else:
@@ -131,12 +129,13 @@ else:
 # |   Model construction   |
 # +------------------------+
 
-generator = Generator(
+generator = ResGenerator(
     output_dim=hp.get("g_output_dim", y.shape[1]),
     latent_dim=hp.get("g_latent_dim", 64),
-    num_hidden_layers=hp.get("g_num_hidden_layers", 5),
+    num_hidden_layers=hp.get("g_num_hidden_layers", 10),
     mlp_hidden_units=hp.get("g_mlp_hidden_units", 128),
     mlp_dropout_rates=hp.get("g_mlp_dropout_rates", 0.0),
+    output_activation=hp.get("g_output_activation", None),
     name="generator",
     dtype=DTYPE,
 )
@@ -144,11 +143,16 @@ generator = Generator(
 discriminator = AuxDiscriminator(
     output_dim=hp.get("d_output_dim", 1),
     aux_features=hp.get(
-        "d_aux_features", [f"{y_vars.index('PIDp')} - {y_vars.index('PIDK')}"]
+        "d_aux_features",
+        [
+            f"{y_vars.index('PIDmu')} - {y_vars.index('PIDe')}",
+            f"{y_vars.index('PIDp')} - {y_vars.index('PIDK')}",
+        ],
     ),
-    num_hidden_layers=hp.get("d_num_hidden_layers", 5),
+    num_hidden_layers=hp.get("d_num_hidden_layers", 10),
     mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
-    mlp_dropout_rates=hp.get("d_mlp_dropout_rates", 0.1),
+    mlp_dropout_rates=hp.get("d_mlp_dropout_rates", 0.0),
+    enable_residual_blocks=hp.get("d_enable_residual_blocks", True),
     output_activation=hp.get("d_output_activation", "sigmoid"),
     name="discriminator",
     dtype=DTYPE,
@@ -157,7 +161,11 @@ discriminator = AuxDiscriminator(
 referee = Classifier(
     num_hidden_layers=hp.get("r_num_hidden_layers", 5),
     mlp_hidden_units=hp.get("r_mlp_hidden_units", 128),
-    mlp_dropout_rates=hp.get("r_mlp_dropout_rates", 0.1),
+    mlp_hidden_activation=hp.get("r_mlp_hidden_activation", "relu"),
+    mlp_hidden_kernel_regularizer=hp.get(
+        "r_mlp_hidden_kernel_regularizer", tf.keras.regularizers.L2(1e-4)
+    ),
+    mlp_dropout_rates=hp.get("r_mlp_dropout_rates", 0.0),
     name="referee",
     dtype=DTYPE,
 )
@@ -166,8 +174,8 @@ gan = BceGAN(
     generator=generator,
     discriminator=discriminator,
     from_logits=hp.get("gan_from_logits", False),
-    label_smoothing=hp.get("gan_label_smoothing", 0.1),
-    injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.05),
+    label_smoothing=hp.get("gan_label_smoothing", 0.01),
+    injected_noise_stddev=hp.get("gan_injected_noise_stddev", 0.02),
     feature_matching_penalty=hp.get("gan_feature_matching_penalty", 0.0),
     referee=referee if args.referee else None,
 )
@@ -180,14 +188,14 @@ gan.summary()
 # |   Optimizers setup   |
 # +----------------------+
 
-g_opt = keras.optimizers.RMSprop(hp.get("g_lr0", 0.001))
+g_opt = keras.optimizers.RMSprop(hp.get("g_lr0", 6e-4))
 hp.get("g_optimizer", g_opt.name)
 
-d_opt = keras.optimizers.RMSprop(hp.get("d_lr0", 0.001))
+d_opt = keras.optimizers.RMSprop(hp.get("d_lr0", 1e-3))
 hp.get("d_optimizer", d_opt.name)
 
 if gan.referee is not None:
-    r_opt = keras.optimizers.RMSprop(hp.get("r_lr0", 0.001))
+    r_opt = keras.optimizers.RMSprop(hp.get("r_lr0", 1e-3))
     hp.get("r_optimizer", r_opt.name)
 
 # +----------------------------+
@@ -215,7 +223,7 @@ callbacks = list()
 g_lr_sched = LearnRateExpDecay(
     gan.generator_optimizer,
     decay_rate=hp.get("g_decay_rate", 0.10),
-    decay_steps=hp.get("g_decay_steps", 100_000),
+    decay_steps=hp.get("g_decay_steps", 150_000),
     min_learning_rate=hp.get("g_min_learning_rate", 1e-6),
     verbose=True,
     key="g_lr",
@@ -226,7 +234,7 @@ callbacks.append(g_lr_sched)
 d_lr_sched = LearnRateExpDecay(
     gan.discriminator_optimizer,
     decay_rate=hp.get("d_decay_rate", 0.10),
-    decay_steps=hp.get("d_decay_steps", 100_000),
+    decay_steps=hp.get("d_decay_steps", 200_000),
     min_learning_rate=hp.get("d_min_learning_rate", 1e-6),
     verbose=True,
     key="d_lr",
@@ -238,7 +246,7 @@ if gan.referee is not None:
     r_lr_sched = LearnRateExpDecay(
         gan.referee_optimizer,
         decay_rate=hp.get("r_decay_rate", 0.10),
-        decay_steps=hp.get("r_decay_steps", 100_000),
+        decay_steps=hp.get("r_decay_steps", 150_000),
         min_learning_rate=hp.get("r_min_learning_rate", 1e-6),
         verbose=True,
         key="r_lr",
@@ -268,21 +276,21 @@ print(f"[INFO] Model training completed in {duration}")
 # +---------------------+
 
 with open(
-    f"{models_dir}/GlobalPIDmu_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/GlobalPID-im_{args.particle}_models/tX_{args.data_sample}.pkl", "rb"
 ) as file:
     x_scaler = pickle.load(file)
 
 x_post = invertColumnTransformer(x_scaler, x_val)
 
 with open(
-    f"{models_dir}/GlobalPIDmu_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
+    f"{models_dir}/GlobalPID-im_{args.particle}_models/tY_{args.data_sample}.pkl", "rb"
 ) as file:
     y_scaler = pickle.load(file)
 
-y_post = y_scaler.inverse_transform(y_val)
+y_post = invertColumnTransformer(y_scaler, y_val)
 
-out = gan.generate(x_val, seed=None)
-out_post = y_scaler.inverse_transform(out)
+out = gan.generate(x_val, seed=None).numpy()
+out_post = invertColumnTransformer(y_scaler, out)
 
 # +------------------+
 # |   Model export   |
@@ -294,21 +302,21 @@ date = date.replace("-", "/")
 hour = hour.split(".")[0]
 
 if args.test:
-    prefix = "test"
+    model_name = "test"
     save_output = args.saving
 elif args.latest:
-    prefix = "latest"
+    model_name = "latest"
     save_output = True
 else:
-    prefix = ""
+    model_name = ""
     save_output = args.saving
     timestamp = timestamp.split(".")[0].replace("-", "").replace(" ", "-")
     for time, unit in zip(timestamp.split(":"), ["h", "m", "s"]):
-        prefix += time + unit  # YYYYMMDD-HHhMMmSSs
-prefix += f"_GlobalPIDmuGAN-{args.particle}_{args.data_sample}"
+        model_name += time + unit  # YYYYMMDD-HHhMMmSSs
+model_name += f"_GlobalPID-im-{args.particle}_{args.data_sample}_gan"
 
-export_model_dirname = f"{models_dir}/GlobalPIDmu_{args.particle}_models/{prefix}_model"
-export_img_dirname = f"{images_dir}/GlobalPIDmu_{args.particle}_img/{prefix}_img"
+export_model_dirname = f"{models_dir}/GlobalPID-im_{args.particle}_models/{model_name}"
+export_img_dirname = f"{images_dir}/GlobalPID-im_{args.particle}_images/{model_name}"
 
 if save_output:
     if not os.path.exists(export_model_dirname):
@@ -328,11 +336,11 @@ if save_output:
     pickle.dump(y_scaler, open(f"{export_model_dirname}/tY.pkl", "wb"))
     np.savez(
         f"{export_model_dirname}/results.npz",
-        x=x_val,
+        x_true=x_post,
         x_vars=x_vars,
-        y=y_val,
+        y_true=y_post,
+        y_pred=out_post,
         y_vars=y_vars,
-        output=out,
     )  # export training results
 
 # +---------------------+
@@ -340,7 +348,9 @@ if save_output:
 # +---------------------+
 
 report = Report()
-report.add_markdown('<h1 align="center">GlobalPIDmuGAN training report</h1>')
+report.add_markdown(
+    '<h1 align="center">GlobalPIDGAN (isMuon passed) training report</h1>'
+)
 
 info = [
     f"- Script executed on **{socket.gethostname()}**",
@@ -351,10 +361,10 @@ info = [
     f"- Model trained on **{args.particle}** tracks",
 ]
 
-if "sim" in args.data_sample:
-    info += ["- Model trained on **detailed simulated** samples"]
+if "calib" not in args.data_sample:
+    info += [f"- Model trained on **detailed simulated** samples ({args.data_sample})"]
 else:
-    info += ["- Model trained on **calibration** samples"]
+    info += [f"- Model trained on **calibration** samples ({args.data_sample})"]
     if args.weights:
         info += ["- Any background components subtracted using **sWeights**"]
     else:
@@ -413,7 +423,7 @@ if gan.referee is not None:
 ## Training plots
 prepare_training_plots(
     report=report,
-    model="GlobalPIDmu",
+    model="GlobalPID-im",
     history=train.history,
     metrics=metrics,
     num_epochs=num_epochs,
@@ -427,17 +437,17 @@ prepare_training_plots(
 ## Validation plots
 prepare_validation_plots(
     report=report,
-    model="GlobalPIDmu",
+    model="GlobalPID-im",
     x_true=x_post,
     y_true=y_post,
     y_pred=out_post,
     y_vars=y_vars,
     weights=w_val,
-    from_fullsim="sim" in args.data_sample,
+    from_fullsim="calib" not in args.data_sample,
     save_images=save_output,
     images_dirname=export_img_dirname,
 )
 
-report_fname = f"{reports_dir}/{prefix}_train-report.html"
+report_fname = f"{reports_dir}/{model_name}_train-report.html"
 report.write_report(filename=report_fname)
 print(f"[INFO] Training report correctly exported to '{report_fname}'")
