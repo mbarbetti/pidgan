@@ -195,13 +195,17 @@ def prepare_validation_plots(
 ) -> None:
     if model != "isMuon":
         if model == "Rich":
-            idx_p = y_vars.index("RichDLLp")
-            idx_k = y_vars.index("RichDLLk")
-            new_y_true = y_true[:, idx_p] - y_true[:, idx_k]
-            y_true = np.c_[y_true, new_y_true]
-            new_y_pred = y_pred[:, idx_p] - y_pred[:, idx_k]
-            y_pred = np.c_[y_pred, new_y_pred]
-            y_vars += ["RichDLLpk"]
+            for rich_dll in [
+                ["RichDLLmu", "RichDLLe", "RichDLLmue"],
+                ["RichDLLp", "RichDLLk", "RichDLLpk"],
+            ]:
+                idx_0 = y_vars.index(rich_dll[0])
+                idx_1 = y_vars.index(rich_dll[1])
+                new_y_true = y_true[:, idx_0] - y_true[:, idx_1]
+                y_true = np.c_[y_true, new_y_true]
+                new_y_pred = y_pred[:, idx_0] - y_pred[:, idx_1]
+                y_pred = np.c_[y_pred, new_y_pred]
+                y_vars += [rich_dll[2]]
         elif model == "Muon":
             idx_mu = y_vars.index("MuonMuLL")
             idx_bg = y_vars.index("MuonBgLL")
@@ -209,15 +213,16 @@ def prepare_validation_plots(
             y_true = np.c_[y_true, new_y_true]
             new_y_pred = y_pred[:, idx_mu] - y_pred[:, idx_bg]
             y_pred = np.c_[y_pred, new_y_pred]
-            y_vars += ["MuonLL"]
+            y_vars += ["muDLL"]
         elif "GlobalPID" in model:
-            idx_p = y_vars.index("PIDp")
-            idx_k = y_vars.index("PIDK")
-            new_y_true = y_true[:, idx_p] - y_true[:, idx_k]
-            y_true = np.c_[y_true, new_y_true]
-            new_y_pred = y_pred[:, idx_p] - y_pred[:, idx_k]
-            y_pred = np.c_[y_pred, new_y_pred]
-            y_vars += ["PIDpk"]
+            for comb_dll in [["PIDmu", "PIDe", "PIDmue"], ["PIDp", "PIDK", "PIDpK"]]:
+                idx_0 = y_vars.index(comb_dll[0])
+                idx_1 = y_vars.index(comb_dll[1])
+                new_y_true = y_true[:, idx_0] - y_true[:, idx_1]
+                y_true = np.c_[y_true, new_y_true]
+                new_y_pred = y_pred[:, idx_0] - y_pred[:, idx_1]
+                y_pred = np.c_[y_pred, new_y_pred]
+                y_vars += [comb_dll[2]]
 
         for i, y_var in enumerate(y_vars):
             report.add_markdown(f'<h2 align="center">Validation plots of {y_var}</h2>')
@@ -242,10 +247,10 @@ def prepare_validation_plots(
             for log_scale in [False, True]:
                 correlation_histogram(
                     report=report,
-                    data_corr=x_true[:, 0] / 1e3,
+                    data_corr=x_true[:, 0],
                     data_ref=y_true[:, i],
                     data_gen=y_pred[:, i],
-                    range_corr=[0, 100],
+                    range_corr=[3.0, 153.0],
                     weights_ref=weights,
                     weights_gen=weights,
                     xlabel="Momentum [GeV/$c$]",
@@ -262,10 +267,10 @@ def prepare_validation_plots(
             for log_scale in [False, True]:
                 binned_validation_histogram(
                     report=report,
-                    data_bin=x_true[:, 0] / 1e3,
+                    data_bin=x_true[:, 0],
                     data_ref=y_true[:, i],
                     data_gen=y_pred[:, i],
-                    boundaries_bin=[0, 5, 10, 25, 100],
+                    boundaries_bin=[3.0, 10.0, 25.0, 50.0, 150.0],
                     weights_ref=weights,
                     weights_gen=weights,
                     xlabel=f"{y_var}",
@@ -282,10 +287,10 @@ def prepare_validation_plots(
 
             selection_efficiency(
                 report=report,
-                data_bin=x_true[:, 0] / 1e3,
+                data_bin=x_true[:, 0],
                 data_ref=y_true[:, i],
                 data_gen=y_pred[:, i],
-                range_bin=[0, 100],
+                range_bin=[3.0, 153.0],
                 weights_ref=weights,
                 weights_gen=weights,
                 title=f"{y_var}",
@@ -302,7 +307,7 @@ def prepare_validation_plots(
                     data_corr=x_true[:, 1],
                     data_ref=y_true[:, i],
                     data_gen=y_pred[:, i],
-                    range_corr=[2, 5],
+                    range_corr=[1.5, 5.5],
                     weights_ref=weights,
                     weights_gen=weights,
                     xlabel="Pseudorapidity",
@@ -322,7 +327,7 @@ def prepare_validation_plots(
                     data_bin=x_true[:, 1],
                     data_ref=y_true[:, i],
                     data_gen=y_pred[:, i],
-                    boundaries_bin=[1.8, 2.7, 3.5, 4.2, 5.5],
+                    boundaries_bin=[1.5, 2.5, 3.5, 4.5, 5.5],
                     weights_ref=weights,
                     weights_gen=weights,
                     xlabel=f"{y_var}",
@@ -341,7 +346,7 @@ def prepare_validation_plots(
                 data_bin=x_true[:, 1],
                 data_ref=y_true[:, i],
                 data_gen=y_pred[:, i],
-                range_bin=[1.8, 5.5],
+                range_bin=[1.5, 5.5],
                 weights_ref=weights,
                 weights_gen=weights,
                 title=f"{y_var}",
@@ -358,7 +363,7 @@ def prepare_validation_plots(
                     data_corr=x_true[:, 2],
                     data_ref=y_true[:, i],
                     data_gen=y_pred[:, i],
-                    range_corr=[0, 500],
+                    range_corr=[0, 800],
                     weights_ref=weights,
                     weights_gen=weights,
                     xlabel="$\mathtt{nTracks}$",
@@ -378,7 +383,7 @@ def prepare_validation_plots(
                     data_bin=x_true[:, 2],
                     data_ref=y_true[:, i],
                     data_gen=y_pred[:, i],
-                    boundaries_bin=[0, 50, 150, 300, 500],
+                    boundaries_bin=[0, 100, 250, 350, 800],
                     weights_ref=weights,
                     weights_gen=weights,
                     xlabel=f"{y_var}",
@@ -397,7 +402,7 @@ def prepare_validation_plots(
                 data_bin=x_true[:, 2],
                 data_ref=y_true[:, i],
                 data_gen=y_pred[:, i],
-                range_bin=[0, 500],
+                range_bin=[0, 800],
                 weights_ref=weights,
                 weights_gen=weights,
                 title=f"{y_var}",
@@ -416,10 +421,10 @@ def prepare_validation_plots(
         for log_scale in [False, True]:
             validation_2d_histogram(
                 report=report,
-                x_true=x_true[:, 0] / 1e3,
+                x_true=x_true[:, 0],
                 y_true=x_true[:, 1],
-                range_x=[0, 100],
-                range_y=[2, 5],
+                range_x=[3.0, 153.0],
+                range_y=[1.5, 5.5],
                 weights_true=weights * y_true if weights else y_true,
                 weights_pred=weights * y_pred if weights else y_pred,
                 xlabel="Momentum [GeV/$c$]",
@@ -433,12 +438,12 @@ def prepare_validation_plots(
 
         identification_efficiency(
             report=report,
-            x_true=x_true[:, 0] / 1e3,
+            x_true=x_true[:, 0],
             id_true=y_true,
             id_pred=y_pred,
             data_bin=x_true[:, 1],
-            range_true=[0, 100],
-            boundaries_bin=[1.8, 2.7, 3.5, 4.2, 5.5],
+            range_true=[3.0, 153.0],
+            boundaries_bin=[1.5, 2.5, 3.5, 4.5, 5.5],
             weights_true=weights,
             weights_pred=weights,
             xlabel="Momentum [GeV/$c$]",
@@ -453,10 +458,10 @@ def prepare_validation_plots(
         for log_scale in [False, True]:
             validation_2d_histogram(
                 report=report,
-                x_true=x_true[:, 0] / 1e3,
+                x_true=x_true[:, 0],
                 y_true=x_true[:, 2],
-                range_x=[0, 100],
-                range_y=[0, 500],
+                range_x=[3.0, 153.0],
+                range_y=[0, 800],
                 weights_true=weights * y_true if weights else y_true,
                 weights_pred=weights * y_pred if weights else y_pred,
                 xlabel="Momentum [GeV/$c$]",
@@ -470,12 +475,12 @@ def prepare_validation_plots(
 
         identification_efficiency(
             report=report,
-            x_true=x_true[:, 0] / 1e3,
+            x_true=x_true[:, 0],
             id_true=y_true,
             id_pred=y_pred,
             data_bin=x_true[:, 2],
-            range_true=[0, 100],
-            boundaries_bin=[0, 50, 150, 300, 500],
+            range_true=[3.0, 153.0],
+            boundaries_bin=[0, 100, 250, 350, 800],
             weights_true=weights,
             weights_pred=weights,
             xlabel="Momentum [GeV/$c$]",
@@ -492,8 +497,8 @@ def prepare_validation_plots(
                 report=report,
                 x_true=x_true[:, 1],
                 y_true=x_true[:, 2],
-                range_x=[2, 5],
-                range_y=[0, 500],
+                range_x=[1.5, 5.5],
+                range_y=[0, 800],
                 weights_true=weights * y_true if weights else y_true,
                 weights_pred=weights * y_pred if weights else y_pred,
                 xlabel="Pseudorapidity",
@@ -511,8 +516,8 @@ def prepare_validation_plots(
             id_true=y_true.flatten(),
             id_pred=y_pred.flatten(),
             data_bin=x_true[:, 2],
-            range_true=[2, 5],
-            boundaries_bin=[0, 50, 150, 300, 500],
+            range_true=[1.5, 5.5],
+            boundaries_bin=[0, 100, 250, 350, 800],
             weights_true=weights,
             weights_pred=weights,
             xlabel="Pseudorapidity",

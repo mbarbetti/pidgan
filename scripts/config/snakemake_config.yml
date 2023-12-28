@@ -1,8 +1,6 @@
-data_max_files: 150
-prep_chunk_size: 3_000_000
-data_sample: sim10-2016MU
+data_sample: 2016MU
 num_epochs: 500
-gan_chunk_size: 500_000
-gan_train_ratio: 0.7
-ismuon_chunk_size: 1_000_000
-ismuon_train_ratio: 0.5
+gan_chunk_size: 1_800_000
+gan_train_ratio: 0.6
+ismuon_chunk_size: 1_800_000
+ismuon_train_ratio: 0.6
