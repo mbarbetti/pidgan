@@ -22,7 +22,7 @@ from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 
 DTYPE = np.float32
-BATCHSIZE = 1024
+BATCHSIZE = 2048
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -313,7 +313,7 @@ else:
     timestamp = timestamp.split(".")[0].replace("-", "").replace(" ", "-")
     for time, unit in zip(timestamp.split(":"), ["h", "m", "s"]):
         model_name += time + unit  # YYYYMMDD-HHhMMmSSs
-model_name += f"_GlobalPID-im-{args.particle}_{args.data_sample}_gan"
+model_name += f"_GlobalPID-im_{args.particle}_{args.data_sample}_gan"
 
 export_model_dirname = f"{models_dir}/GlobalPID-im_{args.particle}_models/{model_name}"
 export_img_dirname = f"{images_dir}/GlobalPID-im_{args.particle}_images/{model_name}"

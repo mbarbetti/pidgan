@@ -22,7 +22,7 @@ from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import getSummaryHTML, initHPSingleton
 
 DTYPE = np.float32
-BATCHSIZE = 1024
+BATCHSIZE = 2048
 
 here = os.path.abspath(os.path.dirname(__file__))
 
