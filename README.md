@@ -14,8 +14,12 @@
   <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/tensorflow-2.7–2.15-f57000?style=flat"></a>
   <a href="https://scikit-learn.org/stable/whats_new.html"><img alt="scikit-learn versions" src="https://img.shields.io/badge/sklearn-1.0–1.3-f89939?style=flat"></a>
   <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.11-blue?style=flat"></a>
+</p>
+
+<p align="center">
   <a href="https://pypi.python.org/pypi/pidgan"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/pidgan"></a>
   <a href="LICENSE"><img alt="GitHub - License" src="https://img.shields.io/github/license/mbarbetti/pidgan"></a>
+  <a href="https://zenodo.org/doi/10.5281/zenodo.10463727"><img alt="DOI" src="https://zenodo.org/badge/597088032.svg"></a>
 </p>
 
 <p align="center">
