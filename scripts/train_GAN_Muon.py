@@ -155,7 +155,7 @@ referee = Classifier(
     mlp_hidden_units=hp.get("r_mlp_hidden_units", 128),
     mlp_hidden_activation=hp.get("r_mlp_hidden_activation", "relu"),
     mlp_hidden_kernel_regularizer=hp.get(
-        "r_mlp_hidden_kernel_regularizer", tf.keras.regularizers.L2(1e-4)
+        "r_mlp_hidden_kernel_regularizer", tf.keras.regularizers.L2(5e-5)
     ),
     mlp_dropout_rates=hp.get("r_mlp_dropout_rates", 0.0),
     name="referee",

@@ -143,12 +143,8 @@ generator = ResGenerator(
 discriminator = AuxDiscriminator(
     output_dim=hp.get("d_output_dim", 1),
     aux_features=hp.get(
-        "d_aux_features",
-        [
-            f"{y_vars.index('PIDmu')} - {y_vars.index('PIDe')}",
-            f"{y_vars.index('PIDp')} - {y_vars.index('PIDK')}",
-        ],
-    ),
+        "d_aux_features", ["3 - 0", "2 - 1"]
+    ),  # ["PIDmu - PIDe", "PIDK - PIDp"]
     num_hidden_layers=hp.get("d_num_hidden_layers", 10),
     mlp_hidden_units=hp.get("d_mlp_hidden_units", 128),
     mlp_dropout_rates=hp.get("d_mlp_dropout_rates", 0.0),
@@ -163,7 +159,7 @@ referee = Classifier(
     mlp_hidden_units=hp.get("r_mlp_hidden_units", 128),
     mlp_hidden_activation=hp.get("r_mlp_hidden_activation", "relu"),
     mlp_hidden_kernel_regularizer=hp.get(
-        "r_mlp_hidden_kernel_regularizer", tf.keras.regularizers.L2(1e-4)
+        "r_mlp_hidden_kernel_regularizer", tf.keras.regularizers.L2(5e-5)
     ),
     mlp_dropout_rates=hp.get("r_mlp_dropout_rates", 0.0),
     name="referee",
