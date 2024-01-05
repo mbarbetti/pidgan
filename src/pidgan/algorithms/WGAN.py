@@ -61,7 +61,9 @@ class WGAN(GAN):
         else:
             return fake_loss - real_loss
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_g_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -73,7 +75,9 @@ class WGAN(GAN):
             generator_loss=True,
         )
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )

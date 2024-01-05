@@ -182,8 +182,7 @@ class GAN(keras.Model):
 
     def _g_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
-            loss = self._compute_g_loss(x, y, sample_weight, training=True)
-            loss += self._compute_feature_matching(x, y, sample_weight, training=True)
+            loss = self._compute_g_loss(x, y, sample_weight, training=True, test=False)
 
         trainable_vars = self._generator.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
@@ -194,7 +193,7 @@ class GAN(keras.Model):
 
     def _d_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
-            loss = self._compute_d_loss(x, y, sample_weight, training=True)
+            loss = self._compute_d_loss(x, y, sample_weight, training=True, test=False)
 
         trainable_vars = self._discriminator.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
@@ -205,7 +204,7 @@ class GAN(keras.Model):
 
     def _r_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
-            loss = self._compute_r_loss(x, y, sample_weight, training=True)
+            loss = self._compute_r_loss(x, y, sample_weight, training=True, test=False)
 
         trainable_vars = self._referee.trainable_weights
         gradients = tape.gradient(loss, trainable_vars)
@@ -278,11 +277,13 @@ class GAN(keras.Model):
         else:
             return -(real_loss + fake_loss)
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_g_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
-        return self._standard_loss_func(
+        g_loss = self._standard_loss_func(
             discriminator=self._discriminator,
             trainset_ref=trainset_ref,
             trainset_gen=trainset_gen,
@@ -291,8 +292,15 @@ class GAN(keras.Model):
             original_loss=self._use_original_loss,
             generator_loss=True,
         )
+        if not test:
+            g_loss += self._compute_feature_matching(
+                x, y, sample_weight, training_generator=training
+            )
+        return g_loss
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
@@ -306,7 +314,9 @@ class GAN(keras.Model):
             generator_loss=False,
         )
 
-    def _compute_r_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_r_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
@@ -324,11 +334,11 @@ class GAN(keras.Model):
         return (real_loss + fake_loss) / 2.0
 
     def _compute_feature_matching(
-        self, x, y, sample_weight=None, training=True
+        self, x, y, sample_weight=None, training_generator=True
     ) -> tf.Tensor:
         if self._feature_matching_penalty > 0.0:
             trainset_ref, trainset_gen = self._prepare_trainset(
-                x, y, sample_weight, training_generator=training
+                x, y, sample_weight, training_generator=training_generator
             )
             x_ref, y_ref, _ = trainset_ref
             x_gen, y_gen, _ = trainset_gen
@@ -385,14 +395,16 @@ class GAN(keras.Model):
 
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
 
-        g_loss = self._compute_g_loss(x, y, sample_weight, training=False)
+        g_loss = self._compute_g_loss(x, y, sample_weight, training=False, test=True)
         self._g_loss.update_state(g_loss + threshold)
 
-        d_loss = self._compute_d_loss(x, y, sample_weight, training=False)
+        d_loss = self._compute_d_loss(x, y, sample_weight, training=False, test=True)
         self._d_loss.update_state(d_loss - threshold)
 
         if self._referee is not None:
-            r_loss = self._compute_r_loss(x, y, sample_weight, training=False)
+            r_loss = self._compute_r_loss(
+                x, y, sample_weight, training=False, test=True
+            )
             self._r_loss.update_state(r_loss)
 
         train_dict = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())

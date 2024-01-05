@@ -72,7 +72,9 @@ class LSGAN(GAN):
         else:
             return (real_loss + fake_loss) / 2.0
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_g_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -87,7 +89,9 @@ class LSGAN(GAN):
             generator_loss=True,
         )
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )

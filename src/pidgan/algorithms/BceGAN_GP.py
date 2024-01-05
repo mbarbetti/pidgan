@@ -48,11 +48,18 @@ class BceGAN_GP(BceGAN):
             )
         self._lipschitz_penalty_strategy = lipschitz_penalty_strategy
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         d_loss = super()._compute_d_loss(x, y, sample_weight, training)
-        d_loss += self._lipschitz_regularization(
-            self._discriminator, x, y, sample_weight, training_discriminator=training
-        )
+        if not test:
+            d_loss += self._lipschitz_regularization(
+                self._discriminator,
+                x,
+                y,
+                sample_weight,
+                training_discriminator=training,
+            )
         return d_loss
 
     def _lipschitz_regularization(

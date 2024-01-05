@@ -104,7 +104,9 @@ class CramerGAN(WGAN_GP):
         else:
             return fake_loss - real_loss
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_g_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -117,7 +119,9 @@ class CramerGAN(WGAN_GP):
             generator_loss=True,
         )
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
@@ -129,12 +133,15 @@ class CramerGAN(WGAN_GP):
             training_critic=training,
             generator_loss=False,
         )
-        lip_reg = self._lipschitz_regularization(
-            self._critic, x, y, sample_weight, training_critic=training
-        )
-        return d_loss + lip_reg
+        if not test:
+            d_loss += self._lipschitz_regularization(
+                self._critic, x, y, sample_weight, training_critic=training
+            )
+        return d_loss
 
-    def _compute_r_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_r_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen, _ = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )

@@ -49,12 +49,19 @@ class WGAN_GP(WGAN):
     def _d_train_step(self, x, y, sample_weight=None) -> None:
         super(WGAN, self)._d_train_step(x, y, sample_weight)
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         d_loss = super()._compute_d_loss(x, y, sample_weight, training)
-        lip_reg = self._lipschitz_regularization(
-            self._discriminator, x, y, sample_weight, training_discriminator=training
-        )
-        return d_loss + lip_reg
+        if not test:
+            d_loss += self._lipschitz_regularization(
+                self._discriminator,
+                x,
+                y,
+                sample_weight,
+                training_discriminator=training,
+            )
+        return d_loss
 
     def _lipschitz_regularization(
         self, discriminator, x, y, sample_weight=None, training_discriminator=True

@@ -36,7 +36,9 @@ class BceGAN(GAN):
         self._from_logits = bool(from_logits)
         self._label_smoothing = float(label_smoothing)
 
-    def _compute_g_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_g_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         _, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -58,7 +60,9 @@ class BceGAN(GAN):
         )
         return fake_loss
 
-    def _compute_d_loss(self, x, y, sample_weight=None, training=True) -> tf.Tensor:
+    def _compute_d_loss(
+        self, x, y, sample_weight=None, training=True, test=False
+    ) -> tf.Tensor:
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
