@@ -155,21 +155,7 @@ class GAN(keras.Model):
             for _ in range(self._r_upds_per_batch):
                 self._r_train_step(x, y, sample_weight)
 
-        train_dict = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
-        if self._referee is not None:
-            train_dict.update(dict(r_loss=self._r_loss.result()))
-        if self._metrics is not None:
-            g_out = self._generator(x, training=False)
-            x_concat = tf.concat([x, x], axis=0)
-            y_concat = tf.concat([y, g_out], axis=0)
-            d_out = self._discriminator((x_concat, y_concat), training=False)
-            d_ref, d_gen = tf.split(d_out, 2, axis=0)
-            for metric in self._metrics:
-                metric.update_state(
-                    y_true=d_ref, y_pred=d_gen, sample_weight=sample_weight
-                )
-                train_dict.update({metric.name: metric.result()})
-        return train_dict
+        return self._update_metric_states(x, y, sample_weight)
 
     @staticmethod
     def _unpack_data(data) -> tuple:
@@ -211,6 +197,23 @@ class GAN(keras.Model):
         self._r_opt.apply_gradients(zip(gradients, trainable_vars))
 
         self._r_loss.update_state(loss)
+
+    def _update_metric_states(self, x, y, sample_weight) -> None:
+        metric_states = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
+        if self._referee is not None:
+            metric_states.update(dict(r_loss=self._r_loss.result()))
+        if self._metrics is not None:
+            g_out = self._generator(x, training=False)
+            x_concat = tf.concat([x, x], axis=0)
+            y_concat = tf.concat([y, g_out], axis=0)
+            d_out = self._discriminator((x_concat, y_concat), training=False)
+            d_ref, d_gen = tf.split(d_out, 2, axis=0)
+            for metric in self._metrics:
+                metric.update_state(
+                    y_true=d_ref, y_pred=d_gen, sample_weight=sample_weight
+                )
+                metric_states.update({metric.name: metric.result()})
+        return metric_states
 
     def _prepare_trainset(
         self, x, y, sample_weight=None, training_generator=True
@@ -407,21 +410,7 @@ class GAN(keras.Model):
             )
             self._r_loss.update_state(r_loss)
 
-        train_dict = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
-        if self._referee is not None:
-            train_dict.update(dict(r_loss=self._r_loss.result()))
-        if self._metrics is not None:
-            g_out = self._generator(x, training=False)
-            x_concat = tf.concat([x, x], axis=0)
-            y_concat = tf.concat([y, g_out], axis=0)
-            d_out = self._discriminator((x_concat, y_concat), training=False)
-            d_ref, d_gen = tf.split(d_out, 2, axis=0)
-            for metric in self._metrics:
-                metric.update_state(
-                    y_true=d_ref, y_pred=d_gen, sample_weight=sample_weight
-                )
-                train_dict.update({metric.name: metric.result()})
-        return train_dict
+        return self._update_metric_states(x, y, sample_weight)
 
     def generate(self, x, seed=None) -> tf.Tensor:
         return self._generator.generate(x, seed=seed)

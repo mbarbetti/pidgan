@@ -43,6 +43,38 @@ class CramerGAN(WGAN_GP):
         # Critic function
         self._critic = Critic(lambda x, t: self._discriminator(x, training=t))
 
+    def _update_metric_states(self, x, y, sample_weight) -> None:
+        metric_states = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
+        if self._referee is not None:
+            metric_states.update(dict(r_loss=self._r_loss.result()))
+        if self._metrics is not None:
+            batch_size = tf.cast(tf.shape(x)[0] / 2, tf.int32)
+            x_1, x_2 = tf.split(x[: batch_size * 2], 2, axis=0)
+            y_1 = y[:batch_size]
+            g_out = self._generator(x[: batch_size * 2], training=False)
+            g_out_1, g_out_2 = tf.split(g_out, 2, axis=0)
+
+            x_concat_1 = tf.concat([x_1, x_1], axis=0)
+            y_concat_1 = tf.concat([y_1, g_out_1], axis=0)
+            x_concat_2 = tf.concat([x_2, x_2], axis=0)
+            y_concat_2 = tf.concat([g_out_2, g_out_2], axis=0)
+
+            c_out = self._critic(
+                (x_concat_1, y_concat_1), (x_concat_2, y_concat_2), training=False
+            )
+            c_ref, c_gen = tf.split(c_out, 2, axis=0)
+            for metric in self._metrics:
+                if sample_weight is not None:
+                    w_1, w_2 = tf.split(sample_weight[: batch_size * 2], 2, axis=0)
+                    weights = w_1 * w_2
+                else:
+                    weights = None
+                metric.update_state(
+                    y_true=c_ref, y_pred=c_gen, sample_weight=weights
+                )
+                metric_states.update({metric.name: metric.result()})
+        return metric_states
+
     def _prepare_trainset(
         self, x, y, sample_weight=None, training_generator=True
     ) -> tuple:
