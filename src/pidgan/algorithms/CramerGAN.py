@@ -69,9 +69,7 @@ class CramerGAN(WGAN_GP):
                     weights = w_1 * w_2
                 else:
                     weights = None
-                metric.update_state(
-                    y_true=c_ref, y_pred=c_gen, sample_weight=weights
-                )
+                metric.update_state(y_true=c_ref, y_pred=c_gen, sample_weight=weights)
                 metric_states.update({metric.name: metric.result()})
         return metric_states
 
