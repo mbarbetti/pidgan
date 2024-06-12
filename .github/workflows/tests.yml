@@ -48,7 +48,7 @@ jobs:
       env:
         HOPAAS_TOKEN: ${{ secrets.HOPAAS_TOKEN }}
       run: |
-        python tests/config/config.py --no-interactive -t "$HOPAAS_TOKEN"
+        python tests/config/config.py --no-interactive -s "http://hopaas.cloud.infn.it:11756" -t "$HOPAAS_TOKEN"
         pytest --cov tests/
 
     - name: Upload coverage to Codecov
