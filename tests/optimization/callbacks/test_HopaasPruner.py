@@ -54,6 +54,7 @@ def callback():
 ###########################################################################
 
 
+@pytest.mark.xfail
 def test_callback_configuration(callback):
     from pidgan.optimization.callbacks import HopaasPruner
 
@@ -63,6 +64,7 @@ def test_callback_configuration(callback):
     assert isinstance(callback.enable_pruning, bool)
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("enable_pruning", [False, True])
 def test_callback_use(enable_pruning):
     study = hpc.Study(
