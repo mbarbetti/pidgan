@@ -18,7 +18,7 @@ jobs:
     - name: Set-up python version
       uses: actions/setup-python@v5
       with:
-        python-version: "3.8"  # supported by all tensorflow versions
+        python-version: "3.9" # supported by all tensorflow versions
     - name: Install dependencies
       run: |
         pip install --upgrade pip
