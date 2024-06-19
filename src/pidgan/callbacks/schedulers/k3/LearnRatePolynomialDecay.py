@@ -1,6 +1,6 @@
-import tensorflow as tf
+import keras as k
 
-from pidgan.callbacks.schedulers.LearnRateBaseScheduler import LearnRateBaseScheduler
+from pidgan.callbacks.schedulers.k3.LearnRateBaseScheduler import LearnRateBaseScheduler
 
 
 class LearnRatePolynomialDecay(LearnRateBaseScheduler):
@@ -38,22 +38,22 @@ class LearnRatePolynomialDecay(LearnRateBaseScheduler):
 
     def on_train_begin(self, logs=None) -> None:
         super().on_train_begin(logs=logs)
-        self._tf_decay_steps = tf.cast(self._decay_steps, self._dtype)
-        self._tf_end_learning_rate = tf.cast(self._end_learning_rate, self._dtype)
-        self._tf_power = tf.cast(self._power, self._dtype)
+        self._tf_decay_steps = k.ops.cast(self._decay_steps, self._dtype)
+        self._tf_end_learning_rate = k.ops.cast(self._end_learning_rate, self._dtype)
+        self._tf_power = k.ops.cast(self._power, self._dtype)
 
-    def _scheduled_lr(self, init_lr, step) -> tf.Tensor:
+    def _scheduled_lr(self, init_lr, step):
         if not self._cycle:
-            step = tf.minimum(step, self._tf_decay_steps)
+            step = k.ops.minimum(step, self._tf_decay_steps)
             decay_steps = self._tf_decay_steps
         else:
-            decay_steps = tf.multiply(
+            decay_steps = k.ops.multiply(
                 self._tf_decay_steps,
-                tf.math.ceil(tf.divide(step, self._tf_decay_steps)),
+                k.ops.ceil(k.ops.divide(step, self._tf_decay_steps)),
             )
         return (
             (init_lr - self._tf_end_learning_rate)
-            * tf.pow(1 - step / decay_steps, self._tf_power)
+            * k.ops.power(1 - step / decay_steps, self._tf_power)
         ) + self._tf_end_learning_rate
 
     @property

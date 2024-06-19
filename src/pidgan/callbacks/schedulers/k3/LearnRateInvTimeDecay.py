@@ -1,6 +1,6 @@
-import tensorflow as tf
+import keras as k
 
-from pidgan.callbacks.schedulers.LearnRateBaseScheduler import LearnRateBaseScheduler
+from pidgan.callbacks.schedulers.k3.LearnRateBaseScheduler import LearnRateBaseScheduler
 
 
 class LearnRateInvTimeDecay(LearnRateBaseScheduler):
@@ -41,16 +41,16 @@ class LearnRateInvTimeDecay(LearnRateBaseScheduler):
 
     def on_train_begin(self, logs=None) -> None:
         super().on_train_begin(logs=logs)
-        self._tf_decay_rate = tf.cast(self._decay_rate, self._dtype)
-        self._tf_decay_steps = tf.cast(self._decay_steps, self._dtype)
+        self._tf_decay_rate = k.ops.cast(self._decay_rate, self._dtype)
+        self._tf_decay_steps = k.ops.cast(self._decay_steps, self._dtype)
 
-    def _scheduled_lr(self, init_lr, step) -> tf.Tensor:
-        p = tf.divide(step, self._tf_decay_steps)
+    def _scheduled_lr(self, init_lr, step):
+        p = k.ops.divide(step, self._tf_decay_steps)
         if self._staircase:
-            p = tf.floor(p)
-        sched_lr = tf.divide(init_lr, 1 + tf.multiply(self._tf_decay_rate, p))
+            p = k.ops.floor(p)
+        sched_lr = k.ops.divide(init_lr, 1 + k.ops.multiply(self._tf_decay_rate, p))
         if self._min_learning_rate is not None:
-            return tf.maximum(sched_lr, self._min_learning_rate)
+            return k.ops.maximum(sched_lr, self._min_learning_rate)
         else:
             return sched_lr
 

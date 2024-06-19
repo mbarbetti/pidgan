@@ -1,7 +1,7 @@
+import keras as k
 import numpy as np
-import tensorflow as tf
 
-from pidgan.callbacks.schedulers.LearnRateBaseScheduler import LearnRateBaseScheduler
+from pidgan.callbacks.schedulers.k3.LearnRateBaseScheduler import LearnRateBaseScheduler
 
 
 class LearnRatePiecewiseConstDecay(LearnRateBaseScheduler):
@@ -20,10 +20,10 @@ class LearnRatePiecewiseConstDecay(LearnRateBaseScheduler):
 
     def on_train_begin(self, logs=None) -> None:
         super().on_train_begin(logs=logs)
-        self._tf_boundaries = tf.cast(self._boundaries, self._dtype)
-        self._tf_values = tf.cast(self._values, self._dtype)
+        self._tf_boundaries = k.ops.cast(self._boundaries, self._dtype)
+        self._tf_values = k.ops.cast(self._values, self._dtype)
 
-    def _scheduled_lr(self, init_lr, step) -> tf.Tensor:
+    def _scheduled_lr(self, init_lr, step):
         for i in range(len(self._boundaries) - 1):
             if (step >= self._tf_boundaries[i]) and (step < self._tf_boundaries[i + 1]):
                 return self._tf_values[i]

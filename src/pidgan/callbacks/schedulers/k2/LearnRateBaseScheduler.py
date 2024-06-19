@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow import keras
+import keras
 
 K = keras.backend
 
@@ -25,13 +25,12 @@ class LearnRateBaseScheduler(keras.callbacks.Callback):
         init_lr = K.get_value(self._optimizer.learning_rate)
         self._init_lr = tf.identity(init_lr)
         self._dtype = self._init_lr.dtype
-        self._step = tf.cast(-1.0, self._dtype)
+        self._step = tf.cast(0.0, self._dtype)
 
     def on_batch_begin(self, batch, logs=None) -> None:
         self._step += 1.0
-        K.set_value(
-            self._optimizer.learning_rate, self._scheduled_lr(self._init_lr, self._step)
-        )
+        sched_lr = self._scheduled_lr(self._init_lr, self._step)
+        K.set_value(self._optimizer.learning_rate, sched_lr)
 
     def _scheduled_lr(self, init_lr, step) -> tf.Tensor:
         return init_lr

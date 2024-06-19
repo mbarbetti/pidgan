@@ -1,7 +1,7 @@
-import numpy as np
-import tensorflow as tf
+import math
+import keras as k
 
-from pidgan.callbacks.schedulers.LearnRateBaseScheduler import LearnRateBaseScheduler
+from pidgan.callbacks.schedulers.k3.LearnRateBaseScheduler import LearnRateBaseScheduler
 
 
 class LearnRateCosineDecay(LearnRateBaseScheduler):
@@ -37,17 +37,17 @@ class LearnRateCosineDecay(LearnRateBaseScheduler):
 
     def on_train_begin(self, logs=None) -> None:
         super().on_train_begin(logs=logs)
-        self._tf_decay_steps = tf.cast(self._decay_steps, self._dtype)
-        self._tf_alpha = tf.cast(self._alpha, self._dtype)
+        self._tf_decay_steps = k.ops.cast(self._decay_steps, self._dtype)
+        self._tf_alpha = k.ops.cast(self._alpha, self._dtype)
 
-    def _scheduled_lr(self, init_lr, step) -> tf.Tensor:
-        step = tf.minimum(step, self._tf_decay_steps)
-        p = tf.divide(step, self._tf_decay_steps)
-        cosine_decay = 0.5 * (1 + tf.cos(tf.constant(np.pi) * p))
-        decayed = tf.multiply(1 - self._tf_alpha, cosine_decay + self._tf_alpha)
-        sched_lr = tf.multiply(init_lr, decayed)
+    def _scheduled_lr(self, init_lr, step):
+        step = k.ops.minimum(step, self._tf_decay_steps)
+        p = k.ops.divide(step, self._tf_decay_steps)
+        cosine_decay = 0.5 * (1 + k.ops.cos(math.pi * p))
+        decayed = k.ops.multiply(1 - self._tf_alpha, cosine_decay + self._tf_alpha)
+        sched_lr = k.ops.multiply(init_lr, decayed)
         if self._min_learning_rate is not None:
-            return tf.maximum(sched_lr, self._min_learning_rate)
+            return k.ops.maximum(sched_lr, self._min_learning_rate)
         else:
             return sched_lr
 

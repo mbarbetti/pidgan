@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from pidgan.callbacks.schedulers.LearnRateBaseScheduler import LearnRateBaseScheduler
+from pidgan.callbacks.schedulers.k2.LearnRateBaseScheduler import LearnRateBaseScheduler
 
 
 class LearnRateExpDecay(LearnRateBaseScheduler):
