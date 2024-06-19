@@ -1,11 +1,11 @@
-from tensorflow import keras
+import keras
 
-from pidgan.metrics.BaseMetric import BaseMetric
+from pidgan.metrics.k2.BaseMetric import BaseMetric
 
 
 class RootMeanSquaredError(BaseMetric):
-    def __init__(self, name="rmse", dtype=None, **kwargs):
-        super().__init__(name, dtype, **kwargs)
+    def __init__(self, name="rmse", dtype=None):
+        super().__init__(name=name, dtype=dtype)
         self._rmse = keras.metrics.RootMeanSquaredError(name=name, dtype=dtype)
 
     def update_state(self, y_true, y_pred, sample_weight=None):

@@ -1,9 +1,9 @@
-from tensorflow import keras
+import keras
 
 
 class BaseMetric(keras.metrics.Metric):
     def __init__(self, name="metric", dtype=None) -> None:
-        super().__init__(name, dtype)
+        super().__init__(name=name, dtype=dtype)
         self._metric_values = self.add_weight(
             name=f"{name}_values", initializer="zeros"
         )

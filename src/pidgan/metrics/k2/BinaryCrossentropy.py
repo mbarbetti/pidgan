@@ -1,14 +1,14 @@
 import tensorflow as tf
-from tensorflow import keras
+import keras
 
-from pidgan.metrics.BaseMetric import BaseMetric
+from pidgan.metrics.k2.BaseMetric import BaseMetric
 
 
 class BinaryCrossentropy(BaseMetric):
     def __init__(
         self, name="bce", dtype=None, from_logits=False, label_smoothing=0.0
     ) -> None:
-        super().__init__(name, dtype)
+        super().__init__(name=name, dtype=dtype)
         self._bce = keras.metrics.BinaryCrossentropy(
             name=name,
             dtype=dtype,

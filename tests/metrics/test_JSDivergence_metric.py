@@ -26,13 +26,8 @@ def test_metric_configuration(metric):
     assert isinstance(metric.name, str)
 
 
-def test_metric_use_no_weights(metric):
-    metric.update_state(y_true, y_pred, sample_weight=None)
-    res = metric.result().numpy()
-    assert res
-
-
-def test_metric_use_with_weights(metric):
-    metric.update_state(y_true, y_pred, sample_weight=weight)
+@pytest.mark.parametrize("sample_weight", [None, weight])
+def test_metric_use(metric, sample_weight):
+    metric.update_state(y_true, y_pred, sample_weight=sample_weight)
     res = metric.result().numpy()
     assert res
