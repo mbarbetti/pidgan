@@ -1,6 +1,6 @@
-import keras
+import keras as k
 
-k_vrs = keras.__version__.split(".")[:2]
+k_vrs = k.__version__.split(".")[:2]
 k_vrs = float(".".join([n for n in k_vrs]))
 
 if k_vrs >= 3.0:
