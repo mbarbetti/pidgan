@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 import pytest
+import keras as k
 import tensorflow as tf
-from tensorflow import keras
 
 CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
@@ -60,11 +60,17 @@ def test_model_use(mlp_hidden_activation, inputs):
         mlp_hidden_activation=mlp_hidden_activation,
         mlp_dropout_rates=0.0,
     )
+    if not isinstance(inputs, (tuple, list)):
+        in_shape = inputs.shape
+    else:
+        in_shape = (inputs[0].shape, inputs[1].shape)
+    model.build(input_shape=in_shape)
+
     out = model(inputs)
     model.summary()
     test_shape = [x.shape[0], model.num_multiclasses]
     assert out.shape == tuple(test_shape)
-    assert isinstance(model.export_model, keras.Model)
+    assert isinstance(model.export_model, k.Model)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
@@ -80,26 +86,53 @@ def test_model_train(model, inputs, sample_weight):
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
-    adam = keras.optimizers.Adam(learning_rate=0.001)
-    cce = keras.losses.CategoricalCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=cce, metrics=["mse"])
+    if not isinstance(inputs, (tuple, list)):
+        in_shape = inputs.shape
+    else:
+        in_shape = (inputs[0].shape, inputs[1].shape)
+    model.build(input_shape=in_shape)
+    model.compile(
+        optimizer=k.optimizers.Adam(learning_rate=0.001),
+        loss=k.losses.MeanSquaredError(), 
+        metrics=["mae"],
+    )
     model.fit(dataset, epochs=2)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, inputs, sample_weight):
-    adam = keras.optimizers.Adam(learning_rate=0.001)
-    cce = keras.losses.CategoricalCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=cce, metrics=["mse"])
-    model.evaluate(inputs, sample_weight=sample_weight)
+    if not isinstance(inputs, (tuple, list)):
+        in_shape = inputs.shape
+    else:
+        in_shape = (inputs[0].shape, inputs[1].shape)
+    model.build(input_shape=in_shape)
+    model.compile(
+        optimizer=k.optimizers.Adam(learning_rate=0.001),
+        loss=k.losses.MeanSquaredError(), 
+        metrics=["mae"],
+    )
+    model.evaluate(x=inputs, y=labels, sample_weight=sample_weight)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
 def test_model_export(model, inputs):
+    if not isinstance(inputs, (tuple, list)):
+        in_shape = inputs.shape
+    else:
+        in_shape = (inputs[0].shape, inputs[1].shape)
+    model.build(input_shape=in_shape)
     out = model(inputs)
-    keras.models.save_model(model.export_model, export_dir, save_format="tf")
-    model_reloaded = keras.models.load_model(export_dir)
+
+    k_vrs = k.__version__.split(".")[:2]
+    k_vrs = float(".".join([n for n in k_vrs]))
+    if k_vrs >= 3.0:
+        model.export_model.export(export_dir)
+        model_reloaded = k.layers.TFSMLayer(export_dir, call_endpoint="serve")
+    else:
+        k.models.save_model(model.export_model, export_dir, save_format="tf")
+        model_reloaded = k.models.load_model(export_dir)
+    
     if isinstance(inputs, (list, tuple)):
         in_reloaded = tf.concat((x, y), axis=-1)
     else:

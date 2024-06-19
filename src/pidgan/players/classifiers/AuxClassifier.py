@@ -35,6 +35,13 @@ class AuxClassifier(AuxDiscriminator):
         # Kernel regularizer
         self._hidden_kernel_reg = mlp_hidden_kernel_regularizer
 
+    def _get_input_dim(self, input_shape) -> int:
+        if isinstance(input_shape, (tuple, list)):
+            in_dim = super()._get_input_dim(input_shape)
+        else:
+            in_dim = input_shape[-1] + len(self._aux_features)
+        return in_dim
+
     def hidden_feature(self, x, return_hidden_idx=False):
         raise NotImplementedError(
             "Only the `discriminators` family has the "

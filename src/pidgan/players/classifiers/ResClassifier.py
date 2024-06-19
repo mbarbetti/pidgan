@@ -31,6 +31,12 @@ class ResClassifier(ResDiscriminator):
         # Kernel regularizer
         self._hidden_kernel_reg = mlp_hidden_kernel_regularizer
 
+    def _get_input_dim(self, input_shape) -> int:
+        if isinstance(input_shape, (tuple, list)):
+            return super()._get_input_dim(input_shape)
+        else:
+            return input_shape[-1]
+
     def hidden_feature(self, x, return_hidden_idx=False):
         raise NotImplementedError(
             "Only the `discriminators` family has the "
