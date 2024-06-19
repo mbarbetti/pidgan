@@ -63,10 +63,13 @@ class Generator(k.Model):
         # Output activation
         self._output_activation = output_activation
 
+    def _get_input_dim(self, input_shape) -> int:
+        return input_shape[-1] + self._latent_dim
+
     def build(self, input_shape) -> None:
-        input_dim = input_shape[-1] + self._latent_dim
+        in_dim = self._get_input_dim(input_shape)
         seq = k.Sequential(name=f"{self.name}_seq" if self.name else None)
-        seq.add(k.layers.InputLayer(input_shape=(input_dim,)))
+        seq.add(k.layers.InputLayer(input_shape=(in_dim,)))
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):

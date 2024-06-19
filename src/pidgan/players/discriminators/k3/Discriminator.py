@@ -1,5 +1,4 @@
 import keras as k
-import tensorflow as tf
 
 LEAKY_NEG_SLOPE = 0.1
 
@@ -67,7 +66,7 @@ class Discriminator(k.Model):
     def build(self, input_shape) -> None:
         in_dim = self._get_input_dim(input_shape)
         seq = k.Sequential(name=f"{self.name}_seq" if self.name else None)
-        seq.add(k.layers.InputLayer(input_shape=(in_dim,)))
+        seq.add(k.layers.InputLayer(shape=(in_dim,)))
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
@@ -106,12 +105,12 @@ class Discriminator(k.Model):
         )
         self._model = seq
 
-    def _prepare_input(self, x) -> tf.Tensor:
+    def _prepare_input(self, x):
         if isinstance(x, (list, tuple)):
-            x = tf.concat(x, axis=-1)
+            x = k.ops.concatenate(x, axis=-1)
         return x
 
-    def call(self, x) -> tf.Tensor:
+    def call(self, x):
         # TODO: add warning for model.build()
         x = self._prepare_input(x)
         out = self._model(x)

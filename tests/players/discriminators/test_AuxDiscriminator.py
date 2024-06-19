@@ -1,8 +1,8 @@
 import os
 
 import pytest
+import keras as k
 import tensorflow as tf
-from tensorflow import keras
 
 CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
@@ -30,6 +30,7 @@ def model():
         enable_residual_blocks=False,
         output_activation="sigmoid",
     )
+    disc.build(input_shape=(x.shape, y.shape))
     return disc
 
 
@@ -63,6 +64,8 @@ def test_model_use(enable_res_blocks, output_activation):
         enable_residual_blocks=enable_res_blocks,
         output_activation=output_activation,
     )
+    model.build(input_shape=(x.shape, y.shape))
+
     out = model((x, y))
     model.summary()
     test_shape = [x.shape[0]]
@@ -72,7 +75,7 @@ def test_model_use(enable_res_blocks, output_activation):
     test_shape = [x.shape[0]]
     test_shape.append(model.mlp_hidden_units)
     assert hidden_feat.shape == tuple(test_shape)
-    assert isinstance(model.export_model, keras.Model)
+    assert isinstance(model.export_model, k.Model)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
@@ -87,24 +90,36 @@ def test_model_train(model, sample_weight):
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
-    adam = keras.optimizers.Adam(learning_rate=0.001)
-    bce = keras.losses.BinaryCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=bce, metrics=["mse"])
+    model.compile(
+        optimizer=k.optimizers.Adam(learning_rate=0.001),
+        loss=k.losses.MeanSquaredError(), 
+        metrics=["mae"],
+    )
     model.fit(dataset, epochs=2)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    adam = keras.optimizers.Adam(learning_rate=0.001)
-    bce = keras.losses.BinaryCrossentropy(from_logits=False)
-    model.compile(optimizer=adam, loss=bce, metrics=["mse"])
-    model.evaluate((x, y), sample_weight=sample_weight)
+    model.compile(
+        optimizer=k.optimizers.Adam(learning_rate=0.001),
+        loss=k.losses.MeanSquaredError(), 
+        metrics=["mae"],
+    )
+    model.evaluate(x=(x, y), y=labels, sample_weight=sample_weight)
 
 
 def test_model_export(model):
     out, aux = model((x, y), return_aux_features=True)
-    keras.models.save_model(model.export_model, export_dir, save_format="tf")
-    model_reloaded = keras.models.load_model(export_dir)
+
+    k_vrs = k.__version__.split(".")[:2]
+    k_vrs = float(".".join([n for n in k_vrs]))
+    if k_vrs >= 3.0:
+        model.export_model.export(export_dir)
+        model_reloaded = k.layers.TFSMLayer(export_dir, call_endpoint="serve")
+    else:
+        k.models.save_model(model.export_model, export_dir, save_format="tf")
+        model_reloaded = k.models.load_model(export_dir)
+
     in_reloaded = tf.concat((x, y, aux), axis=-1)
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()

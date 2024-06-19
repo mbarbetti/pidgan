@@ -1,5 +1,4 @@
-import tensorflow as tf
-
+import keras as k
 from pidgan.players.discriminators.k3.ResDiscriminator import ResDiscriminator
 
 
@@ -40,16 +39,16 @@ class AuxDiscriminator(ResDiscriminator):
         for aux_feat in aux_features:
             assert isinstance(aux_feat, str)
             if "+" in aux_feat:
-                self._aux_operators.append(tf.math.add)
+                self._aux_operators.append(k.ops.add)
                 self._aux_indices.append([int(i) for i in aux_feat.split("+")])
             elif "-" in aux_feat:
-                self._aux_operators.append(tf.math.subtract)
+                self._aux_operators.append(k.ops.subtract)
                 self._aux_indices.append([int(i) for i in aux_feat.split("-")])
             elif "*" in aux_feat:
-                self._aux_operators.append(tf.math.multiply)
+                self._aux_operators.append(k.ops.multiply)
                 self._aux_indices.append([int(i) for i in aux_feat.split("*")])
             elif "/" in aux_feat:
-                self._aux_operators.append(tf.math.divide)
+                self._aux_operators.append(k.ops.divide)
                 self._aux_indices.append([int(i) for i in aux_feat.split("/")])
             else:
                 raise ValueError(
@@ -64,7 +63,7 @@ class AuxDiscriminator(ResDiscriminator):
         in_dim += len(self._aux_features)
         return in_dim
 
-    def _prepare_input(self, x) -> tf.Tensor:
+    def _prepare_input(self, x):
         in_feats = super()._prepare_input(x)
         if isinstance(x, (list, tuple)):
             _, y = x
@@ -73,10 +72,10 @@ class AuxDiscriminator(ResDiscriminator):
         aux_feats = list()
         for aux_idx, aux_op in zip(self._aux_indices, self._aux_operators):
             aux_feats.append(aux_op(y[:, aux_idx[0]], y[:, aux_idx[1]])[:, None])
-        self._aux_feats = tf.concat(aux_feats, axis=-1)
-        return tf.concat([in_feats, self._aux_feats], axis=-1)
+        self._aux_feats = k.ops.concatenate(aux_feats, axis=-1)
+        return k.ops.concatenate([in_feats, self._aux_feats], axis=-1)
 
-    def call(self, x, return_aux_features=False) -> tf.Tensor:
+    def call(self, x, return_aux_features=False):
         out = super().call(x)
         if return_aux_features:
             return out, self._aux_feats

@@ -93,9 +93,9 @@ class ResGenerator(Generator):
         )
 
     def build(self, input_shape) -> None:
-        input_dim = input_shape[-1] + self._latent_dim
+        in_dim = self._get_input_dim(input_shape)
         self._define_arch()
-        inputs = k.layers.Input(shape=(input_dim,))
+        inputs = k.layers.Input(shape=(in_dim,))
         x_ = inputs
         for layer in self._hidden_layers[0]:
             x_ = layer(x_)
