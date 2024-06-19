@@ -1,9 +1,8 @@
 import keras as k
 
-k_vrs = k.__version__.split(".")[:2]
-k_vrs = float(".".join([n for n in k_vrs]))
+v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
 
-if k_vrs >= 3.0:
+if v_major == 3 and v_minor >= 0:
     from .k3.LearnRateBaseScheduler import LearnRateBaseScheduler
     from .k3.LearnRateCosineDecay import LearnRateCosineDecay
     from .k3.LearnRateExpDecay import LearnRateExpDecay

@@ -111,9 +111,8 @@ def test_model_eval(model, sample_weight):
 def test_model_export(model):
     out, aux = model((x, y), return_aux_features=True)
 
-    k_vrs = k.__version__.split(".")[:2]
-    k_vrs = float(".".join([n for n in k_vrs]))
-    if k_vrs >= 3.0:
+    v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
+    if v_major == 3 and v_minor >= 0:
         model.export_model.export(export_dir)
         model_reloaded = k.layers.TFSMLayer(export_dir, call_endpoint="serve")
     else:
