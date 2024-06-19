@@ -1,6 +1,6 @@
 import pytest
 
-from pidgan.metrics.BaseMetric import BaseMetric
+from pidgan.metrics import BaseMetric
 from pidgan.utils.checks.checkMetrics import METRIC_SHORTCUTS, PIDGAN_METRICS
 
 

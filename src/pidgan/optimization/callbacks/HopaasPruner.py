@@ -1,7 +1,7 @@
-from tensorflow import keras
+import keras as k
 
 
-class HopaasPruner(keras.callbacks.Callback):
+class HopaasPruner(k.callbacks.Callback):
     def __init__(
         self, trial, loss_name, report_frequency=1, enable_pruning=True
     ) -> None:

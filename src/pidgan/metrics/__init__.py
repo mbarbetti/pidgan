@@ -4,6 +4,7 @@ k_vrs = k.__version__.split(".")[:2]
 k_vrs = float(".".join([n for n in k_vrs]))
 
 if k_vrs >= 3.0:
+    from .k3.BaseMetric import BaseMetric
     from .k3.Accuracy import Accuracy
     from .k3.BinaryCrossentropy import BinaryCrossentropy
     from .k3.JSDivergence import JSDivergence
@@ -13,6 +14,7 @@ if k_vrs >= 3.0:
     from .k3.RootMeanSquaredError import RootMeanSquaredError
     from .k3.WassersteinDistance import WassersteinDistance
 else:
+    from .k2.BaseMetric import BaseMetric
     from .k2.Accuracy import Accuracy
     from .k2.BinaryCrossentropy import BinaryCrossentropy
     from .k2.JSDivergence import JSDivergence

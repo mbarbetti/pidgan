@@ -6,7 +6,7 @@ from pidgan.metrics import MeanAbsoluteError as MAE
 from pidgan.metrics import MeanSquaredError as MSE
 from pidgan.metrics import RootMeanSquaredError as RMSE
 from pidgan.metrics import WassersteinDistance as Wass_dist
-from pidgan.metrics.BaseMetric import BaseMetric
+from pidgan.metrics import BaseMetric
 
 METRIC_SHORTCUTS = [
     "accuracy",
@@ -46,19 +46,19 @@ def checkMetrics(metrics):  # TODO: add Union[list, None]
                                 checked_metrics.append(calo_metric)
                     else:
                         raise ValueError(
-                            f"`metrics` elements should be selected in "
+                            f'"metrics" elements should be selected in '
                             f"{METRIC_SHORTCUTS}, instead '{metric}' passed"
                         )
                 elif isinstance(metric, BaseMetric):
                     checked_metrics.append(metric)
                 else:
                     raise TypeError(
-                        f"`metrics` elements should be a pidgan's "
-                        f"`BaseMetric`, instead {type(metric)} passed"
+                        f'"metrics" elements should be a pidgan '
+                        f"BaseMetric, instead {type(metric)} passed"
                     )
             return checked_metrics
         else:
             raise TypeError(
-                f"`metrics` should be a list of strings or pidgan's "
-                f"`BaseMetric`s, instead {type(metrics)} passed"
+                f'"metrics" should be a list of strings or pidgan '
+                f"BaseMetrics, instead {type(metrics)} passed"
             )
