@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from pidgan.players.discriminators.ResDiscriminator import ResDiscriminator
+from pidgan.players.discriminators.k3.ResDiscriminator import ResDiscriminator
 
 
 class AuxDiscriminator(ResDiscriminator):
@@ -58,6 +58,11 @@ class AuxDiscriminator(ResDiscriminator):
                     f"instead '{aux_feat}' passed."
                 )
             self._aux_features.append(aux_feat)
+
+    def _get_input_dim(self, input_shape) -> int:
+        in_dim = super()._get_input_dim(input_shape)
+        in_dim += len(self._aux_features)
+        return in_dim
 
     def _prepare_input(self, x) -> tf.Tensor:
         in_feats = super()._prepare_input(x)
