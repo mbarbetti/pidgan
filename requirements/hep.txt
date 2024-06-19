@@ -1,8 +1,7 @@
-tqdm
-numpy
+matplotlib>=3.7,<4.0
+html-reports>=0.2
+scikinC>=0.2.6
 pandas
 uproot
-scikinC>0.2.6
-matplotlib
-html-reports>=0.2
 pyyaml
+tqdm
