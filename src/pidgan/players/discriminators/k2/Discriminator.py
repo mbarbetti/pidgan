@@ -88,7 +88,6 @@ class Discriminator(k.Model):
                         alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if self.name else None
                     )
                 )
-            # TODO: implement alternative hidden activation func
             seq.add(
                 k.layers.Dropout(
                     rate=rate, name=f"dropout_{i}" if self.name else None

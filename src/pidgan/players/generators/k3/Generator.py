@@ -88,7 +88,6 @@ class Generator(k.Model):
                         negative_slope=LEAKY_NEG_SLOPE, name=f"leaky_relu_{i}" if self.name else None
                     )
                 )
-            # TODO: implement alternative hidden activation func
             seq.add(
                 k.layers.Dropout(
                     rate=rate, name=f"dropout_{i}" if self.name else None

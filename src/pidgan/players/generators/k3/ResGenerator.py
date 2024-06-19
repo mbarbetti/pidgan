@@ -68,7 +68,6 @@ class ResGenerator(Generator):
                         negative_slope=LEAKY_NEG_SLOPE, name=f"leaky_relu_{i}" if self.name else None
                     )
                 )
-            # TODO: implement alternative hidden activation func
             res_block.append(
                 k.layers.Dropout(
                     rate=self._mlp_dropout_rates,
