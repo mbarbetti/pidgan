@@ -1,10 +1,10 @@
+import keras as k
 import tensorflow as tf
-from tensorflow import keras
 
 LEAKY_ALPHA = 0.1
 
 
-class Generator(keras.Model):
+class Generator(k.Model):
     def __init__(
         self,
         output_dim,
@@ -18,7 +18,6 @@ class Generator(keras.Model):
     ) -> None:
         super().__init__(name=name, dtype=dtype)
         self._hidden_activation_func = None
-        self._model = None
 
         # Output dimension
         assert output_dim >= 1
@@ -64,13 +63,15 @@ class Generator(keras.Model):
         # Output activation
         self._output_activation = output_activation
 
-    def _define_arch(self) -> keras.Sequential:
-        model = keras.Sequential(name=f"{self.name}_seq" if self.name else None)
+    def build(self, input_shape) -> None:
+        input_dim = input_shape[-1] + self._latent_dim
+        seq = k.Sequential(name=f"{self.name}_seq" if self.name else None)
+        seq.add(k.layers.InputLayer(input_shape=(input_dim,)))
         for i, (units, rate) in enumerate(
             zip(self._mlp_hidden_units, self._mlp_dropout_rates)
         ):
-            model.add(
-                keras.layers.Dense(
+            seq.add(
+                k.layers.Dense(
                     units=units,
                     activation=self._hidden_activation_func,
                     kernel_initializer="glorot_uniform",
@@ -80,18 +81,19 @@ class Generator(keras.Model):
                 )
             )
             if self._hidden_activation_func is None:
-                model.add(
-                    keras.layers.LeakyReLU(
+                seq.add(
+                    k.layers.LeakyReLU(
                         alpha=LEAKY_ALPHA, name=f"leaky_relu_{i}" if self.name else None
                     )
                 )
-            model.add(
-                keras.layers.Dropout(
+            # TODO: implement alternative hidden activation func
+            seq.add(
+                k.layers.Dropout(
                     rate=rate, name=f"dropout_{i}" if self.name else None
                 )
             )
-        model.add(
-            keras.layers.Dense(
+        seq.add(
+            k.layers.Dense(
                 units=self._output_dim,
                 activation=self._output_activation,
                 kernel_initializer="glorot_uniform",
@@ -100,13 +102,7 @@ class Generator(keras.Model):
                 dtype=self.dtype,
             )
         )
-        return model
-
-    def _build_model(self, x) -> None:
-        if self._model is None:
-            self._model = self._define_arch()
-        else:
-            pass
+        self._model = seq
 
     def _prepare_input(self, x, seed=None) -> tuple:
         latent_sample = tf.random.normal(
@@ -120,8 +116,8 @@ class Generator(keras.Model):
         return x, latent_sample
 
     def call(self, x) -> tf.Tensor:
+        # TODO: add warning for model.build()
         x, _ = self._prepare_input(x, seed=None)
-        self._build_model(x)
         out = self._model(x)
         return out
 
@@ -129,9 +125,9 @@ class Generator(keras.Model):
         self._model.summary(**kwargs)
 
     def generate(self, x, seed=None, return_latent_sample=False) -> tf.Tensor:
+        # TODO: add warning for model.build()
         tf.random.set_seed(seed=seed)
         x, latent_sample = self._prepare_input(x, seed=seed)
-        self._build_model(x)
         out = self._model(x)
         if return_latent_sample:
             return out, latent_sample
@@ -163,5 +159,5 @@ class Generator(keras.Model):
         return self._output_activation
 
     @property
-    def export_model(self) -> keras.Sequential:
+    def export_model(self) -> k.Sequential:
         return self._model
