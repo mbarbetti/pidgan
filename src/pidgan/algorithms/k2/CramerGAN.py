@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from pidgan.algorithms.lipschitz_regularizations import compute_CriticGradientPenalty
-from pidgan.algorithms.WGAN_GP import WGAN_GP
+from pidgan.algorithms.k2.lipschitz_regularizations import compute_CriticGradientPenalty
+from pidgan.algorithms.k2.WGAN_GP import WGAN_GP
 
 LIPSCHITZ_CONSTANT = 1.0
 

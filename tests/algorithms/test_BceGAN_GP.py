@@ -1,6 +1,6 @@
 import pytest
+import keras as k
 import tensorflow as tf
-from tensorflow import keras
 
 from pidgan.players.classifiers import AuxClassifier
 from pidgan.players.discriminators import AuxDiscriminator
@@ -110,9 +110,9 @@ def test_model_use(referee):
 
 @pytest.mark.parametrize("metrics", [["bce"], None])
 def test_model_compilation(model, metrics):
-    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
-    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
-    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    g_opt = k.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = k.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = k.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=metrics,
         generator_optimizer=g_opt,
@@ -123,11 +123,11 @@ def test_model_compilation(model, metrics):
         referee_upds_per_batch=1,
     )
     assert isinstance(model.metrics, list)
-    assert isinstance(model.generator_optimizer, keras.optimizers.Optimizer)
-    assert isinstance(model.discriminator_optimizer, keras.optimizers.Optimizer)
+    assert isinstance(model.generator_optimizer, k.optimizers.Optimizer)
+    assert isinstance(model.discriminator_optimizer, k.optimizers.Optimizer)
     assert isinstance(model.generator_upds_per_batch, int)
     assert isinstance(model.discriminator_upds_per_batch, int)
-    assert isinstance(model.referee_optimizer, keras.optimizers.Optimizer)
+    assert isinstance(model.referee_optimizer, k.optimizers.Optimizer)
     assert isinstance(model.referee_upds_per_batch, int)
 
 
@@ -156,9 +156,9 @@ def test_model_train(referee, sample_weight, lipschitz_penalty_strategy):
         feature_matching_penalty=1.0,
         referee=referee,
     )
-    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
-    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
-    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    g_opt = k.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = k.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = k.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=None,
         generator_optimizer=g_opt,
@@ -173,9 +173,9 @@ def test_model_train(referee, sample_weight, lipschitz_penalty_strategy):
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    g_opt = keras.optimizers.RMSprop(learning_rate=0.001)
-    d_opt = keras.optimizers.RMSprop(learning_rate=0.001)
-    r_opt = keras.optimizers.RMSprop(learning_rate=0.001)
+    g_opt = k.optimizers.RMSprop(learning_rate=0.001)
+    d_opt = k.optimizers.RMSprop(learning_rate=0.001)
+    r_opt = k.optimizers.RMSprop(learning_rate=0.001)
     model.compile(
         metrics=None,
         generator_optimizer=g_opt,

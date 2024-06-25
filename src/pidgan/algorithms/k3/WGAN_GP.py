@@ -1,10 +1,8 @@
-import tensorflow as tf
-
-from pidgan.algorithms.lipschitz_regularizations import (
+from pidgan.algorithms.k3.lipschitz_regularizations import (
     PENALTY_STRATEGIES,
     compute_GradientPenalty,
 )
-from pidgan.algorithms.WGAN import WGAN
+from pidgan.algorithms.k3.WGAN import WGAN
 
 LIPSCHITZ_CONSTANT = 1.0
 
@@ -46,12 +44,12 @@ class WGAN_GP(WGAN):
             )
         self._lipschitz_penalty_strategy = lipschitz_penalty_strategy
 
-    def _d_train_step(self, x, y, sample_weight=None) -> None:
-        super(WGAN, self)._d_train_step(x, y, sample_weight)
+    def _d_tf_train_step(self, x, y, sample_weight=None) -> None:
+        super(WGAN, self)._d_tf_train_step(x, y, sample_weight)
 
     def _compute_d_loss(
         self, x, y, sample_weight=None, training=True, test=False
-    ) -> tf.Tensor:
+    ):
         d_loss = super()._compute_d_loss(x, y, sample_weight, training)
         if not test:
             d_loss += self._lipschitz_regularization(
@@ -65,7 +63,7 @@ class WGAN_GP(WGAN):
 
     def _lipschitz_regularization(
         self, discriminator, x, y, sample_weight=None, training_discriminator=True
-    ) -> tf.Tensor:
+    ):
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )

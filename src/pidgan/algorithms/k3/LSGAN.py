@@ -1,6 +1,6 @@
-import tensorflow as tf
+import keras as k
 
-from pidgan.algorithms.GAN import GAN
+from pidgan.algorithms.k3.GAN import GAN
 
 
 class LSGAN(GAN):
@@ -41,16 +41,16 @@ class LSGAN(GAN):
         inj_noise_std=0.0,
         training_discriminator=False,
         generator_loss=True,
-    ) -> tf.Tensor:
+    ):
         x_ref, y_ref, w_ref = trainset_ref
         x_gen, y_gen, w_gen = trainset_gen
 
-        x_concat = tf.concat([x_ref, x_gen], axis=0)
-        y_concat = tf.concat([y_ref, y_gen], axis=0)
+        x_concat = k.ops.concatenate([x_ref, x_gen], axis=0)
+        y_concat = k.ops.concatenate([y_ref, y_gen], axis=0)
 
         if inj_noise_std > 0.0:
-            rnd_noise = tf.random.normal(
-                shape=(tf.shape(y_ref)[0] * 2, tf.shape(y_ref)[1]),
+            rnd_noise = k.random.normal(
+                shape=(k.ops.shape(y_ref)[0] * 2, k.ops.shape(y_ref)[1]),
                 mean=0.0,
                 stddev=inj_noise_std,
                 dtype=y_ref.dtype,
@@ -58,23 +58,23 @@ class LSGAN(GAN):
             y_concat += rnd_noise
 
         d_out = discriminator((x_concat, y_concat), training=training_discriminator)
-        d_ref, d_gen = tf.split(d_out, 2, axis=0)
+        d_ref, d_gen = k.ops.split(d_out, 2, axis=0)
 
-        real_loss = tf.reduce_sum(
+        real_loss = k.ops.sum(
             w_ref[:, None] * (d_ref - b_param) ** 2
-        ) / tf.reduce_sum(w_ref)
-        fake_loss = tf.reduce_sum(
+        ) / k.ops.sum(w_ref)
+        fake_loss = k.ops.sum(
             w_gen[:, None] * (d_gen - a_param) ** 2
-        ) / tf.reduce_sum(w_gen)
+        ) / k.ops.sum(w_gen)
 
         if generator_loss:
-            return (tf.stop_gradient(real_loss) + fake_loss) / 2.0
+            return (k.ops.stop_gradient(real_loss) + fake_loss) / 2.0
         else:
             return (real_loss + fake_loss) / 2.0
 
     def _compute_g_loss(
         self, x, y, sample_weight=None, training=True, test=False
-    ) -> tf.Tensor:
+    ):
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -91,7 +91,7 @@ class LSGAN(GAN):
 
     def _compute_d_loss(
         self, x, y, sample_weight=None, training=True, test=False
-    ) -> tf.Tensor:
+    ):
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
@@ -106,7 +106,7 @@ class LSGAN(GAN):
             generator_loss=False,
         )
 
-    def _compute_threshold(self, discriminator, x, y, sample_weight=None) -> tf.Tensor:
+    def _compute_threshold(self, discriminator, x, y, sample_weight=None):
         return 0.0
 
     @property
