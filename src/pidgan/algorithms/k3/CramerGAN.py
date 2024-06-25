@@ -122,21 +122,15 @@ class CramerGAN(WGAN_GP):
         )
         c_ref, c_gen = k.ops.split(c_out, 2, axis=0)
 
-        real_loss = k.ops.sum(w_ref * w_gen_2 * c_ref) / k.ops.sum(
-            w_ref * w_gen_2
-        )
-        fake_loss = k.ops.sum(w_gen_1 * w_gen_2 * c_gen) / k.ops.sum(
-            w_gen_1 * w_gen_2
-        )
+        real_loss = k.ops.sum(w_ref * w_gen_2 * c_ref) / k.ops.sum(w_ref * w_gen_2)
+        fake_loss = k.ops.sum(w_gen_1 * w_gen_2 * c_gen) / k.ops.sum(w_gen_1 * w_gen_2)
 
         if generator_loss:
             return real_loss - fake_loss
         else:
             return fake_loss - real_loss
 
-    def _compute_g_loss(
-        self, x, y, sample_weight=None, training=True, test=False
-    ):
+    def _compute_g_loss(self, x, y, sample_weight=None, training=True, test=False):
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -149,9 +143,7 @@ class CramerGAN(WGAN_GP):
             generator_loss=True,
         )
 
-    def _compute_d_loss(
-        self, x, y, sample_weight=None, training=True, test=False
-    ):
+    def _compute_d_loss(self, x, y, sample_weight=None, training=True, test=False):
         trainset_ref, trainset_gen_1, trainset_gen_2 = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
@@ -169,9 +161,7 @@ class CramerGAN(WGAN_GP):
             )
         return d_loss
 
-    def _compute_r_loss(
-        self, x, y, sample_weight=None, training=True, test=False
-    ):
+    def _compute_r_loss(self, x, y, sample_weight=None, training=True, test=False):
         trainset_ref, trainset_gen, _ = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )
@@ -184,8 +174,12 @@ class CramerGAN(WGAN_GP):
         r_out = self._referee((x_concat, y_concat), training=training)
         r_ref, r_gen = k.ops.split(r_out, 2, axis=0)
 
-        real_loss = self._referee_loss(k.ops.ones_like(r_ref), r_ref, sample_weight=w_ref)
-        fake_loss = self._referee_loss(k.ops.zeros_like(r_gen), r_gen, sample_weight=w_gen)
+        real_loss = self._referee_loss(
+            k.ops.ones_like(r_ref), r_ref, sample_weight=w_ref
+        )
+        fake_loss = self._referee_loss(
+            k.ops.zeros_like(r_gen), r_gen, sample_weight=w_gen
+        )
         return (real_loss + fake_loss) / 2.0
 
     def _lipschitz_regularization(

@@ -85,7 +85,7 @@ def test_model_train(model, sample_weight):
     )
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.fit(dataset, epochs=2)
@@ -95,7 +95,7 @@ def test_model_train(model, sample_weight):
 def test_model_eval(model, sample_weight):
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.evaluate(x=(x, y), y=labels, sample_weight=sample_weight)
@@ -111,7 +111,7 @@ def test_model_export(model):
     else:
         k.models.save_model(model.export_model, export_dir, save_format="tf")
         model_reloaded = k.models.load_model(export_dir)
-        
+
     in_reloaded = tf.concat((x, y), axis=-1)
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()

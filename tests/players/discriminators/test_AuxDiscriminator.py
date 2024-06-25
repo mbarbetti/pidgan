@@ -92,7 +92,7 @@ def test_model_train(model, sample_weight):
     )
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.fit(dataset, epochs=2)
@@ -102,7 +102,7 @@ def test_model_train(model, sample_weight):
 def test_model_eval(model, sample_weight):
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.evaluate(x=(x, y), y=labels, sample_weight=sample_weight)

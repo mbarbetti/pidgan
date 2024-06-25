@@ -47,9 +47,7 @@ class WGAN_GP(WGAN):
     def _d_tf_train_step(self, x, y, sample_weight=None) -> None:
         super(WGAN, self)._d_tf_train_step(x, y, sample_weight)
 
-    def _compute_d_loss(
-        self, x, y, sample_weight=None, training=True, test=False
-    ):
+    def _compute_d_loss(self, x, y, sample_weight=None, training=True, test=False):
         d_loss = super()._compute_d_loss(x, y, sample_weight, training)
         if not test:
             d_loss += self._lipschitz_regularization(

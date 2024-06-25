@@ -60,21 +60,19 @@ class LSGAN(GAN):
         d_out = discriminator((x_concat, y_concat), training=training_discriminator)
         d_ref, d_gen = k.ops.split(d_out, 2, axis=0)
 
-        real_loss = k.ops.sum(
-            w_ref[:, None] * (d_ref - b_param) ** 2
-        ) / k.ops.sum(w_ref)
-        fake_loss = k.ops.sum(
-            w_gen[:, None] * (d_gen - a_param) ** 2
-        ) / k.ops.sum(w_gen)
+        real_loss = k.ops.sum(w_ref[:, None] * (d_ref - b_param) ** 2) / k.ops.sum(
+            w_ref
+        )
+        fake_loss = k.ops.sum(w_gen[:, None] * (d_gen - a_param) ** 2) / k.ops.sum(
+            w_gen
+        )
 
         if generator_loss:
             return (k.ops.stop_gradient(real_loss) + fake_loss) / 2.0
         else:
             return (real_loss + fake_loss) / 2.0
 
-    def _compute_g_loss(
-        self, x, y, sample_weight=None, training=True, test=False
-    ):
+    def _compute_g_loss(self, x, y, sample_weight=None, training=True, test=False):
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=training
         )
@@ -89,9 +87,7 @@ class LSGAN(GAN):
             generator_loss=True,
         )
 
-    def _compute_d_loss(
-        self, x, y, sample_weight=None, training=True, test=False
-    ):
+    def _compute_d_loss(self, x, y, sample_weight=None, training=True, test=False):
         trainset_ref, trainset_gen = self._prepare_trainset(
             x, y, sample_weight, training_generator=False
         )

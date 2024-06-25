@@ -25,7 +25,10 @@ def compute_GradientPenalty(
         with tf.GradientTape() as tape:
             # Compute interpolated points
             eps = k.random.uniform(
-                shape=(k.ops.shape(y_ref)[0],), minval=0.0, maxval=1.0, dtype=y_ref.dtype
+                shape=(k.ops.shape(y_ref)[0],),
+                minval=0.0,
+                maxval=1.0,
+                dtype=y_ref.dtype,
             )[:, None]
             x_hat = k.ops.clip(
                 x_gen + eps * (x_ref - x_gen),
@@ -48,9 +51,13 @@ def compute_GradientPenalty(
             norm = k.ops.norm(grad, axis=-1)
 
     elif k.backend.backend() == "torch":
-        raise NotImplementedError('"compute_GradientPenalty()" not implemented for the PyTorch backend')
+        raise NotImplementedError(
+            '"compute_GradientPenalty()" not implemented for the PyTorch backend'
+        )
     elif k.backend.backend() == "jax":
-        raise NotImplementedError('"compute_GradientPenalty()" not implemented for the Jax backend')
+        raise NotImplementedError(
+            '"compute_GradientPenalty()" not implemented for the Jax backend'
+        )
 
     if lipschitz_penalty_strategy == "two-sided":
         gp_term = (norm - lipschitz_constant) ** 2
@@ -80,7 +87,10 @@ def compute_CriticGradientPenalty(
         with tf.GradientTape() as tape:
             # Compute interpolated points
             eps = k.random.uniform(
-                shape=(k.ops.shape(y_ref)[0],), minval=0.0, maxval=1.0, dtype=y_ref.dtype
+                shape=(k.ops.shape(y_ref)[0],),
+                minval=0.0,
+                maxval=1.0,
+                dtype=y_ref.dtype,
             )[:, None]
             x_hat = k.ops.clip(
                 x_gen_1 + eps * (x_ref - x_gen_1),
@@ -98,14 +108,20 @@ def compute_CriticGradientPenalty(
             # Value of the critic on interpolated points
             x_hat = c_in_hat[:, : k.ops.shape(x_hat)[1]]
             y_hat = c_in_hat[:, k.ops.shape(x_hat)[1] :]
-            c_out_hat = critic((x_hat, y_hat), (x_gen_2, y_gen_2), training=training_critic)
+            c_out_hat = critic(
+                (x_hat, y_hat), (x_gen_2, y_gen_2), training=training_critic
+            )
             grad = tape.gradient(c_out_hat, c_in_hat)
             norm = k.ops.norm(grad, axis=-1)
 
     elif k.backend.backend() == "torch":
-        raise NotImplementedError('"compute_CriticGradientPenalty()" not implemented for the PyTorch backend')
+        raise NotImplementedError(
+            '"compute_CriticGradientPenalty()" not implemented for the PyTorch backend'
+        )
     elif k.backend.backend() == "jax":
-        raise NotImplementedError('"compute_CriticGradientPenalty()" not implemented for the Jax backend')
+        raise NotImplementedError(
+            '"compute_CriticGradientPenalty()" not implemented for the Jax backend'
+        )
 
     if lipschitz_penalty_strategy == "two-sided":
         gp_term = (norm - lipschitz_constant) ** 2
@@ -159,9 +175,13 @@ def compute_AdversarialLipschitzPenalty(
                 )
 
     elif k.backend.backend() == "torch":
-        raise NotImplementedError('"compute_AdversarialLipschitzPenalty()" not implemented for the PyTorch backend')
+        raise NotImplementedError(
+            '"compute_AdversarialLipschitzPenalty()" not implemented for the PyTorch backend'
+        )
     elif k.backend.backend() == "jax":
-        raise NotImplementedError('"compute_AdversarialLipschitzPenalty()" not implemented for the Jax backend')
+        raise NotImplementedError(
+            '"compute_AdversarialLipschitzPenalty()" not implemented for the Jax backend'
+        )
 
     # Virtual adversarial direction
     xi = k.random.uniform(

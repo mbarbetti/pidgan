@@ -89,9 +89,7 @@ class Discriminator(k.Model):
                     )
                 )
             seq.add(
-                k.layers.Dropout(
-                    rate=rate, name=f"dropout_{i}" if self.name else None
-                )
+                k.layers.Dropout(rate=rate, name=f"dropout_{i}" if self.name else None)
             )
         seq.add(
             k.layers.Dense(

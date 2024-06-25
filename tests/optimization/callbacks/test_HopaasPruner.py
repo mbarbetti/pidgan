@@ -27,7 +27,7 @@ Y = np.tanh(X[:, 0]) + 2 * X[:, 1] * X[:, 2]
 model = k.Sequential()
 try:
     model.add(k.layers.InputLayer(shape=(3,)))
-except(ValueError):
+except ValueError:
     model.add(k.layers.InputLayer(input_shape=(3,)))
 for units in [16, 16, 16]:
     model.add(k.layers.Dense(units, activation="relu"))

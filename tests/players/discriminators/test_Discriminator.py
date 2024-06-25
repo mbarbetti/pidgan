@@ -87,7 +87,7 @@ def test_model_train(model, sample_weight):
     )
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.fit(dataset, epochs=2)

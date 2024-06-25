@@ -85,13 +85,12 @@ class Generator(k.Model):
             if self._hidden_activation_func is None:
                 seq.add(
                     k.layers.LeakyReLU(
-                        negative_slope=LEAKY_NEG_SLOPE, name=f"leaky_relu_{i}" if self.name else None
+                        negative_slope=LEAKY_NEG_SLOPE,
+                        name=f"leaky_relu_{i}" if self.name else None,
                     )
                 )
             seq.add(
-                k.layers.Dropout(
-                    rate=rate, name=f"dropout_{i}" if self.name else None
-                )
+                k.layers.Dropout(rate=rate, name=f"dropout_{i}" if self.name else None)
             )
         seq.add(
             k.layers.Dense(

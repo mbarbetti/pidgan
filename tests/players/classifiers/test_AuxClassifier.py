@@ -97,7 +97,7 @@ def test_model_train(model, inputs, sample_weight):
     model.build(input_shape=in_shape)
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.fit(dataset, epochs=2)
@@ -113,7 +113,7 @@ def test_model_eval(model, inputs, sample_weight):
     model.build(input_shape=in_shape)
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
-        loss=k.losses.MeanSquaredError(), 
+        loss=k.losses.MeanSquaredError(),
         metrics=["mae"],
     )
     model.evaluate(x=inputs, y=labels, sample_weight=sample_weight)
@@ -127,7 +127,7 @@ def test_model_export(model, inputs):
         in_shape = (inputs[0].shape, inputs[1].shape)
     model.build(input_shape=in_shape)
     out, aux = model(inputs, return_aux_features=True)
-    
+
     v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
     if v_major == 3 and v_minor >= 0:
         model.export_model.export(export_dir)

@@ -15,7 +15,7 @@ Y = np.tanh(X[:, 0]) + 2 * X[:, 1] * X[:, 2]
 model = k.Sequential()
 try:
     model.add(k.layers.InputLayer(shape=(3,)))
-except(ValueError):
+except ValueError:
     model.add(k.layers.InputLayer(input_shape=(3,)))
 for units in [16, 16, 16]:
     model.add(k.layers.Dense(units, activation="relu"))
@@ -49,4 +49,4 @@ def test_sched_use(scheduler):
     history = model.fit(X, Y, batch_size=512, epochs=10, callbacks=[scheduler])
     last_lr = float(f"{history.history['lr'][-1]:.3f}")
     assert last_lr == LEARN_RATE
-    #raise TypeError
+    # raise TypeError

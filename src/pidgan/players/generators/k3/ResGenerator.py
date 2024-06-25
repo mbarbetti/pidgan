@@ -65,7 +65,8 @@ class ResGenerator(Generator):
             if self._hidden_activation_func is None:
                 res_block.append(
                     k.layers.LeakyReLU(
-                        negative_slope=LEAKY_NEG_SLOPE, name=f"leaky_relu_{i}" if self.name else None
+                        negative_slope=LEAKY_NEG_SLOPE,
+                        name=f"leaky_relu_{i}" if self.name else None,
                     )
                 )
             res_block.append(

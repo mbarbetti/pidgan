@@ -143,14 +143,18 @@ class GAN(k.Model):
         else:
             self._r_opt = None
             self._r_upds_per_batch = None
-    
+
     def train_step(self, *args, **kwargs):
         if k.backend.backend() == "tensorflow":
             return self._tf_train_step(*args, **kwargs)
         elif k.backend.backend() == "torch":
-            raise NotImplementedError('"train_step()" not implemented for the PyTorch backend')
+            raise NotImplementedError(
+                '"train_step()" not implemented for the PyTorch backend'
+            )
         elif k.backend.backend() == "jax":
-            raise NotImplementedError('"train_step()" not implemented for the Jax backend')
+            raise NotImplementedError(
+                '"train_step()" not implemented for the Jax backend'
+            )
 
     @staticmethod
     def _unpack_data(data) -> tuple:
@@ -267,15 +271,12 @@ class GAN(k.Model):
         d_ref, d_gen = k.ops.split(d_out, 2, axis=0)
 
         real_loss = k.ops.sum(
-            w_ref[:, None]
-            * k.ops.log(k.ops.clip(d_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
+            w_ref[:, None] * k.ops.log(k.ops.clip(d_ref, MIN_LOG_VALUE, MAX_LOG_VALUE))
         ) / k.ops.sum(w_ref)
         if original_loss:
             fake_loss = k.ops.sum(
                 w_gen[:, None]
-                * k.ops.log(
-                    k.ops.clip(1.0 - d_gen, MIN_LOG_VALUE, MAX_LOG_VALUE)
-                )
+                * k.ops.log(k.ops.clip(1.0 - d_gen, MIN_LOG_VALUE, MAX_LOG_VALUE))
             ) / k.ops.sum(w_gen)
         else:
             fake_loss = k.ops.sum(
@@ -340,8 +341,12 @@ class GAN(k.Model):
         r_out = self._referee((x_concat, y_concat), training=training)
         r_ref, r_gen = k.ops.split(r_out, 2, axis=0)
 
-        real_loss = self._referee_loss(k.ops.ones_like(r_ref), r_ref, sample_weight=w_ref)
-        fake_loss = self._referee_loss(k.ops.zeros_like(r_gen), r_gen, sample_weight=w_gen)
+        real_loss = self._referee_loss(
+            k.ops.ones_like(r_ref), r_ref, sample_weight=w_ref
+        )
+        fake_loss = self._referee_loss(
+            k.ops.zeros_like(r_gen), r_gen, sample_weight=w_gen
+        )
         return (real_loss + fake_loss) / 2.0
 
     def _compute_feature_matching(
@@ -383,7 +388,9 @@ class GAN(k.Model):
         if sample_weight is not None:
             w_ref_1, w_ref_2 = k.ops.split(sample_weight[: batch_size * 2], 2, axis=0)
         else:
-            w_ref_1, w_ref_2 = k.ops.split(k.ops.ones(shape=(batch_size * 2,)), 2, axis=0)
+            w_ref_1, w_ref_2 = k.ops.split(
+                k.ops.ones(shape=(batch_size * 2,)), 2, axis=0
+            )
 
         return (x_ref_1, y_ref_1, w_ref_1), (x_ref_2, y_ref_2, w_ref_2)
 
