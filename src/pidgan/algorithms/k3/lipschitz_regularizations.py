@@ -176,11 +176,13 @@ def compute_AdversarialLipschitzPenalty(
 
     elif k.backend.backend() == "torch":
         raise NotImplementedError(
-            '"compute_AdversarialLipschitzPenalty()" not implemented for the PyTorch backend'
+            '"compute_AdversarialLipschitzPenalty()" not '
+            "implemented for the PyTorch backend"
         )
     elif k.backend.backend() == "jax":
         raise NotImplementedError(
-            '"compute_AdversarialLipschitzPenalty()" not implemented for the Jax backend'
+            '"compute_AdversarialLipschitzPenalty()" not '
+            "implemented for the Jax backend"
         )
 
     # Virtual adversarial direction
