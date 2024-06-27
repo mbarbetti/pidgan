@@ -3,8 +3,11 @@ import keras as k
 import numpy as np
 
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
+EPOCHS = 5
 LEARN_RATE = 0.001
 MIN_LEARN_RATE = 0.0005
+ALPHA = 0.1
 
 X = np.c_[
     np.random.uniform(-1, 1, size=CHUNK_SIZE),
@@ -30,8 +33,8 @@ def scheduler():
     adam = k.optimizers.Adam(learning_rate=LEARN_RATE)
     sched = LearnRateCosineDecay(
         optimizer=adam,
-        decay_steps=1000,
-        alpha=0.95,
+        decay_steps=CHUNK_SIZE / BATCH_SIZE * EPOCHS,
+        alpha=ALPHA,
         min_learning_rate=LEARN_RATE,
         verbose=True,
         key="lr",
@@ -62,15 +65,15 @@ def test_sched_use(min_learning_rate):
     adam = k.optimizers.Adam(learning_rate=LEARN_RATE)
     scheduler = LearnRateCosineDecay(
         optimizer=adam,
-        decay_steps=1000,
-        alpha=0.95,
+        decay_steps=CHUNK_SIZE / BATCH_SIZE * EPOCHS,
+        alpha=ALPHA,
         min_learning_rate=min_learning_rate,
         verbose=True,
     )
     model.compile(optimizer=adam, loss=k.losses.MeanSquaredError())
-    history = model.fit(X, Y, batch_size=500, epochs=5, callbacks=[scheduler])
-    last_lr = float(f"{history.history['lr'][-1]:.4f}")
+    train = model.fit(X, Y, batch_size=BATCH_SIZE, epochs=EPOCHS, callbacks=[scheduler])
+    last_lr = float(f"{train.history['lr'][-1]:.8f}")
     if min_learning_rate is not None:
         assert last_lr == MIN_LEARN_RATE
     else:
-        assert last_lr == 0.1 * LEARN_RATE
+        assert last_lr == ALPHA * LEARN_RATE

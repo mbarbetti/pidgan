@@ -35,12 +35,12 @@ class LearnRateBaseScheduler(k.callbacks.Callback):
     def on_batch_end(self, batch, logs=None) -> None:
         logs = logs or {}
         if self._verbose:
-            logs[self._key] = np.array(self._optimizer.learning_rate)
+            logs[self._key] = float(np.array(self._optimizer.learning_rate))
 
     def on_epoch_end(self, epoch, logs=None) -> None:
         logs = logs or {}
         if self._verbose:
-            logs[self._key] = np.array(self._optimizer.learning_rate)
+            logs[self._key] = float(np.array(self._optimizer.learning_rate))
 
     @property
     def name(self) -> str:

@@ -41,10 +41,9 @@ class LearnRateCosineDecay(LearnRateBaseScheduler):
         self._tf_alpha = k.ops.cast(self._alpha, self._dtype)
 
     def _scheduled_lr(self, init_lr, step):
-        step = k.ops.minimum(step, self._tf_decay_steps)
         p = k.ops.divide(step, self._tf_decay_steps)
         cosine_decay = 0.5 * (1 + k.ops.cos(math.pi * p))
-        decayed = k.ops.multiply(1 - self._tf_alpha, cosine_decay + self._tf_alpha)
+        decayed = k.ops.multiply(1 - self._tf_alpha, cosine_decay) + self._tf_alpha
         sched_lr = k.ops.multiply(init_lr, decayed)
         if self._min_learning_rate is not None:
             return k.ops.maximum(sched_lr, self._min_learning_rate)

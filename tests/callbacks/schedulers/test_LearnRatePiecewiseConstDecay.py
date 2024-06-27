@@ -3,7 +3,10 @@ import keras as k
 import numpy as np
 
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
+EPOCHS = 5
 LEARN_RATE = 0.001
+ALPHA = 0.1
 
 X = np.c_[
     np.random.uniform(-1, 1, size=CHUNK_SIZE),
@@ -30,7 +33,7 @@ def scheduler():
     sched = LearnRatePiecewiseConstDecay(
         optimizer=adam,
         boundaries=[25, 50],
-        values=[LEARN_RATE, 0.5 * LEARN_RATE, 0.1 * LEARN_RATE],
+        values=[LEARN_RATE, 5.0 * ALPHA * LEARN_RATE, ALPHA * LEARN_RATE],
         verbose=True,
         key="lr",
     )
@@ -57,6 +60,6 @@ def test_sched_configuration(scheduler):
 
 def test_sched_use(scheduler):
     model.compile(optimizer=scheduler.optimizer, loss=k.losses.MeanSquaredError())
-    history = model.fit(X, Y, batch_size=500, epochs=5, callbacks=[scheduler])
-    last_lr = float(f"{history.history['lr'][-1]:.4f}")
-    assert last_lr == 0.1 * LEARN_RATE
+    train = model.fit(X, Y, batch_size=BATCH_SIZE, epochs=EPOCHS, callbacks=[scheduler])
+    last_lr = float(f"{train.history['lr'][-1]:.8f}")
+    assert last_lr == ALPHA * LEARN_RATE

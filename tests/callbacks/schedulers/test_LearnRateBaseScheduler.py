@@ -3,6 +3,8 @@ import keras as k
 import numpy as np
 
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
+EPOCHS = 5
 LEARN_RATE = 0.001
 
 X = np.c_[
@@ -46,7 +48,6 @@ def test_sched_configuration(scheduler):
 
 def test_sched_use(scheduler):
     model.compile(optimizer=scheduler.optimizer, loss=k.losses.MeanSquaredError())
-    history = model.fit(X, Y, batch_size=512, epochs=10, callbacks=[scheduler])
-    last_lr = float(f"{history.history['lr'][-1]:.3f}")
+    train = model.fit(X, Y, batch_size=BATCH_SIZE, epochs=EPOCHS, callbacks=[scheduler])
+    last_lr = float(f"{train.history['lr'][-1]:.8f}")
     assert last_lr == LEARN_RATE
-    # raise TypeError

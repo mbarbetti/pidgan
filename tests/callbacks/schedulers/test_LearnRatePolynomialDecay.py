@@ -3,7 +3,10 @@ import keras as k
 import numpy as np
 
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
+EPOCHS = 5
 LEARN_RATE = 0.001
+ALPHA = 0.1
 
 X = np.c_[
     np.random.uniform(-1, 1, size=CHUNK_SIZE),
@@ -29,8 +32,8 @@ def scheduler(cycle=False):
     adam = k.optimizers.Adam(learning_rate=LEARN_RATE)
     sched = LearnRatePolynomialDecay(
         optimizer=adam,
-        decay_steps=1000,
-        end_learning_rate=0.1 * LEARN_RATE,
+        decay_steps=CHUNK_SIZE / BATCH_SIZE * EPOCHS,
+        end_learning_rate=ALPHA * LEARN_RATE,
         power=1.0,
         cycle=cycle,
         verbose=False,
@@ -63,13 +66,13 @@ def test_sched_use(cycle):
     adam = k.optimizers.Adam(learning_rate=LEARN_RATE)
     sched = LearnRatePolynomialDecay(
         optimizer=adam,
-        decay_steps=100,
-        end_learning_rate=0.1 * LEARN_RATE,
+        decay_steps=CHUNK_SIZE / BATCH_SIZE * EPOCHS,
+        end_learning_rate=ALPHA * LEARN_RATE,
         power=1.0,
         cycle=cycle,
         verbose=True,
     )
     model.compile(optimizer=adam, loss=k.losses.MeanSquaredError())
-    history = model.fit(X, Y, batch_size=500, epochs=5, callbacks=[sched])
-    last_lr = float(f"{history.history['lr'][-1]:.4f}")
+    train = model.fit(X, Y, batch_size=BATCH_SIZE, epochs=EPOCHS, callbacks=[sched])
+    last_lr = float(f"{train.history['lr'][-1]:.8f}")
     assert last_lr == 0.1 * LEARN_RATE
