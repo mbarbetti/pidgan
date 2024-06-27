@@ -1,3 +1,4 @@
+import warnings
 import keras as k
 
 from pidgan.players.discriminators.k3.Discriminator import Discriminator
@@ -17,10 +18,13 @@ class ResDiscriminator(Discriminator):
         dtype=None,
     ) -> None:
         super(Discriminator, self).__init__(name=name, dtype=dtype)
+
+        self._model = None
+        self._model_is_built = False
+
         self._hidden_activation_func = None
         self._hidden_kernel_reg = None
         self._enable_res_blocks = True
-        self._model = None
 
         # Output dimension
         assert output_dim >= 1
@@ -115,10 +119,12 @@ class ResDiscriminator(Discriminator):
             outputs=outputs,
             name=f"{self.name}_func" if self.name else None,
         )
+        self._model_is_built = True
 
     def hidden_feature(self, x, return_hidden_idx=False):
-        # TODO: add warning for model.build()
         x = self._prepare_input(x)
+        if not self._model_is_built:
+            self.build(input_shape=x.shape)
         for layer in self._hidden_layers[0]:
             x = layer(x)
         hidden_idx = int((self._num_hidden_layers + 1) / 2.0)
@@ -146,4 +152,15 @@ class ResDiscriminator(Discriminator):
 
     @property
     def export_model(self) -> k.Model:
+        warnings.warn(
+            "The `export_model` attribute is deprecated and will be removed "
+            "in a future release. Consider to replace it with the new (and "
+            "equivalent) `plain_keras` attribute.",
+            category=DeprecationWarning,
+            stacklevel=1,
+        )
+        return self.plain_keras
+
+    @property
+    def plain_keras(self) -> k.Model:
         return self._model

@@ -1,3 +1,5 @@
+import warnings
+
 import keras as k
 import tensorflow as tf
 
@@ -24,11 +26,12 @@ class GAN(k.Model):
     ) -> None:
         super().__init__(name=name, dtype=dtype)
         self._loss_name = "GAN original loss"
+        self._compiled_metrics = None
 
         # Generator
         if not isinstance(generator, Generator):
             raise TypeError(
-                f'"generator" should be a pidgan Generator, '
+                f"`generator` should be a pidgan's Generator, "
                 f"instead {type(generator)} passed"
             )
         self._generator = generator
@@ -36,7 +39,7 @@ class GAN(k.Model):
         # Discriminator
         if not isinstance(discriminator, Discriminator):
             raise TypeError(
-                f'"discriminator" should be a pidgan Discriminator, '
+                f"`discriminator` should be a pidgan's Discriminator, "
                 f"instead {type(discriminator)} passed"
             )
         self._discriminator = discriminator
@@ -50,8 +53,8 @@ class GAN(k.Model):
             if not isinstance(referee, Classifier):
                 if not isinstance(referee, Discriminator):
                     raise TypeError(
-                        f"`referee` should be a pidgan's `Classifier` "
-                        f"(or `Discriminator`), instead "
+                        f"`referee` should be a pidgan's Classifier "
+                        f"(or Discriminator), instead "
                         f"{type(referee)} passed"
                     )
             self._referee = referee
@@ -70,30 +73,17 @@ class GAN(k.Model):
         assert feature_matching_penalty >= 0.0
         self._feature_matching_penalty = float(feature_matching_penalty)
 
-    def call(self, x, y=None) -> tuple:
-        g_out = self._generator(x)
-        d_out_gen = self._discriminator((x, g_out))
-        if y is None:
-            if self._referee is not None:
-                r_out_gen = self._referee((x, g_out))
-                return g_out, d_out_gen, r_out_gen
-            else:
-                return g_out, d_out_gen
-        else:
-            d_out_ref = self._discriminator((x, y))
-            if self._referee is not None:
-                r_out_gen = self._referee((x, g_out))
-                r_out_ref = self._referee((x, y))
-                return g_out, (d_out_gen, d_out_ref), (r_out_gen, r_out_ref)
-            else:
-                return g_out, (d_out_gen, d_out_ref)
+    def build(self, input_shape) -> None:
+        super().build(input_shape=input_shape)
 
-    def summary(self, **kwargs) -> None:
-        print("_" * 65)
-        self._generator.summary(**kwargs)
-        self._discriminator.summary(**kwargs)
+        # Tracking states for losses
+        self._g_loss_state = k.metrics.Mean(name="g_loss")
+        self._d_loss_state = k.metrics.Mean(name="d_loss")
         if self._referee is not None:
-            self._referee.summary(**kwargs)
+            self._r_loss_state = k.metrics.Mean(name="r_loss")
+
+        # Tracking states for metrics
+        self._metrics = checkMetrics(self._compiled_metrics)
 
     def compile(
         self,
@@ -107,12 +97,20 @@ class GAN(k.Model):
     ) -> None:
         super().compile(weighted_metrics=[])
 
-        # Loss metrics
-        self._g_loss = k.metrics.Mean(name="g_loss")
-        self._d_loss = k.metrics.Mean(name="d_loss")
-        if self._referee is not None:
-            self._r_loss = k.metrics.Mean(name="r_loss")
-        self._metrics = checkMetrics(metrics)
+        # Metrics
+        if isinstance(self._metrics, list):
+            if len(self._metrics) == 0:
+                self._compiled_metrics = metrics
+                self.build(input_shape=[])
+        elif self._metrics is None:
+            if metrics is not None:
+                warnings.warn(
+                    "The `metrics` argument is ignored when the model is "
+                    "built before to be compiled. Consider to move the first model "
+                    "calling after the `compile()` method to fix this issue.",
+                    category=UserWarning,
+                    stacklevel=1,
+                )
 
         # Gen/Disc optimizers
         self._g_opt = checkOptimizer(generator_optimizer)
@@ -143,6 +141,31 @@ class GAN(k.Model):
         else:
             self._r_opt = None
             self._r_upds_per_batch = None
+
+    def call(self, x, y=None) -> tuple:
+        g_out = self._generator(x)
+        d_out_gen = self._discriminator((x, g_out))
+        if y is None:
+            if self._referee is not None:
+                r_out_gen = self._referee((x, g_out))
+                return g_out, d_out_gen, r_out_gen
+            else:
+                return g_out, d_out_gen
+        else:
+            d_out_ref = self._discriminator((x, y))
+            if self._referee is not None:
+                r_out_gen = self._referee((x, g_out))
+                r_out_ref = self._referee((x, y))
+                return g_out, (d_out_gen, d_out_ref), (r_out_gen, r_out_ref)
+            else:
+                return g_out, (d_out_gen, d_out_ref)
+
+    def summary(self, **kwargs) -> None:
+        print("_" * 65)
+        self._generator.summary(**kwargs)
+        self._discriminator.summary(**kwargs)
+        if self._referee is not None:
+            self._referee.summary(**kwargs)
 
     def train_step(self, data) -> dict:
         x, y, sample_weight = self._unpack_data(data)
@@ -175,7 +198,7 @@ class GAN(k.Model):
         self._g_opt.apply_gradients(zip(gradients, trainable_vars))
 
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
-        self._g_loss.update_state(loss + threshold)
+        self._g_loss_state.update_state(loss + threshold)
 
     def _d_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
@@ -186,7 +209,7 @@ class GAN(k.Model):
         self._d_opt.apply_gradients(zip(gradients, trainable_vars))
 
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
-        self._d_loss.update_state(loss - threshold)
+        self._d_loss_state.update_state(loss - threshold)
 
     def _r_train_step(self, x, y, sample_weight=None) -> None:
         with tf.GradientTape() as tape:
@@ -196,12 +219,15 @@ class GAN(k.Model):
         gradients = tape.gradient(loss, trainable_vars)
         self._r_opt.apply_gradients(zip(gradients, trainable_vars))
 
-        self._r_loss.update_state(loss)
+        self._r_loss_state.update_state(loss)
 
     def _update_metric_states(self, x, y, sample_weight) -> None:
-        metric_states = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
+        metric_states = {
+            "g_loss": self._g_loss_state.result(),
+            "d_loss": self._d_loss_state.result(),
+        }
         if self._referee is not None:
-            metric_states.update(dict(r_loss=self._r_loss.result()))
+            metric_states.update({"r_loss": self._r_loss_state.result()})
         if self._metrics is not None:
             g_out = self._generator(x, training=False)
             x_concat = tf.concat([x, x], axis=0)
@@ -399,16 +425,16 @@ class GAN(k.Model):
         threshold = self._compute_threshold(self._discriminator, x, y, sample_weight)
 
         g_loss = self._compute_g_loss(x, y, sample_weight, training=False, test=True)
-        self._g_loss.update_state(g_loss + threshold)
+        self._g_loss_state.update_state(g_loss + threshold)
 
         d_loss = self._compute_d_loss(x, y, sample_weight, training=False, test=True)
-        self._d_loss.update_state(d_loss - threshold)
+        self._d_loss_state.update_state(d_loss - threshold)
 
         if self._referee is not None:
             r_loss = self._compute_r_loss(
                 x, y, sample_weight, training=False, test=True
             )
-            self._r_loss.update_state(r_loss)
+            self._r_loss_state.update_state(r_loss)
 
         return self._update_metric_states(x, y, sample_weight)
 
@@ -445,9 +471,9 @@ class GAN(k.Model):
 
     @property
     def metrics(self) -> list:
-        reset_states = [self._g_loss, self._d_loss]
+        reset_states = [self._g_loss_state, self._d_loss_state]
         if self._referee is not None:
-            reset_states += [self._r_loss]
+            reset_states += [self._r_loss_state]
         if self._metrics is not None:
             reset_states += self._metrics
         return reset_states

@@ -27,7 +27,6 @@ def model():
         mlp_dropout_rates=0.0,
         output_activation=None,
     )
-    gen.build(input_shape=x.shape)
     return gen
 
 
@@ -58,14 +57,13 @@ def test_model_use(output_activation):
         mlp_dropout_rates=0.0,
         output_activation=output_activation,
     )
-    model.build(input_shape=x.shape)
 
     out = model(x)
     model.summary()
     test_shape = [x.shape[0]]
     test_shape.append(model.output_dim)
     assert out.shape == tuple(test_shape)
-    assert isinstance(model.export_model, k.Model)
+    assert isinstance(model.plain_keras, k.Model)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
@@ -114,10 +112,10 @@ def test_model_export(model):
 
     v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
     if v_major == 3 and v_minor >= 0:
-        model.export_model.export(export_dir)
+        model.plain_keras.export(export_dir)
         model_reloaded = k.layers.TFSMLayer(export_dir, call_endpoint="serve")
     else:
-        k.models.save_model(model.export_model, export_dir, save_format="tf")
+        k.models.save_model(model.plain_keras, export_dir, save_format="tf")
         model_reloaded = k.models.load_model(export_dir)
 
     x_reloaded = tf.concat([x, latent_sample], axis=-1)

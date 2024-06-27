@@ -16,13 +16,13 @@ def checkOptimizer(optimizer) -> k.optimizers.Optimizer:
                     return tf_opt
         else:
             raise ValueError(
-                f'"optimizer" should be selected in {OPT_SHORTCUTS}, '
+                f"`optimizer` should be selected in {OPT_SHORTCUTS}, "
                 f"instead '{optimizer}' passed"
             )
     elif isinstance(optimizer, k.optimizers.Optimizer):
         return optimizer
     else:
         raise TypeError(
-            f'"optimizer" should be a Keras Optimizer, '
+            f"`optimizer` should be a Keras' Optimizer, "
             f"instead {type(optimizer)} passed"
         )

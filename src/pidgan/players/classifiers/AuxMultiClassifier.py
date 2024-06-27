@@ -38,10 +38,15 @@ class AuxMultiClassifier(AuxDiscriminator):
         self._hidden_kernel_reg = mlp_hidden_kernel_regularizer
 
     def _get_input_dim(self, input_shape) -> int:
-        if isinstance(input_shape, (tuple, list)):
-            in_dim = super()._get_input_dim(input_shape)
+        if isinstance(input_shape, (list, tuple)):
+            in_shape_1, in_shape_2 = input_shape
+            if isinstance(in_shape_2, int):
+                in_dim = in_shape_2
+            else:
+                in_dim = in_shape_1[-1] + in_shape_2[-1]
         else:
-            in_dim = input_shape[-1] + len(self._aux_features)
+            in_dim = input_shape[-1]  # after concatenate action
+        in_dim += len(self._aux_features)
         return in_dim
 
     def _define_arch(self) -> None:
@@ -50,7 +55,7 @@ class AuxMultiClassifier(AuxDiscriminator):
 
     def hidden_feature(self, x, return_hidden_idx=False):
         raise NotImplementedError(
-            "Only the `discriminators` family has the "
+            "Only the pidgan's Discriminators has the "
             "`hidden_feature()` method implemented."
         )
 

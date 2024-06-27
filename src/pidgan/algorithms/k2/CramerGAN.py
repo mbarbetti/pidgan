@@ -44,9 +44,12 @@ class CramerGAN(WGAN_GP):
         self._critic = Critic(lambda x, t: self._discriminator(x, training=t))
 
     def _update_metric_states(self, x, y, sample_weight) -> None:
-        metric_states = dict(g_loss=self._g_loss.result(), d_loss=self._d_loss.result())
+        metric_states = {
+            "g_loss": self._g_loss_state.result(),
+            "d_loss": self._d_loss_state.result(),
+        }
         if self._referee is not None:
-            metric_states.update(dict(r_loss=self._r_loss.result()))
+            metric_states.update({"r_loss": self._r_loss_state.result()})
         if self._metrics is not None:
             batch_size = tf.cast(tf.shape(x)[0] / 2, tf.int32)
             x_1, x_2 = tf.split(x[: batch_size * 2], 2, axis=0)

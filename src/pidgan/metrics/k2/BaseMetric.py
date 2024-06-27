@@ -10,7 +10,7 @@ class BaseMetric(keras.metrics.Metric):
 
     def update_state(self, y_true, y_pred, sample_weight=None) -> None:
         raise NotImplementedError(
-            "Only `BaseMetric` subclasses have the "
+            "Only the pidgan's BaseMetric subclasses have the "
             "`update_state()` method implemented."
         )
 

@@ -1,3 +1,4 @@
+import warnings
 import keras as k
 
 from pidgan.players.generators.k3.Generator import Generator
@@ -18,9 +19,12 @@ class ResGenerator(Generator):
         dtype=None,
     ) -> None:
         super(Generator, self).__init__(name=name, dtype=dtype)
+
+        self._model = None
+        self._model_is_built = False
+
         self._hidden_activation_func = None
         self._enable_res_blocks = True
-        self._model = None
 
         # Output dimension
         assert output_dim >= 1
@@ -113,6 +117,7 @@ class ResGenerator(Generator):
             outputs=outputs,
             name=f"{self.name}_func" if self.name else None,
         )
+        self._model_is_built = True
 
     @property
     def mlp_hidden_units(self) -> int:
@@ -124,4 +129,15 @@ class ResGenerator(Generator):
 
     @property
     def export_model(self) -> k.Model:
+        warnings.warn(
+            "The `export_model` attribute is deprecated and will be removed "
+            "in a future release. Consider to replace it with the new (and "
+            "equivalent) `plain_keras` attribute.",
+            category=DeprecationWarning,
+            stacklevel=1,
+        )
+        return self.plain_keras
+
+    @property
+    def plain_keras(self) -> k.Model:
         return self._model

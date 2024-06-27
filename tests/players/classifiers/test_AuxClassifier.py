@@ -63,18 +63,13 @@ def test_model_use(mlp_hidden_activation, enable_res_blocks, inputs):
         mlp_dropout_rates=0.0,
         enable_residual_blocks=enable_res_blocks,
     )
-    if not isinstance(inputs, (tuple, list)):
-        in_shape = inputs.shape
-    else:
-        in_shape = (inputs[0].shape, inputs[1].shape)
-    model.build(input_shape=in_shape)
 
     print(inputs)
     out = model(inputs)
     model.summary()
     test_shape = [x.shape[0], 1]
     assert out.shape == tuple(test_shape)
-    assert isinstance(model.export_model, k.Model)
+    assert isinstance(model.plain_keras, k.Model)
 
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
@@ -90,11 +85,6 @@ def test_model_train(model, inputs, sample_weight):
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
-    if not isinstance(inputs, (tuple, list)):
-        in_shape = inputs.shape
-    else:
-        in_shape = (inputs[0].shape, inputs[1].shape)
-    model.build(input_shape=in_shape)
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
         loss=k.losses.MeanSquaredError(),
@@ -106,11 +96,6 @@ def test_model_train(model, inputs, sample_weight):
 @pytest.mark.parametrize("inputs", [y, (x, y)])
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, inputs, sample_weight):
-    if not isinstance(inputs, (tuple, list)):
-        in_shape = inputs.shape
-    else:
-        in_shape = (inputs[0].shape, inputs[1].shape)
-    model.build(input_shape=in_shape)
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=0.001),
         loss=k.losses.MeanSquaredError(),
@@ -121,19 +106,14 @@ def test_model_eval(model, inputs, sample_weight):
 
 @pytest.mark.parametrize("inputs", [y, (x, y)])
 def test_model_export(model, inputs):
-    if not isinstance(inputs, (tuple, list)):
-        in_shape = inputs.shape
-    else:
-        in_shape = (inputs[0].shape, inputs[1].shape)
-    model.build(input_shape=in_shape)
     out, aux = model(inputs, return_aux_features=True)
 
     v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
     if v_major == 3 and v_minor >= 0:
-        model.export_model.export(export_dir)
+        model.plain_keras.export(export_dir)
         model_reloaded = k.layers.TFSMLayer(export_dir, call_endpoint="serve")
     else:
-        k.models.save_model(model.export_model, export_dir, save_format="tf")
+        k.models.save_model(model.plain_keras, export_dir, save_format="tf")
         model_reloaded = k.models.load_model(export_dir)
 
     if isinstance(inputs, (list, tuple)):

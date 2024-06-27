@@ -1,3 +1,4 @@
+import warnings
 import keras as k
 import tensorflow as tf
 
@@ -17,6 +18,9 @@ class Generator(k.Model):
         dtype=None,
     ) -> None:
         super().__init__(name=name, dtype=dtype)
+
+        self._model = None
+        self._model_is_built = False
         self._hidden_activation_func = None
 
         # Output dimension
@@ -103,6 +107,7 @@ class Generator(k.Model):
             )
         )
         self._model = seq
+        self._model_is_built = True
 
     def _prepare_input(self, x, seed=None) -> tuple:
         latent_sample = tf.random.normal(
@@ -116,19 +121,21 @@ class Generator(k.Model):
         return x, latent_sample
 
     def call(self, x) -> tf.Tensor:
-        # TODO: add warning for model.build()
-        x, _ = self._prepare_input(x, seed=None)
-        out = self._model(x)
+        if not self._model_is_built:
+            self.build(input_shape=x.shape)
+        in_, _ = self._prepare_input(x, seed=None)
+        out = self._model(in_)
         return out
 
     def summary(self, **kwargs) -> None:
         self._model.summary(**kwargs)
 
     def generate(self, x, seed=None, return_latent_sample=False) -> tf.Tensor:
-        # TODO: add warning for model.build()
+        if not self._model_is_built:
+            self.build(input_shape=x.shape)
         tf.random.set_seed(seed=seed)
-        x, latent_sample = self._prepare_input(x, seed=seed)
-        out = self._model(x)
+        in_, latent_sample = self._prepare_input(x, seed=seed)
+        out = self._model(in_)
         if return_latent_sample:
             return out, latent_sample
         else:
@@ -160,4 +167,15 @@ class Generator(k.Model):
 
     @property
     def export_model(self) -> k.Sequential:
+        warnings.warn(
+            "The `export_model` attribute is deprecated and will be removed "
+            "in a future release. Consider to replace it with the new (and "
+            "equivalent) `plain_keras` attribute.",
+            category=DeprecationWarning,
+            stacklevel=1,
+        )
+        return self.plain_keras
+
+    @property
+    def plain_keras(self) -> k.Sequential:
         return self._model

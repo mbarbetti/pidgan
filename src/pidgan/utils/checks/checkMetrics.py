@@ -39,26 +39,26 @@ def checkMetrics(metrics):  # TODO: add Union[list, None]
             for metric in metrics:
                 if isinstance(metric, str):
                     if metric in METRIC_SHORTCUTS:
-                        for str_metric, calo_metric in zip(
+                        for str_metric, pid_metric in zip(
                             METRIC_SHORTCUTS, PIDGAN_METRICS
                         ):
                             if metric == str_metric:
-                                checked_metrics.append(calo_metric)
+                                checked_metrics.append(pid_metric)
                     else:
                         raise ValueError(
-                            f'"metrics" elements should be selected in '
+                            f"`metrics` elements should be selected in "
                             f"{METRIC_SHORTCUTS}, instead '{metric}' passed"
                         )
                 elif isinstance(metric, BaseMetric):
                     checked_metrics.append(metric)
                 else:
                     raise TypeError(
-                        f'"metrics" elements should be a pidgan '
+                        f"`metrics` elements should inherit from pidgan's "
                         f"BaseMetric, instead {type(metric)} passed"
                     )
             return checked_metrics
         else:
             raise TypeError(
-                f'"metrics" should be a list of strings or pidgan '
-                f"BaseMetrics, instead {type(metrics)} passed"
+                f"`metrics` should be a list of strings or pidgan's "
+                f"metrics, instead {type(metrics)} passed"
             )

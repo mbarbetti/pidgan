@@ -1,3 +1,4 @@
+import warnings
 import keras as k
 
 LEAKY_NEG_SLOPE = 0.1
@@ -15,9 +16,12 @@ class Discriminator(k.Model):
         dtype=None,
     ) -> None:
         super().__init__(name=name, dtype=dtype)
+
+        self._model = None
+        self._model_is_built = False
+
         self._hidden_activation_func = None
         self._hidden_kernel_reg = None
-        self._model = None
 
         # Output dimension
         assert output_dim >= 1
@@ -60,8 +64,11 @@ class Discriminator(k.Model):
         self._output_activation = output_activation
 
     def _get_input_dim(self, input_shape) -> int:
-        in_shape_1, in_shape_2 = input_shape
-        return in_shape_1[-1] + in_shape_2[-1]
+        if isinstance(input_shape, (list, tuple)):
+            in_shape_1, in_shape_2 = input_shape
+            return in_shape_1[-1] + in_shape_2[-1]
+        else:
+            return input_shape[-1]  # after concatenate action
 
     def build(self, input_shape) -> None:
         in_dim = self._get_input_dim(input_shape)
@@ -102,6 +109,7 @@ class Discriminator(k.Model):
             )
         )
         self._model = seq
+        self._model_is_built = True
 
     def _prepare_input(self, x):
         if isinstance(x, (list, tuple)):
@@ -109,8 +117,9 @@ class Discriminator(k.Model):
         return x
 
     def call(self, x):
-        # TODO: add warning for model.build()
         x = self._prepare_input(x)
+        if not self._model_is_built:
+            self.build(input_shape=x.shape)
         out = self._model(x)
         return out
 
@@ -118,8 +127,9 @@ class Discriminator(k.Model):
         self._model.summary(**kwargs)
 
     def hidden_feature(self, x, return_hidden_idx=False):
-        # TODO: add warning for model.build()
         x = self._prepare_input(x)
+        if not self._model_is_built:
+            self.build(input_shape=x.shape)
         if self._hidden_activation_func is None:
             multiple = 3  # dense + leaky_relu + dropout
         else:
@@ -156,4 +166,15 @@ class Discriminator(k.Model):
 
     @property
     def export_model(self) -> k.Sequential:
+        warnings.warn(
+            "The `export_model` attribute is deprecated and will be removed "
+            "in a future release. Consider to replace it with the new (and "
+            "equivalent) `plain_keras` attribute.",
+            category=DeprecationWarning,
+            stacklevel=1,
+        )
+        return self.plain_keras
+
+    @property
+    def plain_keras(self) -> k.Sequential:
         return self._model
