@@ -166,16 +166,18 @@ class Generator(k.Model):
         return self._output_activation
 
     @property
-    def export_model(self) -> k.Sequential:
-        warnings.warn(
-            "The `export_model` attribute is deprecated and will be removed "
-            "in a future release. Consider to replace it with the new (and "
-            "equivalent) `plain_keras` attribute.",
-            category=DeprecationWarning,
-            stacklevel=1,
-        )
-        return self.plain_keras
-
-    @property
     def plain_keras(self) -> k.Sequential:
         return self._model
+    
+    @property
+    def export_model(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("default")
+            warnings.warn(
+                "The `export_model` attribute is deprecated and will be removed "
+                "in a future release. Consider to replace it with the new (and "
+                "equivalent) `plain_keras` attribute.",
+                category=DeprecationWarning,
+                stacklevel=1,
+            )
+        return self.plain_keras

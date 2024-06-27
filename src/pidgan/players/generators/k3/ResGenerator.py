@@ -128,16 +128,5 @@ class ResGenerator(Generator):
         return self._mlp_dropout_rates
 
     @property
-    def export_model(self) -> k.Model:
-        warnings.warn(
-            "The `export_model` attribute is deprecated and will be removed "
-            "in a future release. Consider to replace it with the new (and "
-            "equivalent) `plain_keras` attribute.",
-            category=DeprecationWarning,
-            stacklevel=1,
-        )
-        return self.plain_keras
-
-    @property
     def plain_keras(self) -> k.Model:
         return self._model
