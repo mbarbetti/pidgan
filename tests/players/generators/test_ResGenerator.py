@@ -1,8 +1,8 @@
 import os
 
 import pytest
+import keras as k
 import tensorflow as tf
-from tensorflow import keras
 
 CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
@@ -57,12 +57,13 @@ def test_model_use(output_activation):
         mlp_dropout_rates=0.0,
         output_activation=output_activation,
     )
-    output = model(x)
+
+    out = model(x)
     model.summary()
     test_shape = [x.shape[0]]
     test_shape.append(model.output_dim)
-    assert output.shape == tuple(test_shape)
-    assert isinstance(model.export_model, keras.Model)
+    assert out.shape == tuple(test_shape)
+    assert isinstance(model.plain_keras, k.Model)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
@@ -77,18 +78,22 @@ def test_model_train(model, sample_weight):
         .cache()
         .prefetch(tf.data.AUTOTUNE)
     )
-    adam = keras.optimizers.Adam(learning_rate=0.001)
-    mse = keras.losses.MeanSquaredError()
-    model.compile(optimizer=adam, loss=mse, metrics=["mae"])
+    model.compile(
+        optimizer=k.optimizers.Adam(learning_rate=0.001),
+        loss=k.losses.MeanSquaredError(),
+        metrics=["mae"],
+    )
     model.fit(dataset, epochs=2)
 
 
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, sample_weight):
-    adam = keras.optimizers.Adam(learning_rate=0.001)
-    mse = keras.losses.MeanSquaredError()
-    model.compile(optimizer=adam, loss=mse, metrics=["mae"])
-    model.evaluate(x, sample_weight=sample_weight)
+    model.compile(
+        optimizer=k.optimizers.Adam(learning_rate=0.001),
+        loss=k.losses.MeanSquaredError(),
+        metrics=["mae"],
+    )
+    model.evaluate(x, y, sample_weight=sample_weight)
 
 
 def test_model_generate(model):
@@ -104,8 +109,15 @@ def test_model_generate(model):
 
 def test_model_export(model):
     out, latent_sample = model.generate(x, return_latent_sample=True)
-    keras.models.save_model(model.export_model, export_dir, save_format="tf")
-    model_reloaded = keras.models.load_model(export_dir)
+
+    v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
+    if v_major == 3 and v_minor >= 0:
+        model.plain_keras.export(export_dir)
+        model_reloaded = k.layers.TFSMLayer(export_dir, call_endpoint="serve")
+    else:
+        k.models.save_model(model.plain_keras, export_dir, save_format="tf")
+        model_reloaded = k.models.load_model(export_dir)
+
     x_reloaded = tf.concat([x, latent_sample], axis=-1)
     out_reloaded = model_reloaded(x_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()

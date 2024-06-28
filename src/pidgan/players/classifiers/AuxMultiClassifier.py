@@ -1,4 +1,4 @@
-from tensorflow import keras
+import keras as k
 from pidgan.players.discriminators import AuxDiscriminator
 
 
@@ -37,15 +37,25 @@ class AuxMultiClassifier(AuxDiscriminator):
         # Kernel regularizer
         self._hidden_kernel_reg = mlp_hidden_kernel_regularizer
 
+    def _get_input_dim(self, input_shape) -> int:
+        if isinstance(input_shape, (list, tuple)):
+            in_shape_1, in_shape_2 = input_shape
+            if isinstance(in_shape_2, int):
+                in_dim = in_shape_2
+            else:
+                in_dim = in_shape_1[-1] + in_shape_2[-1]
+        else:
+            in_dim = input_shape[-1]  # after concatenate action
+        in_dim += len(self._aux_features)
+        return in_dim
+
     def _define_arch(self) -> None:
         super()._define_arch()
-        self._out.append(
-            keras.layers.Softmax(name="softmax_out" if self.name else None)
-        )
+        self._out.append(k.layers.Softmax(name="softmax_out" if self.name else None))
 
     def hidden_feature(self, x, return_hidden_idx=False):
         raise NotImplementedError(
-            "Only the `discriminators` family has the "
+            "Only the pidgan's Discriminators has the "
             "`hidden_feature()` method implemented."
         )
 

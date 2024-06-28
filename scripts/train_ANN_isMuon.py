@@ -1,22 +1,26 @@
 import os
+import yaml
 import pickle
-import socket
-from datetime import datetime
-
+import keras as k
 import numpy as np
 import tensorflow as tf
-import yaml
+
+from datetime import datetime
 from html_reports import Report
 from sklearn.utils import shuffle
-from tensorflow import keras
 from utils.utils_argparser import argparser_training
-from utils.utils_training import prepare_training_plots, prepare_validation_plots
+from utils.utils_training import (
+    fill_html_report,
+    prepare_training_plots,
+    prepare_validation_plots,
+)
 
-import pidgan
 from pidgan.callbacks.schedulers import LearnRateExpDecay
 from pidgan.players.classifiers import ResClassifier
 from pidgan.utils.preprocessing import invertColumnTransformer
-from pidgan.utils.reports import getSummaryHTML, initHPSingleton
+from pidgan.utils.reports import initHPSingleton
+
+os.environ["KERAS_BACKEND"] = "tensorflow"
 
 DTYPE = np.float32
 BATCHSIZE = 2048
@@ -127,21 +131,18 @@ classifier = ResClassifier(
     mlp_hidden_units=hp.get("mlp_hidden_units", 128),
     mlp_hidden_activation=hp.get("mlp_hidden_activation", "relu"),
     mlp_hidden_kernel_regularizer=hp.get(
-        "mlp_hidden_kernel_regularizer", tf.keras.regularizers.L2(5e-5)
+        "mlp_hidden_kernel_regularizer", k.regularizers.L2(5e-5)
     ),
     mlp_dropout_rates=hp.get("mlp_dropout_rates", 0.0),
     name="classifier",
     dtype=DTYPE,
 )
 
-out = classifier(x[:BATCHSIZE])
-classifier.summary()
-
 # +----------------------+
 # |   Optimizers setup   |
 # +----------------------+
 
-opt = keras.optimizers.Adam(hp.get("lr0", 0.001))
+opt = k.optimizers.Adam(hp.get("lr0", 0.001))
 hp.get("optimizer", opt.name)
 
 # +----------------------------+
@@ -149,16 +150,19 @@ hp.get("optimizer", opt.name)
 # +----------------------------+
 
 hp.get("loss", "binary cross-entropy")
-loss = keras.losses.BinaryCrossentropy(label_smoothing=hp.get("label_smoothing", 0.05))
+loss = k.losses.BinaryCrossentropy(label_smoothing=hp.get("label_smoothing", 0.05))
 
 hp.get("metrics", ["auc"])
-metrics = [keras.metrics.AUC(name="auc")]
+metrics = [k.metrics.AUC(name="auc")]
 
 classifier.compile(
     optimizer=opt,
     loss=loss,
     metrics=metrics,
 )
+
+out = classifier(x[:BATCHSIZE])
+classifier.summary()
 
 # +--------------------------+
 # |   Callbacks definition   |
@@ -239,8 +243,8 @@ if save_output:
         os.makedirs(export_model_dirname)
     if not os.path.exists(export_img_dirname):
         os.makedirs(export_img_dirname)  # need to save images
-    keras.models.save_model(
-        classifier.export_model,
+    k.models.save_model(
+        classifier.plain_keras,
         filepath=f"{export_model_dirname}/saved_model",
         save_format="tf",
     )
@@ -264,50 +268,20 @@ if save_output:
 # +---------------------+
 
 report = Report()
-report.add_markdown('<h1 align="center">isMuonANN training report</h1>')
 
-info = [
-    f"- Script executed on **{socket.gethostname()}**",
-    f"- Model training completed in **{duration}**",
-    f"- Model training executed with **TF{tf.__version__}** "
-    f"and **pidgan v{pidgan.__version__}**",
-    f"- Report generated on **{date}** at **{hour}**",
-    f"- Model trained on **{args.particle}** tracks",
-]
-
-if "calib" not in args.data_sample:
-    info += [f"- Model trained on **detailed simulated** samples ({args.data_sample})"]
-else:
-    info += [f"- Model trained on **calibration** samples ({args.data_sample})"]
-    if args.weights:
-        info += ["- Any background components subtracted using **sWeights**"]
-    else:
-        info += ["- **sWeights not applied**"]
-
-report.add_markdown("\n".join([i for i in info]))
-
-report.add_markdown("---")
-
-## Hyperparameters and other details
-report.add_markdown('<h2 align="center">Hyperparameters and other details</h2>')
-hyperparams = ""
-for k, v in hp.get_dict().items():
-    hyperparams += f"- **{k}:** {v}\n"
-report.add_markdown(hyperparams)
-
-report.add_markdown("---")
-
-## Classifier architecture
-report.add_markdown('<h2 align="center">Classifier architecture</h2>')
-report.add_markdown(f"**Model name:** {classifier.name}")
-html_table, params_details = getSummaryHTML(classifier.export_model)
-model_weights = ""
-for k, n in zip(["Total", "Trainable", "Non-trainable"], params_details):
-    model_weights += f"- **{k} params:** {n}\n"
-report.add_markdown(html_table)
-report.add_markdown(model_weights)
-
-report.add_markdown("---")
+## Basic report info
+fill_html_report(
+    report=report,
+    title="isMuonANN training report",
+    train_duration=duration,
+    report_datetime=(date, hour),
+    particle=args.particle,
+    data_sample=args.data_sample,
+    trained_with_weights=args.weights,
+    hp_dict=hp.get_dict(),
+    model_arch=[classifier],
+    model_labels=["Classifier"],
+)
 
 ## Training plots
 prepare_training_plots(

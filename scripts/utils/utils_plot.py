@@ -1,10 +1,8 @@
-import copy
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-my_cmap = copy.copy(mpl.cm.get_cmap("magma"))
+my_cmap = mpl.colormaps["magma"]
 my_cmap.set_bad((0, 0, 0))
 
 

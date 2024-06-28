@@ -12,7 +12,7 @@ class HPSingleton:
         for key in kwargs.keys():
             if key in self._used_keys:
                 raise KeyError(
-                    f"The hyperparameter {key} was already used and is now read-only"
+                    f"The hyperparameter '{key}' was already used and is now read-only"
                 )
         self._hparams.update(kwargs)
 
@@ -29,7 +29,9 @@ class HPSingleton:
     def __del__(self) -> None:
         for key in self._hparams.keys():
             if key not in self._used_keys:
-                print(f"[WARNING] The hyperparameter {key} was defined but never used")
+                print(
+                    f"[WARNING] The hyperparameter '{key}' was defined but never used"
+                )
                 print(self._used_keys)
 
     def __str__(self) -> str:
