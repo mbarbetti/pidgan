@@ -1,4 +1,3 @@
-import warnings
 import keras as k
 
 from pidgan.players.discriminators.k3.Discriminator import Discriminator

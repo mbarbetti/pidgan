@@ -1,4 +1,3 @@
-import warnings
 import keras as k
 
 from pidgan.players.generators.k3.Generator import Generator

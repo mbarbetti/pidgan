@@ -33,7 +33,7 @@ def scheduler(staircase=False):
     adam = k.optimizers.Adam(learning_rate=LEARN_RATE)
     sched = LearnRateInvTimeDecay(
         optimizer=adam,
-        decay_rate=1/ALPHA - 1,
+        decay_rate=1 / ALPHA - 1,
         decay_steps=CHUNK_SIZE / BATCH_SIZE * EPOCHS,
         staircase=staircase,
         min_learning_rate=LEARN_RATE,
@@ -68,7 +68,7 @@ def test_sched_use(staircase, min_learning_rate):
     adam = k.optimizers.Adam(learning_rate=LEARN_RATE)
     sched = LearnRateInvTimeDecay(
         optimizer=adam,
-        decay_rate=1/ALPHA - 1,
+        decay_rate=1 / ALPHA - 1,
         decay_steps=CHUNK_SIZE / BATCH_SIZE * EPOCHS,
         staircase=staircase,
         min_learning_rate=min_learning_rate,

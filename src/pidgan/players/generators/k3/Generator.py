@@ -164,11 +164,11 @@ class Generator(k.Model):
     @property
     def output_activation(self):
         return self._output_activation
-    
+
     @property
     def plain_keras(self) -> k.Sequential:
         return self._model
-    
+
     @property
     def export_model(self):
         with warnings.catch_warnings():
