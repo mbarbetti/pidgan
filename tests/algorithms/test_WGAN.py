@@ -1,3 +1,4 @@
+import os
 import pytest
 import warnings
 import keras as k
@@ -8,7 +9,10 @@ from pidgan.players.discriminators import AuxDiscriminator
 from pidgan.players.generators import ResGenerator
 from pidgan.metrics import WassersteinDistance as Wass_dist
 
+os.environ["KERAS_BACKEND"] = "tensorflow"
+
 CHUNK_SIZE = int(1e4)
+BATCH_SIZE = 500
 
 x = tf.random.normal(shape=(CHUNK_SIZE, 4))
 y = tf.random.normal(shape=(CHUNK_SIZE, 8))
@@ -165,11 +169,15 @@ def test_model_train(referee, sample_weight, build_first):
         slices = (x, y, w)
     else:
         slices = (x, y)
-    dataset = (
+    train_ds = (
         tf.data.Dataset.from_tensor_slices(slices)
-        .batch(batch_size=512, drop_remainder=True)
-        .cache()
-        .prefetch(tf.data.AUTOTUNE)
+        .shuffle(buffer_size=int(0.1 * CHUNK_SIZE))
+        .batch(batch_size=BATCH_SIZE)
+    )
+    val_ds = (
+        tf.data.Dataset.from_tensor_slices(slices)
+        .shuffle(buffer_size=int(0.1 * CHUNK_SIZE))
+        .batch(batch_size=BATCH_SIZE)
     )
 
     model = WGAN(
@@ -200,18 +208,29 @@ def test_model_train(referee, sample_weight, build_first):
     if not build_first:
         model(x, y)  # to build the model
 
-    train = model.fit(dataset, epochs=2)
+    train = model.fit(
+        train_ds.take(BATCH_SIZE),
+        epochs=2,
+        validation_data=val_ds.take(BATCH_SIZE),
+    )
     states = train.history.keys()
+
     if not build_first:
         if referee is not None:
-            assert len(states) == 4  # g_loss + d_loss + r_loss + wass_dist
+            assert len(states) == 8  # 2x (g_loss + d_loss + r_loss + wass_dist)
         else:
-            assert len(states) == 3  # g_loss + d_loss + wass_dist
+            assert len(states) == 6  # 2x (g_loss + d_loss + wass_dist)
     else:
         if referee is not None:
-            assert len(states) == 3  # g_loss + d_loss + r_loss
+            assert len(states) == 6  # 2x (g_loss + d_loss + r_loss)
         else:
-            assert len(states) == 2  # g_loss + d_loss
+            assert len(states) == 4  # 2x (g_loss + d_loss)
+
+    for s in states:
+        for entry in train.history[s]:
+            print(train.history)
+            print(f"{s}: {entry}")
+            assert isinstance(entry, (int, float))
 
 
 @pytest.mark.parametrize("metrics", [["wass_dist"], [Wass_dist()], None])

@@ -44,8 +44,8 @@ class WGAN_GP(WGAN):
             )
         self._lipschitz_penalty_strategy = lipschitz_penalty_strategy
 
-    def _d_tf_train_step(self, x, y, sample_weight=None) -> None:
-        super(WGAN, self)._d_tf_train_step(x, y, sample_weight)
+    def _tf_d_train_step(self, x, y, sample_weight=None) -> None:
+        super(WGAN, self)._tf_d_train_step(x, y, sample_weight)
 
     def _compute_d_loss(self, x, y, sample_weight=None, training=True, test=False):
         d_loss = super()._compute_d_loss(x, y, sample_weight, training)

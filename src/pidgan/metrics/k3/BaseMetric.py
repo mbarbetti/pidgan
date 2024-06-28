@@ -15,4 +15,7 @@ class BaseMetric(k.metrics.Metric):
         )
 
     def result(self):
-        return self._metric_values
+        return self._metric_values.value
+
+    def reset_state(self):
+        self._metric_values.assign(0.0)

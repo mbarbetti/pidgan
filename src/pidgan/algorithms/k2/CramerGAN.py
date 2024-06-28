@@ -50,7 +50,7 @@ class CramerGAN(WGAN_GP):
         }
         if self._referee is not None:
             metric_states.update({"r_loss": self._r_loss_state.result()})
-        if self._metrics is not None:
+        if self._train_metrics is not None:
             batch_size = tf.cast(tf.shape(x)[0] / 2, tf.int32)
             x_1, x_2 = tf.split(x[: batch_size * 2], 2, axis=0)
             y_1 = y[:batch_size]
@@ -66,7 +66,7 @@ class CramerGAN(WGAN_GP):
                 (x_concat_1, y_concat_1), (x_concat_2, y_concat_2), training=False
             )
             c_ref, c_gen = tf.split(c_out, 2, axis=0)
-            for metric in self._metrics:
+            for metric in self._train_metrics:
                 if sample_weight is not None:
                     w_1, w_2 = tf.split(sample_weight[: batch_size * 2], 2, axis=0)
                     weights = w_1 * w_2

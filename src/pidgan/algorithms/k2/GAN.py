@@ -26,7 +26,9 @@ class GAN(k.Model):
     ) -> None:
         super().__init__(name=name, dtype=dtype)
         self._loss_name = "GAN original loss"
-        self._compiled_metrics = None
+
+        self._train_metrics = None
+        self._model_is_built = False
 
         # Generator
         if not isinstance(generator, Generator):
@@ -35,6 +37,7 @@ class GAN(k.Model):
                 f"instead {type(generator)} passed"
             )
         self._generator = generator
+        self._g_loss_state = k.metrics.Mean(name="g_loss")
 
         # Discriminator
         if not isinstance(discriminator, Discriminator):
@@ -43,6 +46,7 @@ class GAN(k.Model):
                 f"instead {type(discriminator)} passed"
             )
         self._discriminator = discriminator
+        self._d_loss_state = k.metrics.Mean(name="d_loss")
 
         # Flag to use the original loss
         assert isinstance(use_original_loss, bool)
@@ -59,6 +63,7 @@ class GAN(k.Model):
                     )
             self._referee = referee
             self._referee_loss = k.losses.BinaryCrossentropy()
+            self._r_loss_state = k.metrics.Mean(name="r_loss")
         else:
             self._referee = None
             self._referee_loss = None
@@ -75,15 +80,7 @@ class GAN(k.Model):
 
     def build(self, input_shape) -> None:
         super().build(input_shape=input_shape)
-
-        # Tracking states for losses
-        self._g_loss_state = k.metrics.Mean(name="g_loss")
-        self._d_loss_state = k.metrics.Mean(name="d_loss")
-        if self._referee is not None:
-            self._r_loss_state = k.metrics.Mean(name="r_loss")
-
-        # Tracking states for metrics
-        self._metrics = checkMetrics(self._compiled_metrics)
+        self._model_is_built = True
 
     def compile(
         self,
@@ -98,11 +95,10 @@ class GAN(k.Model):
         super().compile(weighted_metrics=[])
 
         # Metrics
-        if isinstance(self._metrics, list):
-            if len(self._metrics) == 0:
-                self._compiled_metrics = metrics
-                self.build(input_shape=[])
-        elif self._metrics is None:
+        if not self._model_is_built:
+            self._train_metrics = checkMetrics(metrics)
+            self.build(input_shape=[])
+        else:
             if metrics is not None:
                 warnings.warn(
                     "The `metrics` argument is ignored when the model is "
@@ -228,13 +224,13 @@ class GAN(k.Model):
         }
         if self._referee is not None:
             metric_states.update({"r_loss": self._r_loss_state.result()})
-        if self._metrics is not None:
+        if self._train_metrics is not None:
             g_out = self._generator(x, training=False)
             x_concat = tf.concat([x, x], axis=0)
             y_concat = tf.concat([y, g_out], axis=0)
             d_out = self._discriminator((x_concat, y_concat), training=False)
             d_ref, d_gen = tf.split(d_out, 2, axis=0)
-            for metric in self._metrics:
+            for metric in self._train_metrics:
                 metric.update_state(
                     y_true=d_ref, y_pred=d_gen, sample_weight=sample_weight
                 )
@@ -471,12 +467,7 @@ class GAN(k.Model):
 
     @property
     def metrics(self) -> list:
-        reset_states = [self._g_loss_state, self._d_loss_state]
-        if self._referee is not None:
-            reset_states += [self._r_loss_state]
-        if self._metrics is not None:
-            reset_states += self._metrics
-        return reset_states
+        return self._metrics
 
     @property
     def generator_optimizer(self) -> k.optimizers.Optimizer:

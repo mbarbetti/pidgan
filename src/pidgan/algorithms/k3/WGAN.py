@@ -31,8 +31,8 @@ class WGAN(GAN):
         assert clip_param > 0.0
         self._clip_param = float(clip_param)
 
-    def _d_tf_train_step(self, x, y, sample_weight=None) -> None:
-        super()._d_tf_train_step(x, y, sample_weight)
+    def _tf_d_train_step(self, x, y, sample_weight=None) -> None:
+        super()._tf_d_train_step(x, y, sample_weight)
         for w in self._discriminator.trainable_weights:
             w = k.ops.clip(w, -self._clip_param, self._clip_param)
 
