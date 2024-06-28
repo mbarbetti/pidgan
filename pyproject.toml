@@ -7,7 +7,7 @@ name = "pidgan"
 dynamic = ["version"]
 description = "GAN-based models to flash-simulate the LHCb PID detectors"
 readme = "README.md"
-requires-python = ">=3.7, <3.12"
+requires-python = ">=3.7, <3.13"
 license = {text = "GPLv3 License"}
 authors = [
   {name = "Matteo Barbetti", email = "matteo.barbetti@cnaf.infn.it"},
@@ -15,6 +15,7 @@ authors = [
 ]
 keywords = [
   "tensorflow",
+  "keras",
   "machine learning",
   "deep learning",
   "generative models",
@@ -29,17 +30,19 @@ classifiers = [
   "Environment :: GPU :: NVIDIA CUDA :: 11.2",
   "Environment :: GPU :: NVIDIA CUDA :: 11.8",
   "Environment :: GPU :: NVIDIA CUDA :: 12 :: 12.2",
+  "Environment :: GPU :: NVIDIA CUDA :: 12 :: 12.3",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-  "tensorflow>=2.8,<2.16",
+  "tensorflow>=2.8,<2.17",
   "scikit-learn>=1.0,<1.6",
   "numpy<2.0",
   # "hopaas-client",   # to be released on PyPI
@@ -100,8 +103,8 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.8
-target-version = "py39"
+# Assume Python 3.10
+target-version = "py310"
 
 # Enable linting and formatting for .ipynb files.
 extend-include = ["*.ipynb"]

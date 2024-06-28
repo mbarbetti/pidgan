@@ -11,9 +11,10 @@
 </h2>
 
 <p align="center">
-  <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/tensorflow-2.8–2.15-f57000?style=flat"></a>
-  <a href="https://scikit-learn.org/stable/whats_new.html"><img alt="scikit-learn versions" src="https://img.shields.io/badge/sklearn-1.0–1.5-f89939?style=flat"></a>
-  <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.11-blue?style=flat"></a>
+  <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/TensorFlow-2.8–2.16-f57000?style=flat&logo=tensorflow&logoColor=white"></a>
+  <a href="https://keras.io/keras_3"><img alt="Keras 3" src="https://img.shields.io/badge/Keras_3-compatible-d00000?style=flat&logo=keras&logoColor=white"></a>
+  <a href="https://scikit-learn.org/stable/whats_new.html"><img alt="scikit-learn versions" src="https://img.shields.io/badge/sklearn-1.0–1.5-f89939?style=flat&logo=scikit-learn&logoColor=white"></a>
+  <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.11-blue?style=flat&logo=python&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -38,17 +39,17 @@
 
 ### Generative Adversarial Networks
 
-| Algorithms* | Avail | Test | Lipschitzianity** | Design inspired by | Tutorial |
-|:-----------:|:-----:|:----:|:-----------------:|:------------------:|:--------:|
-| [`GAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/GAN.py) | ✅ | ✅ | ❌ | [1][1], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-GAN-LHCb_RICH.ipynb) |
-| [`BceGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/BceGAN.py) | ✅ | ✅ | ❌ | [2][2], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN-LHCb_RICH.ipynb) |
-| [`LSGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/LSGAN.py) | ✅ | ✅ | ❌ | [3][3], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-LSGAN-LHCb_RICH.ipynb) |
-| [`WGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/WGAN.py) | ✅ | ✅ | ✅ | [4][4], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN-LHCb_RICH.ipynb) |
-| [`WGAN_GP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/WGAN_GP.py) | ✅ | ✅ | ✅ | [5][5], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN_GP-LHCb_RICH.ipynb) |
-| [`CramerGAN`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/CramerGAN.py) | ✅ | ✅ | ✅ | [6][6], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-CramerGAN-LHCb_RICH.ipynb) |
-| [`WGAN_ALP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/WGAN_ALP.py) | ✅ | ✅ | ✅ | [7][7], [9][9] |  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN_ALP-LHCb_RICH.ipynb) |
-| [`BceGAN_GP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/BceGAN_GP.py) | ✅ | ✅ | ✅ | [2][2], [5][5], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN_GP-LHCb_RICH.ipynb) |
-| [`BceGAN_ALP`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/BceGAN_ALP.py) | ✅ | ✅ | ✅ | [2][2], [7][7], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN_ALP-LHCb_RICH.ipynb) |
+| Algorithms* | Source | Avail | Test | Lipschitzianity** | Refs | Tutorial |
+|:-----------:|:------:|:-----:|:----:|:-----------------:|:----:|:--------:|
+| GAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/GAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/GAN.py) | ✅ | ✅ | ❌ | [1][1], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-GAN-LHCb_RICH.ipynb) |
+| BceGAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/BceGAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/BceGAN.py) | ✅ | ✅ | ❌ | [2][2], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN-LHCb_RICH.ipynb) |
+| LSGAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/LSGAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/LSGAN.py) | ✅ | ✅ | ❌ | [3][3], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-LSGAN-LHCb_RICH.ipynb) |
+| WGAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/WGAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/WGAN.py) | ✅ | ✅ | ✅ | [4][4], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN-LHCb_RICH.ipynb) |
+| WGAN-GP | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/WGAN_GP.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/WGAN_GP.py) | ✅ | ✅ | ✅ | [5][5], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN_GP-LHCb_RICH.ipynb) |
+| CramerGAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/CramerGAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/CramerGAN.py) | ✅ | ✅ | ✅ | [6][6], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-CramerGAN-LHCb_RICH.ipynb) |
+| WGAN-ALP | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/WGAN_ALP.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/WGAN_ALP.py) | ✅ | ✅ | ✅ | [7][7], [9][9] |  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-WGAN_ALP-LHCb_RICH.ipynb) |
+| BceGAN-GP | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/BceGAN_GP.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/BceGAN_GP.py) | ✅ | ✅ | ✅ | [2][2], [5][5], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN_GP-LHCb_RICH.ipynb) |
+| BceGAN-ALP | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/BceGAN_ALP.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/BceGAN_ALP.py) | ✅ | ✅ | ✅ | [2][2], [7][7], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN_ALP-LHCb_RICH.ipynb) |
 
 *each GAN algorithm is designed to operate taking __conditions__ as input [[10][10]]
 
@@ -56,29 +57,29 @@
 
 ### Generators
 
-| Players | Avail | Test | Inherit from | Design inspired by |
-|:-------:|:-----:|:----:|:------------:|:------------------:|
-| [`Generator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/Generator.py) | ✅ | ✅ | [`tf.keras.Model`](https://www.tensorflow.org/api_docs/python/tf/keras/Model) | [1][1], [10][10] |
-| [`ResGenerator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/ResGenerator.py) | ✅ | ✅ | [`Generator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/Generator.py) | [1][1], [10][10], [11][11] |
+| Players | Source | Avail | Test | Skip conn | Refs |
+|:-------:|:------:|:-----:|:----:|:---------:|:----:|
+| Generator | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/k2/Generator.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/k3/Generator.py) | ✅ | ✅ | ❌ | [1][1], [10][10] |
+| ResGenerator | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/k2/ResGenerator.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/generators/k3/ResGenerator.py) | ✅ | ✅ | ✅ | [1][1], [10][10], [11][11] |
 
 ### Discriminators
 
-| Players | Avail | Test | Inherit from | Design inspired by |
-|:-------:|:-----:|:----:|:------------:|:------------------:|
-| [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) | ✅ | ✅ | [`tf.keras.Model`](https://www.tensorflow.org/api_docs/python/tf/keras/Model) | [1][1], [9][9], [10][10] |
-| [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) | [1][1], [9][9], [10][10], [11][11] |
-| [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) | ✅ | ✅ | [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) | [1][1], [9][9], [10][10], [11][11], [12][12] |
+| Players | Source | Avail | Test | Skip conn | Aux proc | Refs |
+|:-------:|:------:|:-----:|:----:|:---------:|:--------:|:----:|
+| Discriminator | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/k2/Discriminator.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/k3/Discriminator.py) | ✅ | ✅ | ❌ | ❌ | [1][1], [9][9], [10][10] |
+| ResDiscriminator | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/k2/ResDiscriminator.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/k3/ResDiscriminator.py) | ✅ | ✅ | ✅ | ❌ | [1][1], [9][9], [10][10], [11][11] |
+| AuxDiscriminator | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/k2/AuxDiscriminator.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/k3/AuxDiscriminator.py) | ✅ | ✅ | ✅ | ✅ | [1][1], [9][9], [10][10], [11][11], [12][12] |
 
 ### Other players
 
-| Players | Avail | Test | Inherit from |
-|:-------:|:-----:|:----:|:------------:|
-| [`Classifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/Classifier.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) |
-| [`ResClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/ResClassifier.py) | ✅ | ✅ | [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) |
-| [`AuxClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxClassifier.py) | ✅ | ✅ | [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) |
-| [`MultiClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiClassifier.py) | ✅ | ✅ | [`Discriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/Discriminator.py) |
-| [`MultiResClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiResClassifier.py) | ✅ | ✅ | [`ResDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/ResDiscriminator.py) |
-| [`AuxMultiClassifier`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxMultiClassifier.py) | ✅ | ✅ | [`AuxDiscriminator`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/discriminators/AuxDiscriminator.py) |
+| Players | Source | Avail | Test | Skip conn | Aux proc | Multiclass |
+|:-------:|:------:|:-----:|:----:|:---------:|:--------:|:---------:|
+| Classifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/Classifier.py) | ✅ | ✅ | ❌ | ❌ | ❌ |
+| ResClassifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/ResClassifier.py) | ✅ | ✅ | ✅ | ❌ | ❌ |
+| AuxClassifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxClassifier.py) | ✅ | ✅ | ✅ | ✅ | ❌ |
+| MultiClassifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiClassifier.py) | ✅ | ✅ | ❌ | ❌ | ✅ |
+| MultiResClassifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/MultiResClassifier.py) | ✅ | ✅ | ✅ | ❌ | ✅ |
+| AuxMultiClassifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxMultiClassifier.py) | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### References
 1. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661][1]
