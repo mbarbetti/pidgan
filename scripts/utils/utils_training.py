@@ -1,4 +1,11 @@
+import socket
+import pidgan
+import keras as k
 import numpy as np
+import tensorflow as tf
+
+from html_reports import Report
+from pidgan.utils.reports import getSummaryHTML
 
 from .utils_plot import (
     binned_validation_histogram,
@@ -22,6 +29,69 @@ METRIC_LABELS = {
     "rmse": "Root Mean Squared Error",
     "wass_dist": "Wasserstein distance",
 }
+
+
+def fill_html_report(
+    report,
+    title,
+    train_duration,
+    report_datetime,
+    particle,
+    data_sample,
+    trained_with_weights,
+    hp_dict,
+    model_arch,
+    model_labels,
+) -> Report:
+    report.add_markdown(f'<h1 align="center">{title}</h1>')
+
+    ## General information
+    date, hour = report_datetime
+    info = [
+        f"- Script executed on **{socket.gethostname()}**",
+        f"- Model training completed in **{train_duration}**",
+        f"- Model training executed with **TF{tf.__version__}** "
+        f"(Keras {k.__version__}) and **pidgan {pidgan.__version__}**",
+        f"- Report generated on **{date}** at **{hour}**",
+        f"- Model trained on **{particle}** tracks",
+    ]
+
+    if "calib" not in data_sample:
+        info += [f"- Model trained on **detailed simulated** samples ({data_sample})"]
+    else:
+        info += [f"- Model trained on **calibration** samples ({data_sample})"]
+        if trained_with_weights:
+            info += ["- Any background components subtracted using **sWeights**"]
+        else:
+            info += ["- **sWeights not applied**"]
+
+    report.add_markdown("\n".join([i for i in info]))
+    report.add_markdown("---")
+
+    ## Hyperparameters and other details
+    report.add_markdown('<h2 align="center">Hyperparameters and other details</h2>')
+    hyperparams = ""
+    for key, val in hp_dict.items():
+        hyperparams += f"- **{key}:** {val}\n"
+    report.add_markdown(hyperparams)
+    report.add_markdown("---")
+
+    ## Models architecture
+    for model, label in zip(model_arch, model_labels):
+        if model is not None:
+            report.add_markdown(f'<h2 align="center">{label} architecture</h2>')
+            report.add_markdown(f"**Model name:** {model.name}")
+            html_table, params_details = getSummaryHTML(model.plain_keras)
+            model_weights = ""
+            for key, num in zip(
+                ["Total", "Trainable", "Non-trainable"], params_details
+            ):
+                model_weights += f"- **{key} params:** {num}\n"
+            report.add_markdown(html_table)
+            report.add_markdown(model_weights)
+            report.add_markdown("---")
+
+    return report
 
 
 def prepare_training_plots(
