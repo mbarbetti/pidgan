@@ -1,10 +1,6 @@
-<!--
 <div align="center">
-  <img alt="pidgan logo" src="https://raw.githubusercontent.com/mbarbetti/pidgan/main/.github/images/pidgan-logo.png" width="600"/>
+  <img alt="pidgan logo" src="https://raw.githubusercontent.com/mbarbetti/pidgan/main/.github/images/pidgan-logo-h-plain.png" width="300">
 </div>
--->
-
-<h1 align="center">PIDGAN</h1>
 
 <h2 align="center">
   <em>GAN-based models to flash-simulate the LHCb PID detectors</em>
@@ -19,6 +15,7 @@
 
 <p align="center">
   <a href="https://pypi.python.org/pypi/pidgan"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/pidgan"></a>
+  <a href="https://pypi.python.org/pypi/pidgan"><img alt="PyPI - Status" src="https://img.shields.io/pypi/status/pidgan"></a>
   <a href="LICENSE"><img alt="GitHub - License" src="https://img.shields.io/github/license/mbarbetti/pidgan"></a>
   <a href="https://zenodo.org/doi/10.5281/zenodo.10463727"><img alt="DOI" src="https://zenodo.org/badge/597088032.svg"></a>
 </p>
@@ -39,8 +36,8 @@
 
 ### Generative Adversarial Networks
 
-| Algorithms* | Source | Avail | Test | Lipschitzianity** | Refs | Tutorial |
-|:-----------:|:------:|:-----:|:----:|:-----------------:|:----:|:--------:|
+| Algorithms* | Source | Avail | Test | Lipschitz** | Refs | Tutorial |
+|:-----------:|:------:|:-----:|:----:|:-----------:|:----:|:--------:|
 | GAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/GAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/GAN.py) | ✅ | ✅ | ❌ | [1][1], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-GAN-LHCb_RICH.ipynb) |
 | BceGAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/BceGAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/BceGAN.py) | ✅ | ✅ | ❌ | [2][2], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-BceGAN-LHCb_RICH.ipynb) |
 | LSGAN | [`k2`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k2/LSGAN.py)/[`k3`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/algorithms/k3/LSGAN.py) | ✅ | ✅ | ❌ | [3][3], [8][8], [9][9] | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mbarbetti/pidgan-notebooks/blob/main/tutorial-LSGAN-LHCb_RICH.ipynb) |
