@@ -89,7 +89,7 @@ If the equipped GPU card is not included in the list printed by the previous com
 
 PIDGAN has a minimal list of [requirements](https://github.com/mbarbetti/pidgan/blob/main/requirements/base.txt):
 
-- Python >=3.7, <3.13
+- Python >= 3.7, < 3.13
 - TensorFlow >= 2.8, < 2.17
 - scikit-learn >= 1.0, < 1.6
 - NumPy < 2.0
@@ -116,6 +116,8 @@ pip install pidgan[hep]
 ```
 
 ### Models available
+
+The main components of PIDGAN are the [`algorithms`](https://github.com/mbarbetti/pidgan/tree/main/src/pidgan/algorithms) and [`players`](https://github.com/mbarbetti/pidgan/tree/main/src/pidgan/players) modules that provide, respectively, implementations for several GAN algorithms and the so-called adversarial neural networks (e.g., generator, discriminator). The objects exposed by the `algorithms` and `players` modules are implemented by subclassing the Keras [Model class](https://keras.io/api/models/model) and customizing the training procedure that is executed when one calls the `fit()` method. With [PIDGAN v0.2.0](https://github.com/mbarbetti/pidgan/releases/tag/v0.2.0) the package has been massively rewritten to be also compatible with the new multi-backend [Keras 3](https://keras.io/keras_3). At the moment, the custom training procedures defined for the various GAN algorithms are only implemented for the TensorFlow backend, while relying also on the Pytorch and Jax backends is planned for a future release. The following tables report the complete set of `algorithms` and `players` classes currently available, together with a snapshot of their implementation details.
 
 #### Generative Adversarial Networks
 
@@ -162,6 +164,7 @@ pip install pidgan[hep]
 | AuxMultiClassifier | [`src`](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/players/classifiers/AuxMultiClassifier.py) | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### References
+
 1. M. Barbetti, "The flash-simulation paradigm and its implementation based on Deep Generative Models for the LHCb experiment at CERN", PhD thesis, University of Firenze, 2024
 2. I.J. Goodfellow _et al._, "Generative Adversarial Networks", [arXiv:1406.2661][gan]
 3. M. Mirza, S. Osindero, "Conditional Generative Adversarial Nets", [arXiv:1411.1784][cgan]
@@ -176,6 +179,32 @@ pip install pidgan[hep]
 12. K. He _et al._, "Deep Residual Learning for Image Recognition", [arXiv:1512.03385][skip-conn]
 13. A. Rogachev, F. Ratnikov, "GAN with an Auxiliary Regressor for the Fast Simulation of the Electromagnetic Calorimeter Response", [arXiv:2207.06329][aux-feat]
 
+### Credits
+
+Most of the GAN algorithms are an evolution of what provided by the [mbarbetti/tf-gen-models](https://github.com/mbarbetti/tf-gen-models) repository. The BceGAN model is freely inspired by the TensorFlow tutorial [Deep Convolutional Generative Adversarial Network](https://www.tensorflow.org/tutorials/generative/dcgan) and the Keras tutorial [Conditional GAN](https://keras.io/examples/generative/conditional_gan). The WGAN-ALP model is an adaptation of what provided by the [dterjek/adversarial_lipschitz_regularization](https://github.com/dterjek/adversarial_lipschitz_regularization) repository.
+
+### Citing PIDGAN
+
+To cite this repository:
+
+```bibtex
+@software{pidgan:2023abc,
+  author    = "Matteo Barbetti and Lucio Anderlini",
+  title     = "{PIDGAN: GAN-based models to flash-simulate the LHCb PID detectors}",
+  version   = "v0.2.0",
+  url       = "https://github.com/mbarbetti/pidgan",
+  doi       = "10.5281/zenodo.10463728",
+  publisher = "Zenodo",
+  year      = "2023",
+}
+```
+
+In the above bibtex entry, the version number is intended to be that from [pidgan/version.py](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/version.py), while the year corresponds to the project's open-source release.
+
+### License
+
+PIDGAN has a GNU General Public License v3 (GPLv3), as found in the [LICENSE](https://github.com/mbarbetti/pidgan/blob/main/LICENSE) file.
+
 [gan]: https://arxiv.org/abs/1406.2661
 [dcgan]: https://arxiv.org/abs/1511.06434
 [lsgan]: https://arxiv.org/abs/1611.04076
@@ -188,26 +217,3 @@ pip install pidgan[hep]
 [cgan]: https://arxiv.org/abs/1411.1784
 [skip-conn]: https://arxiv.org/abs/1512.03385
 [aux-feat]: https://arxiv.org/abs/2207.06329
-
-### Credits
-Most of the GAN algorithms are an evolution of what provided by the [mbarbetti/tf-gen-models](https://github.com/mbarbetti/tf-gen-models) repository. The BceGAN model is freely inspired by the TensorFlow tutorial [Deep Convolutional Generative Adversarial Network](https://www.tensorflow.org/tutorials/generative/dcgan) and the Keras tutorial [Conditional GAN](https://keras.io/examples/generative/conditional_gan). The WGAN-ALP model is an adaptation of what provided by the [dterjek/adversarial_lipschitz_regularization](https://github.com/dterjek/adversarial_lipschitz_regularization) repository.
-
-### Citing PIDGAN
-To cite this repository:
-
-```bibtex
-@software{pidgan:2024abc,
-  author    = "Lucio Anderlini and Matteo Barbetti",
-  title     = "{PIDGAN: GAN-based models to flash-simulate the LHCb PID detectors}",
-  version   = "v0.2.0",
-  url       = "https://github.com/mbarbetti/pidgan",
-  doi       = "10.5281/zenodo.10463728",
-  publisher = "Zenodo",
-  year      = "2024",
-}
-```
-
-In the above bibtex entry, names are in alphabetical order, the version number is intended to be that from [pidgan/version.py](https://github.com/mbarbetti/pidgan/blob/main/src/pidgan/version.py), and the year corresponds to the project's open-source release.
-
-### License
-PIDGAN has a GNU General Public License v3 (GPLv3), as found in the [LICENSE](https://github.com/mbarbetti/pidgan/blob/main/LICENSE) file.
