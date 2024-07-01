@@ -10,7 +10,7 @@
   <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/TensorFlow-2.8–2.16-f57000?style=flat&logo=tensorflow&logoColor=white"></a>
   <a href="https://keras.io/keras_3"><img alt="Keras 3" src="https://img.shields.io/badge/Keras_3-compatible-d00000?style=flat&logo=keras&logoColor=white"></a>
   <a href="https://scikit-learn.org/stable/whats_new.html"><img alt="scikit-learn versions" src="https://img.shields.io/badge/sklearn-1.0–1.5-f89939?style=flat&logo=scikit-learn&logoColor=white"></a>
-  <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.11-blue?style=flat&logo=python&logoColor=white"></a>
+  <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.12-blue?style=flat&logo=python&logoColor=white"></a>
 </p>
 
 <p align="center">
