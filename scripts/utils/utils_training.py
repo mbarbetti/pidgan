@@ -50,7 +50,7 @@ def fill_html_report(
     info = [
         f"- Script executed on **{socket.gethostname()}**",
         f"- Model training completed in **{train_duration}**",
-        f"- Model training executed with **TF{tf.__version__}** "
+        f"- Model training executed with **TF {tf.__version__}** "
         f"(Keras {k.__version__}) and **pidgan {pidgan.__version__}**",
         f"- Report generated on **{date}** at **{hour}**",
         f"- Model trained on **{particle}** tracks",
