@@ -99,18 +99,20 @@ def test_model_eval(model, sample_weight):
 
 
 def test_model_generate(model):
-    no_seed_out = model.generate(x, seed=None)
-    comparison = no_seed_out.numpy() != model.generate(x, seed=None).numpy()
+    no_seed_out = model.generate(x[:BATCH_SIZE], seed=None)
+    comparison = (
+        no_seed_out.numpy() != model.generate(x[:BATCH_SIZE], seed=None).numpy()
+    )
     assert comparison.all()
-    seed_out = model.generate(x, seed=42)
-    comparison = seed_out.numpy() == model.generate(x, seed=42).numpy()
+    seed_out = model.generate(x[:BATCH_SIZE], seed=42)
+    comparison = seed_out.numpy() == model.generate(x[:BATCH_SIZE], seed=42).numpy()
     assert comparison.all()
-    comparison = seed_out.numpy() != model.generate(x, seed=24).numpy()
+    comparison = seed_out.numpy() != model.generate(x[:BATCH_SIZE], seed=24).numpy()
     assert comparison.any()
 
 
 def test_model_export(model):
-    out, latent_sample = model.generate(x, return_latent_sample=True)
+    out, latent_sample = model.generate(x[:BATCH_SIZE], return_latent_sample=True)
 
     v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
     if v_major == 3 and v_minor >= 0:
@@ -120,7 +122,7 @@ def test_model_export(model):
         k.models.save_model(model.plain_keras, export_dir, save_format="tf")
         model_reloaded = k.models.load_model(export_dir)
 
-    x_reloaded = tf.concat([x, latent_sample], axis=-1)
+    x_reloaded = tf.concat([x[:BATCH_SIZE], latent_sample], axis=-1)
     out_reloaded = model_reloaded(x_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()

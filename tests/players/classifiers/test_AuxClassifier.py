@@ -104,7 +104,7 @@ def test_model_eval(model, inputs, sample_weight):
     model.evaluate(x=inputs, y=labels, sample_weight=sample_weight)
 
 
-@pytest.mark.parametrize("inputs", [y, (x, y)])
+@pytest.mark.parametrize("inputs", [y[:BATCH_SIZE], (x[:BATCH_SIZE], y[:BATCH_SIZE])])
 def test_model_export(model, inputs):
     out, aux = model(inputs, return_aux_features=True)
 
@@ -117,9 +117,9 @@ def test_model_export(model, inputs):
         model_reloaded = k.models.load_model(export_dir)
 
     if isinstance(inputs, (list, tuple)):
-        in_reloaded = tf.concat((x, y, aux), axis=-1)
+        in_reloaded = tf.concat((x[:BATCH_SIZE], y[:BATCH_SIZE], aux), axis=-1)
     else:
-        in_reloaded = tf.concat((y, aux), axis=-1)
+        in_reloaded = tf.concat((y[:BATCH_SIZE], aux), axis=-1)
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()

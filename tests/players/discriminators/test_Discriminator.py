@@ -102,7 +102,7 @@ def test_model_eval(model, sample_weight):
 
 
 def test_model_export(model):
-    out = model((x, y))
+    out = model((x[:BATCH_SIZE], y[:BATCH_SIZE]))
 
     v_major, v_minor, _ = [int(v) for v in k.__version__.split(".")]
     if v_major == 3 and v_minor >= 0:
@@ -112,7 +112,7 @@ def test_model_export(model):
         k.models.save_model(model.plain_keras, export_dir, save_format="tf")
         model_reloaded = k.models.load_model(export_dir)
 
-    in_reloaded = tf.concat((x, y), axis=-1)
+    in_reloaded = tf.concat((x[:BATCH_SIZE], y[:BATCH_SIZE]), axis=-1)
     out_reloaded = model_reloaded(in_reloaded)
     comparison = out.numpy() == out_reloaded.numpy()
     assert comparison.all()

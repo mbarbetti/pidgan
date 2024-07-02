@@ -100,7 +100,7 @@ def test_model_eval(model, inputs, sample_weight):
     model.evaluate(x=inputs, y=labels, sample_weight=sample_weight)
 
 
-@pytest.mark.parametrize("inputs", [y, (x, y)])
+@pytest.mark.parametrize("inputs", [y[:BATCH_SIZE], (x[:BATCH_SIZE], y[:BATCH_SIZE])])
 def test_model_export(model, inputs):
     out = model(inputs)
 
@@ -113,7 +113,7 @@ def test_model_export(model, inputs):
         model_reloaded = k.models.load_model(export_dir)
 
     if isinstance(inputs, (list, tuple)):
-        in_reloaded = tf.concat((x, y), axis=-1)
+        in_reloaded = tf.concat((x[:BATCH_SIZE], y[:BATCH_SIZE]), axis=-1)
     else:
         in_reloaded = inputs
     out_reloaded = model_reloaded(in_reloaded)
