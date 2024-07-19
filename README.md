@@ -7,7 +7,7 @@
 </h2>
 
 <p align="center">
-  <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/TensorFlow-2.8–2.16-f57000?style=flat&logo=tensorflow&logoColor=white"></a>
+  <a href="https://www.tensorflow.org/versions"><img alt="TensorFlow versions" src="https://img.shields.io/badge/TensorFlow-2.8–2.17-f57000?style=flat&logo=tensorflow&logoColor=white"></a>
   <a href="https://keras.io/keras_3"><img alt="Keras 3" src="https://img.shields.io/badge/Keras_3-compatible-d00000?style=flat&logo=keras&logoColor=white"></a>
   <a href="https://scikit-learn.org/stable/whats_new.html"><img alt="scikit-learn versions" src="https://img.shields.io/badge/sklearn-1.0–1.5-f89939?style=flat&logo=scikit-learn&logoColor=white"></a>
   <a href="https://www.python.org/downloads"><img alt="Python versions" src="https://img.shields.io/badge/python-3.7–3.12-blue?style=flat&logo=python&logoColor=white"></a>
@@ -87,7 +87,7 @@ If the equipped GPU card is not included in the list printed by the previous com
 PIDGAN has a minimal list of [requirements](https://github.com/mbarbetti/pidgan/blob/main/requirements/base.txt):
 
 - Python >= 3.7, < 3.13
-- TensorFlow >= 2.8, < 2.17
+- TensorFlow >= 2.8, < 2.18
 - scikit-learn >= 1.0, < 1.6
 - NumPy < 2.0
 - Hopaas client (https://github.com/landerlini/hopaas_client)
