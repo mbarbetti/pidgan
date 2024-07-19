@@ -1,4 +1,6 @@
 import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
+
 import yaml
 import pickle
 import keras as k
@@ -22,8 +24,6 @@ from pidgan.players.discriminators import AuxDiscriminator
 from pidgan.players.generators import ResGenerator
 from pidgan.utils.preprocessing import invertColumnTransformer
 from pidgan.utils.reports import initHPSingleton
-
-os.environ["KERAS_BACKEND"] = "tensorflow"
 
 DTYPE = np.float32
 BATCHSIZE = 2048

@@ -1,7 +1,9 @@
 import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
+
 import pytest
 import warnings
-import keras as k
+import numpy as np
 import tensorflow as tf
 
 from pidgan.players.classifiers import AuxClassifier
@@ -9,14 +11,12 @@ from pidgan.players.discriminators import AuxDiscriminator
 from pidgan.players.generators import ResGenerator
 from pidgan.metrics import BinaryCrossentropy as BCE
 
-os.environ["KERAS_BACKEND"] = "tensorflow"
-
 CHUNK_SIZE = int(1e4)
 BATCH_SIZE = 500
 
-x = tf.random.normal(shape=(CHUNK_SIZE, 4))
-y = tf.random.normal(shape=(CHUNK_SIZE, 8))
-w = tf.random.uniform(shape=(CHUNK_SIZE,))
+x = np.random.normal(size=(CHUNK_SIZE, 4)).astype("float32")
+y = np.random.normal(size=(CHUNK_SIZE, 8)).astype("float32")
+w = np.random.uniform(size=(CHUNK_SIZE,)).astype("float32")
 
 gen = ResGenerator(
     output_dim=y.shape[1],
@@ -120,6 +120,8 @@ def test_model_use(referee):
 @pytest.mark.parametrize("build_first", [True, False])
 @pytest.mark.parametrize("metrics", [["bce"], [BCE()], None])
 def test_model_compilation(model, build_first, metrics):
+    import keras as k
+
     if build_first:
         model(x, y)  # to build the model
 
@@ -169,6 +171,7 @@ def test_model_compilation(model, build_first, metrics):
 @pytest.mark.parametrize("sample_weight", [w, None])
 @pytest.mark.parametrize("build_first", [True, False])
 def test_model_train(referee, sample_weight, build_first):
+    import keras as k
     from pidgan.algorithms import BceGAN
 
     if sample_weight is not None:
@@ -236,14 +239,21 @@ def test_model_train(referee, sample_weight, build_first):
 
     for s in states:
         for entry in train.history[s]:
-            print(train.history)
-            print(f"{s}: {entry}")
             assert isinstance(entry, (int, float))
+
+    if not build_first:
+        for key in ["g_loss", "d_loss", "bce"]:
+            comparison = (
+                np.array(train.history[key]) != np.array(train.history[f"val_{key}"])
+            )
+            assert comparison.all()
 
 
 @pytest.mark.parametrize("metrics", [["bce"], [BCE()], None])
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, metrics, sample_weight):
+    import keras as k
+    
     g_opt = k.optimizers.RMSprop(learning_rate=0.001)
     d_opt = k.optimizers.RMSprop(learning_rate=0.001)
     r_opt = k.optimizers.RMSprop(learning_rate=0.001)

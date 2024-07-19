@@ -96,8 +96,9 @@ class GAN(k.Model):
         discriminator_upds_per_batch=1,
         referee_optimizer=None,
         referee_upds_per_batch=None,
+        jit_compile=False,
     ) -> None:
-        super().compile(weighted_metrics=[])
+        super().compile(weighted_metrics=[], jit_compile=jit_compile)
 
         # Metrics
         if not self._model_is_built:

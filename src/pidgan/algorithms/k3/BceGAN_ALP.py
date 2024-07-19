@@ -41,6 +41,7 @@ class BceGAN_ALP(BceGAN_GP):
         virtual_adv_direction_upds=1,
         referee_optimizer=None,
         referee_upds_per_batch=None,
+        jit_compile=False,
     ) -> None:
         super().compile(
             metrics=metrics,
@@ -50,6 +51,7 @@ class BceGAN_ALP(BceGAN_GP):
             discriminator_upds_per_batch=discriminator_upds_per_batch,
             referee_optimizer=referee_optimizer,
             referee_upds_per_batch=referee_upds_per_batch,
+            jit_compile=jit_compile,
         )
 
         # Virtual adversarial direction updates
