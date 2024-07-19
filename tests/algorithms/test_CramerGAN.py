@@ -1,4 +1,5 @@
 import os
+
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import pytest
@@ -243,7 +244,7 @@ def test_model_train(referee, sample_weight, lipschitz_penalty_strategy, build_f
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, metrics, sample_weight):
     import keras as k
-    
+
     g_opt = k.optimizers.RMSprop(learning_rate=0.001)
     d_opt = k.optimizers.RMSprop(learning_rate=0.001)
     r_opt = k.optimizers.RMSprop(learning_rate=0.001)

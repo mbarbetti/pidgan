@@ -1,4 +1,5 @@
 import os
+
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import pytest
@@ -240,8 +241,8 @@ def test_model_train(referee, sample_weight, minimize_pearson_chi2, build_first)
 
     if not build_first:
         for key in ["g_loss", "d_loss", "bce"]:
-            comparison = (
-                np.array(train.history[key]) != np.array(train.history[f"val_{key}"])
+            comparison = np.array(train.history[key]) != np.array(
+                train.history[f"val_{key}"]
             )
             assert comparison.all()
 
@@ -250,7 +251,7 @@ def test_model_train(referee, sample_weight, minimize_pearson_chi2, build_first)
 @pytest.mark.parametrize("sample_weight", [w, None])
 def test_model_eval(model, metrics, sample_weight):
     import keras as k
-    
+
     g_opt = k.optimizers.RMSprop(learning_rate=0.001)
     d_opt = k.optimizers.RMSprop(learning_rate=0.001)
     r_opt = k.optimizers.RMSprop(learning_rate=0.001)
