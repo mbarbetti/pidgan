@@ -1,5 +1,5 @@
+import keras as k
 import tensorflow as tf
-import keras
 
 from pidgan.metrics.k2.BaseMetric import BaseMetric
 
@@ -7,7 +7,7 @@ from pidgan.metrics.k2.BaseMetric import BaseMetric
 class Accuracy(BaseMetric):
     def __init__(self, name="accuracy", dtype=None, threshold=0.5) -> None:
         super().__init__(name=name, dtype=dtype)
-        self._accuracy = keras.metrics.BinaryAccuracy(
+        self._accuracy = k.metrics.BinaryAccuracy(
             name=name, dtype=dtype, threshold=threshold
         )
 

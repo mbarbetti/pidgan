@@ -9,21 +9,17 @@ LEARN_RATE = 0.001
 MIN_LEARN_RATE = 0.0005
 ALPHA = 0.1
 
-X = np.c_[
-    np.random.uniform(-1, 1, size=CHUNK_SIZE),
-    np.random.normal(0, 1, size=CHUNK_SIZE),
-    np.random.exponential(5, size=CHUNK_SIZE),
-]
-Y = np.tanh(X[:, 0]) + 2 * X[:, 1] * X[:, 2]
+x = np.random.normal(size=(CHUNK_SIZE, 4)).astype("float32")
+y = np.random.normal(size=(CHUNK_SIZE, 1)).astype("float32")
 
 model = k.Sequential()
 try:
-    model.add(k.layers.InputLayer(shape=(3,)))
+    model.add(k.layers.InputLayer(shape=(x.shape[1],)))
 except ValueError:
-    model.add(k.layers.InputLayer(input_shape=(3,)))
+    model.add(k.layers.InputLayer(input_shape=(x.shape[1],)))
 for units in [16, 16, 16]:
     model.add(k.layers.Dense(units, activation="relu"))
-model.add(k.layers.Dense(1))
+model.add(k.layers.Dense(y.shape[1]))
 
 
 @pytest.fixture
@@ -75,7 +71,7 @@ def test_sched_use(staircase, min_learning_rate):
         verbose=True,
     )
     model.compile(optimizer=adam, loss=k.losses.MeanSquaredError())
-    train = model.fit(X, Y, batch_size=BATCH_SIZE, epochs=5, callbacks=[sched])
+    train = model.fit(x, y, batch_size=BATCH_SIZE, epochs=5, callbacks=[sched])
     last_lr = float(f"{train.history['lr'][-1]:.8f}")
     if min_learning_rate is not None:
         assert last_lr == MIN_LEARN_RATE

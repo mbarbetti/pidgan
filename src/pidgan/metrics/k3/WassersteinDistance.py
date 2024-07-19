@@ -14,5 +14,4 @@ class WassersteinDistance(BaseMetric):
         else:
             state = k.ops.mean(y_pred - y_true)
         state = k.ops.cast(state, self.dtype)
-        print("debug:", self.dtype)
         self._metric_values.assign(state)

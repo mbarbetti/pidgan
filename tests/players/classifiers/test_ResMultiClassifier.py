@@ -1,8 +1,8 @@
 import os
 
-import numpy as np
 import pytest
 import keras as k
+import numpy as np
 import tensorflow as tf
 
 CHUNK_SIZE = int(1e4)
@@ -11,11 +11,11 @@ BATCH_SIZE = 500
 here = os.path.dirname(__file__)
 export_dir = f"{here}/tmp/res-multi-classifier"
 
-x = tf.random.normal(shape=(CHUNK_SIZE, 4))
-y = tf.random.normal(shape=(CHUNK_SIZE, 8))
-w = tf.random.uniform(shape=(CHUNK_SIZE,))
-labels = np.random.choice(3, size=(CHUNK_SIZE,), p=[0.4, 0.2, 0.4])
-labels = tf.one_hot(labels, depth=3, on_value=1.0, off_value=0.0)
+x = np.random.normal(size=(CHUNK_SIZE, 4)).astype("float32")
+y = np.random.normal(size=(CHUNK_SIZE, 8)).astype("float32")
+w = np.random.uniform(size=(CHUNK_SIZE,)).astype("float32")
+labels = np.random.choice(3, size=(CHUNK_SIZE,), p=[0.4, 0.2, 0.4]).astype("float32")
+labels = tf.one_hot(labels, depth=3, on_value=1.0, off_value=0.0).numpy()
 
 
 @pytest.fixture

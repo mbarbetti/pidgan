@@ -2,6 +2,7 @@ import os
 
 import pytest
 import keras as k
+import numpy as np
 import tensorflow as tf
 
 CHUNK_SIZE = int(1e4)
@@ -10,11 +11,11 @@ BATCH_SIZE = 500
 here = os.path.dirname(__file__)
 export_dir = f"{here}/tmp/aux-discriminator"
 
-x = tf.random.normal(shape=(CHUNK_SIZE, 4))
-y = tf.random.normal(shape=(CHUNK_SIZE, 8))
-w = tf.random.uniform(shape=(CHUNK_SIZE,))
-labels = tf.random.uniform(shape=(CHUNK_SIZE,), minval=0.0, maxval=1.0)
-labels = tf.cast(labels > 0.5, x.dtype)
+x = np.random.normal(size=(CHUNK_SIZE, 4)).astype("float32")
+y = np.random.normal(size=(CHUNK_SIZE, 8)).astype("float32")
+w = np.random.uniform(size=(CHUNK_SIZE,)).astype("float32")
+labels = np.random.uniform(0.0, 1.0, size=(CHUNK_SIZE,))
+labels = (labels > 0.5).astype("float32")
 
 
 @pytest.fixture

@@ -2,6 +2,7 @@ import os
 
 import pytest
 import keras as k
+import numpy as np
 import tensorflow as tf
 
 CHUNK_SIZE = int(1e4)
@@ -10,9 +11,9 @@ BATCH_SIZE = 500
 here = os.path.dirname(__file__)
 export_dir = f"{here}/tmp/generator"
 
-x = tf.random.normal(shape=(CHUNK_SIZE, 4))
-y = tf.random.normal(shape=(CHUNK_SIZE, 8))
-w = tf.random.uniform(shape=(CHUNK_SIZE,))
+x = np.random.normal(size=(CHUNK_SIZE, 4)).astype("float32")
+y = np.random.normal(size=(CHUNK_SIZE, 8)).astype("float32")
+w = np.random.uniform(size=(CHUNK_SIZE,)).astype("float32")
 
 
 @pytest.fixture
